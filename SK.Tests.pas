@@ -10,11 +10,13 @@ uses
   SK.Platform.Tests, System.SysUtils, System.Math, System.Classes, System.JSON,
   System.IOUtils, System.Hash, System.Generics.Collections, System.Zip,
   Xml.XMLDoc, Xml.XMLIntf, FMX.Forms, System.Types, FMX.Types, FMX.Graphics,
-  FMX.ListBox, FMX.Layouts, FMX.StdCtrls, FMX.TabControl, SK.Core, SK.Data, SK.Engine, SK.Mix, SK.Main,
-  SK.Setup, SK.Frontend, SK.Input, SK.Features.Tests, SK.Catalog, SK.Platform, System.SyncObjs;
+  FMX.ListBox, FMX.Layouts, FMX.StdCtrls, FMX.TabControl, SK.Core, SK.Data,
+  SK.Engine, SK.Mix, SK.Main, SK.Setup, SK.Frontend, SK.Input, SK.Features.Tests,
+  SK.Catalog, SK.Platform, System.SyncObjs;
 
 type
   TComboWheelAccess = class(TComboBox);
+
   TScrollWheelAccess = class(TVertScrollBox);
 
   TButtonInputAccess = class(TButton);
@@ -95,7 +97,8 @@ var
   end;
 
   procedure AwaitPending(Count: Integer);
-  var Start: UInt64;
+  var
+    Start: UInt64;
   begin
     Start := TThread.GetTickCount64;
     while (Gate.PendingCount <> Count) and (TThread.GetTickCount64 - Start < 3000) do
@@ -107,11 +110,14 @@ var
   begin
     Result := TThread.CreateAnonymousThread(
       procedure
-      var Index: Integer;
+      var
+        Index: Integer;
       begin
         Gate.Acquire(
           function: Boolean
-          begin Result := TInterlocked.CompareExchange(Cancelled, 0, 0) <> 0 end);
+          begin
+            Result := TInterlocked.CompareExchange(Cancelled, 0, 0) <> 0
+          end);
         try
           Index := TInterlocked.Increment(OrderCount) - 1;
           Order[Index] := Number;
@@ -132,10 +138,13 @@ var
         try
           Gate.Acquire(
             function: Boolean
-            begin Result := TInterlocked.CompareExchange(Cancelled, 0, 0) <> 0 end);
+            begin
+              Result := TInterlocked.CompareExchange(Cancelled, 0, 0) <> 0
+            end);
           Gate.Release;
         except
-          on E: EAbort do TInterlocked.Exchange(Aborted, 1);
+          on E: EAbort do
+            TInterlocked.Exchange(Aborted, 1);
         end;
       end);
     Result.FreeOnTerminate := False;
@@ -143,7 +152,8 @@ var
   end;
 
   procedure AwaitFinished(Thread: TThread);
-  var Start: UInt64;
+  var
+    Start: UInt64;
   begin
     Start := TThread.GetTickCount64;
     while not Thread.Finished and (TThread.GetTickCount64 - Start < 3000) do
@@ -154,12 +164,20 @@ var
 
 begin
   Gate := TScreenScraperNetworkQueue.Create(1);
-  First := nil; Second := nil; Waiting := nil;
-  Cancelled := 0; Aborted := 0; OrderCount := 0; Held := False;
+  First := nil;
+  Second := nil;
+  Waiting := nil;
+  Cancelled := 0;
+  Aborted := 0;
+  OrderCount := 0;
+  Held := False;
   try
-    Gate.Acquire(nil); Held := True;
-    First := NewOrderedThread(1); AwaitPending(1);
-    Second := NewOrderedThread(2); AwaitPending(2);
+    Gate.Acquire(nil);
+    Held := True;
+    First := NewOrderedThread(1);
+    AwaitPending(1);
+    Second := NewOrderedThread(2);
+    AwaitPending(2);
     Folder := AppBase + 'tests\output\network-queue-' + TGUID.NewGuid.ToString.Trim(['{', '}']) + '\';
     ForceDirectories(Folder);
     Credentials := TJSONObject.Create;
@@ -168,56 +186,96 @@ begin
     API.NetworkQueue := Gate;
     try
       Response := TJSONObject.ParseJSONValue('{"response":{"jeu":{"id":42}}}') as TJSONObject;
-      try WriteJSON(Folder + THashSHA2.GetHashString('probe.php?') + '.json', Response)
-      finally Response.Free end;
+      try
+        WriteJSON(Folder + THashSHA2.GetHashString('probe.php?') + '.json', Response)
+      finally
+        Response.Free
+      end;
       Started := TThread.GetTickCount64;
       Response := API.Request('probe.php', '');
       try
         Check((JInt(Response, 'response.jeu.id') = 42) and (API.Requests = 0) and
           (API.CacheHits = 1) and (TThread.GetTickCount64 - Started < 1000),
           'Cached metadata completes while the only network slot and its waiting queue are occupied');
-      finally Response.Free end;
+      finally
+        Response.Free
+      end;
       TFile.WriteAllText(Folder + 'existing.png', 'existing');
       API.Download('https://fixture.invalid/image.png', Folder + 'existing.png');
       Check(Gate.PendingCount = 2, 'Existing media bypasses the network admission queue');
-    finally API.Free end;
-    Gate.Release; Held := False;
-    AwaitFinished(First); AwaitFinished(Second);
+    finally
+      API.Free
+    end;
+    Gate.Release;
+    Held := False;
+    AwaitFinished(First);
+    AwaitFinished(Second);
     Check((OrderCount = 2) and (Order[0] = 1) and (Order[1] = 2), 'Network admission follows FIFO order');
-    Gate.Acquire(nil); Held := True;
-    Waiting := NewAbortableThread; AwaitPending(1);
+    Gate.Acquire(nil);
+    Held := True;
+    Waiting := NewAbortableThread;
+    AwaitPending(1);
     TInterlocked.Exchange(Cancelled, 1);
     AwaitFinished(Waiting);
     Check((Aborted = 1) and (Gate.PendingCount = 0), 'Cancelling a waiting request removes it without consuming a network slot');
-    Waiting.Free; Waiting := nil;
-    TInterlocked.Exchange(Cancelled, 0); TInterlocked.Exchange(Aborted, 0);
-    Waiting := NewAbortableThread; AwaitPending(1);
-    Gate.Stop('HTTP 430'); Gate.Stop('Secondary error');
+    Waiting.Free;
+    Waiting := nil;
+    TInterlocked.Exchange(Cancelled, 0);
+    TInterlocked.Exchange(Aborted, 0);
+    Waiting := NewAbortableThread;
+    AwaitPending(1);
+    Gate.Stop('HTTP 430');
+    Gate.Stop('Secondary error');
     AwaitFinished(Waiting);
     Check((Aborted = 1) and Gate.Stopped and (Gate.StopReason = 'HTTP 430') and (Gate.PendingCount = 0),
       'Quota stop wakes queued requests before the occupied network slot is released');
   finally
     TInterlocked.Exchange(Cancelled, 1);
-    if Held then Gate.Release;
-    if First <> nil then begin First.WaitFor; First.Free end;
-    if Second <> nil then begin Second.WaitFor; Second.Free end;
-    if Waiting <> nil then begin Waiting.WaitFor; Waiting.Free end;
+    if Held then
+      Gate.Release;
+    if First <> nil then
+    begin
+      First.WaitFor;
+      First.Free
+    end;
+    if Second <> nil then
+    begin
+      Second.WaitFor;
+      Second.Free
+    end;
+    if Waiting <> nil then
+    begin
+      Waiting.WaitFor;
+      Waiting.Free
+    end;
     Gate.Free;
   end;
   Gate := TScreenScraperNetworkQueue.Create(2);
-  Waiting := nil; Held := False; Cancelled := 0; Aborted := 0;
+  Waiting := nil;
+  Held := False;
+  Cancelled := 0;
+  Aborted := 0;
   try
-    Gate.Acquire(nil); Held := True;
+    Gate.Acquire(nil);
+    Held := True;
     Gate.Acquire(nil);
     try
-      Waiting := NewAbortableThread; AwaitPending(1);
-    finally Gate.Release end;
+      Waiting := NewAbortableThread;
+      AwaitPending(1);
+    finally
+      Gate.Release
+    end;
     AwaitFinished(Waiting);
     Check(Aborted = 0, 'Two account slots admit two requests and queue a third until a slot is released');
   finally
     TInterlocked.Exchange(Cancelled, 1);
-    if Held then Gate.Release;
-    if Waiting <> nil then begin Waiting.WaitFor; Waiting.Free end;
+    if Held then
+      Gate.Release;
+    if Waiting <> nil then
+    begin
+      Waiting.WaitFor;
+      Waiting.Free
+    end;
     Gate.Free;
   end;
 end;
@@ -1293,7 +1351,10 @@ begin
           TJSONArray(JValue(Account.Root, 'Systems')).AddElement(Config);
         end;
         Account.Save;
-      finally Response.Free; Account.Free end;
+      finally
+        Response.Free;
+        Account.Free
+      end;
       FormMain := TFormMain.Create(nil);
       for I := 0 to FormMain.ComponentCount - 1 do
         if FormMain.Components[I] is TComboBox then
@@ -1398,7 +1459,8 @@ begin
           RowButton.FreeNotification(RowProbe);
           RowGrid := nil;
           for I := 0 to RowButton.ComponentCount - 1 do
-            if RowButton.Components[I] is TGridPanelLayout then RowGrid := TGridPanelLayout(RowButton.Components[I]);
+            if RowButton.Components[I] is TGridPanelLayout then
+              RowGrid := TGridPanelLayout(RowButton.Components[I]);
           Check(RowGrid <> nil, 'Library row uses a shared column grid');
           Check(SameValue(RowGrid.ControlCollection.Controls[2, 0].AbsoluteRect.Left, FormMain.PathColumn.AbsoluteRect.Left, 1),
             'Library header and row ROM columns align');
@@ -1644,7 +1706,8 @@ begin
       Lines := TStringList.Create;
       try
         Lines.Assign(FormMain.FastColoredTextBoxLogging.Lines);
-        for I := 1 to 250 do FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:11  Journal fixture line ' + I.ToString);
+        for I := 1 to 250 do
+          FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:11  Journal fixture line ' + I.ToString);
         FormMain.ApplyScrapeStatus(Status);
         Application.ProcessMessages;
         Check(FormMain.FullLog.ViewportPosition.Y > 0, 'Journal follows new lines from the bottom');
@@ -1652,7 +1715,8 @@ begin
         FormMain.FullLog.SelLength := 8;
         FormMain.FullLog.ViewportPosition := PointF(0, 200);
         ScrollBefore := FormMain.FullLog.ViewportPosition;
-        for I := 1 to 5 do FormMain.ApplyScrapeStatus(Status);
+        for I := 1 to 5 do
+          FormMain.ApplyScrapeStatus(Status);
         Application.ProcessMessages;
         Check((FormMain.FullLog.ViewportPosition = ScrollBefore) and (FormMain.FullLog.SelLength = 8),
           'Unchanged status ticks preserve journal viewport and text selection');
@@ -1662,8 +1726,10 @@ begin
         Check((FormMain.FullLog.ViewportPosition = ScrollBefore) and (FormMain.FullLog.SelStart = 15) and
           (FormMain.FullLog.SelLength = 8) and FormMain.FullLog.Lines.Text.Contains('Appended while reading'),
           'Appending journal lines preserves manual scroll and selection');
-        Status.Running := False; Status.Finished := True;
-        for I := 1 to 5 do FormMain.ApplyScrapeStatus(Status);
+        Status.Running := False;
+        Status.Finished := True;
+        for I := 1 to 5 do
+          FormMain.ApplyScrapeStatus(Status);
         Check(FormMain.FullLog.ViewportPosition = ScrollBefore,
           'Completed scraping does not reset journal viewport');
         FormMain.ShellAction(FormMain.NavLibrary);
@@ -1683,9 +1749,12 @@ begin
         Check(FormMain.FullLog.Lines.Count = 0, 'Resetting source clears the full journal once');
         FormMain.BeginScrapeDisplay;
         FormMain.FastColoredTextBoxLogging.Lines.AddStrings(Lines);
-        Status.Running := True; Status.Finished := False;
+        Status.Running := True;
+        Status.Finished := False;
         FormMain.ApplyScrapeStatus(Status);
-      finally Lines.Free end;
+      finally
+        Lines.Free
+      end;
 
       FormMain.ShellAction(FormMain.NavScraping);
       Check(FormMain.PageTabControl.ActiveTab = FormMain.TabScrapingPage, 'Navigation returns to the scraping tab');

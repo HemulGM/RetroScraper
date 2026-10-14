@@ -9,6 +9,7 @@ uses
 
 type
   EScreenScraper = class(Exception);
+
   EScreenScraperFatal = class(EScreenScraper)
   private
     FStatusCode: Integer;
@@ -305,8 +306,11 @@ begin
   FBase := IncludeTrailingPathDelimiter(Base);
   ForceDirectories(FBase);
   Previous := ReadJSON(FBase + ConfigFileName);
-  try Fresh := (Previous = nil) or (JInt(Previous, 'ConfigVersion') <> ConfigSchemaVersion)
-  finally Previous.Free end;
+  try
+    Fresh := (Previous = nil) or (JInt(Previous, 'ConfigVersion') <> ConfigSchemaVersion)
+  finally
+    Previous.Free
+  end;
   if Fresh then
   begin
     Defaults := ReadJSON(TPlatformPath.Combine(AppBase, DefaultConfigPath));
@@ -347,13 +351,20 @@ begin
 end;
 
 procedure TSkraperConfig.ReplaceWith(Source: TSkraperConfig);
-var RootCopy, CredentialCopy: TJSONObject;
+var
+  RootCopy, CredentialCopy: TJSONObject;
 begin
   RootCopy := Source.FRoot.Clone as TJSONObject;
-  try CredentialCopy := Source.FCredentials.Clone as TJSONObject
-  except RootCopy.Free; raise end;
-  FRoot.Free; FCredentials.Free;
-  FRoot := RootCopy; FCredentials := CredentialCopy;
+  try
+    CredentialCopy := Source.FCredentials.Clone as TJSONObject
+  except
+    RootCopy.Free;
+    raise
+  end;
+  FRoot.Free;
+  FCredentials.Free;
+  FRoot := RootCopy;
+  FCredentials := CredentialCopy;
 end;
 
 destructor TSkraperConfig.Destroy;
@@ -386,42 +397,56 @@ begin
 end;
 
 procedure TSkraperConfig.ResetSystemSettings(Index: Integer; Catalog: TJSONObject);
-var I: Integer; Sys: TJSONObject; A: TJSONArray; Loaded: TJSONObject;
+var
+  I: Integer;
+  Sys: TJSONObject;
+  A: TJSONArray;
+  Loaded: TJSONObject;
 begin
   Loaded := nil;
   try
     if Catalog = nil then
     begin
       Loaded := ReadJSON(TPlatformPath.Combine(FBase, SystemsCatalogPath));
-      if Loaded = nil then Loaded := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
+      if Loaded = nil then
+        Loaded := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
       Catalog := Loaded;
     end;
     A := FRoot.GetValue<TJSONArray>('Systems');
     for I := 0 to A.Count - 1 do
     begin
-      if (Index >= 0) and (I <> Index) then Continue;
+      if (Index >= 0) and (I <> Index) then
+        Continue;
       Sys := A.Items[I] as TJSONObject;
       ConfigurePlatform(Sys, SystemAt(-1), Catalog, JInt(FRoot, 'FrontEnd.Type'),
         PlatformIDs(Sys), JStr(Sys, 'GamesAndRoms.Path'));
     end;
-  finally Loaded.Free end;
+  finally
+    Loaded.Free
+  end;
 end;
 
 function TSkraperConfig.DialogFolder(const Key, Current: string): string;
-var Candidate: string;
+var
+  Candidate: string;
 begin
   Candidate := Current.Trim;
   if not Candidate.Contains('%') then
   begin
-    if TDirectory.Exists(Candidate) then Exit(Candidate);
-    if TFile.Exists(Candidate) then Exit(ExtractFilePath(Candidate));
+    if TDirectory.Exists(Candidate) then
+      Exit(Candidate);
+    if TFile.Exists(Candidate) then
+      Exit(ExtractFilePath(Candidate));
     Candidate := ExtractFilePath(Candidate);
-    if (Candidate <> '') and TDirectory.Exists(Candidate) then Exit(Candidate);
+    if (Candidate <> '') and TDirectory.Exists(Candidate) then
+      Exit(Candidate);
   end;
   Candidate := JStr(FRoot, 'MRU.' + Key);
-  if (Candidate <> '') and TDirectory.Exists(Candidate) then Exit(Candidate);
+  if (Candidate <> '') and TDirectory.Exists(Candidate) then
+    Exit(Candidate);
   Candidate := JStr(FRoot, 'AllSystems.GamesAndRoms.Path');
-  if (Candidate <> '') and TDirectory.Exists(Candidate) then Exit(Candidate);
+  if (Candidate <> '') and TDirectory.Exists(Candidate) then
+    Exit(Candidate);
   Result := '';
 end;
 
@@ -627,7 +652,10 @@ begin
       Result := FHttp.Get(URL, Stream);
     CheckCancellation;
     try
-      if Stream = nil then Context := 'ScreenScraper' else Context := 'Media';
+      if Stream = nil then
+        Context := 'ScreenScraper'
+      else
+        Context := 'Media';
       CheckScreenScraperHTTPStatus(Result.StatusCode, Context);
     except
       on E: EScreenScraperFatal do
@@ -671,14 +699,18 @@ function AccountCredentialValue(Credentials: TJSONObject; const Key: string): st
 begin
   if JBool(Credentials, 'anonymous') then
   begin
-    if Key = 'ssid' then Exit('_anonymous_');
-    if Key = 'sspassword' then Exit('_no_paswword_');
+    if Key = 'ssid' then
+      Exit('_anonymous_');
+    if Key = 'sspassword' then
+      Exit('_no_paswword_');
   end;
   Result := JStr(Credentials, Key);
 end;
 
 function TScreenScraper.CredentialValue(const Key: string): string;
-begin Result := AccountCredentialValue(FCredentials, Key) end;
+begin
+  Result := AccountCredentialValue(FCredentials, Key)
+end;
 
 function TScreenScraper.AuthURL(const URL: string): string;
 var
@@ -760,7 +792,8 @@ begin
     begin
       RegisterCacheFile(TDirectory.GetParent(TDirectory.GetParent(FCache)), ScopeSystemID, 'api', FileName);
       Inc(CacheHits);
-      if Assigned(Diagnostic) then Diagnostic('API cache hit: ' + Endpoint);
+      if Assigned(Diagnostic) then
+        Diagnostic('API cache hit: ' + Endpoint);
       Exit;
     end;
   end;
@@ -778,7 +811,8 @@ begin
     URL := URL + '&' + Params;
   for Attempt := 0 to Retries do
   begin
-    if Assigned(Diagnostic) then Diagnostic('API request: ' + Endpoint + ', attempt=' + (Attempt + 1).ToString);
+    if Assigned(Diagnostic) then
+      Diagnostic('API request: ' + Endpoint + ', attempt=' + (Attempt + 1).ToString);
     if Assigned(IsCancelled) and IsCancelled() then
       raise EAbort.Create('Cancelled');
     try

@@ -2,17 +2,21 @@
 
 interface
 
-uses System.Classes;
+uses
+  System.Classes;
 
 procedure RunGameLibraryTests(Report: TStrings);
+
 procedure RunGameLibrarySelfTests;
 
 implementation
 
-uses System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types, System.UITypes,
-  System.Generics.Collections, System.Zip, Xml.XMLDoc, Xml.XMLIntf,
-  FMX.Forms, FMX.Graphics, FMX.Types, FMX.BehaviorManager, SK.Core, SK.Platform, SK.GameLibrary,
-  SK.GameLibrary.Form, SK.Engine, SK.Main, HGM.FMX.Image, FMX.Objects;
+uses
+  System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types,
+  System.UITypes, System.Generics.Collections, System.Zip, Xml.XMLDoc,
+  Xml.XMLIntf, FMX.Forms, FMX.Graphics, FMX.Types, FMX.BehaviorManager, SK.Core,
+  SK.Platform, SK.GameLibrary, SK.GameLibrary.Form, SK.Engine, SK.Main,
+  HGM.FMX.Image, FMX.Objects;
 
 procedure RunGameLibraryTests(Report: TStrings);
 var
@@ -37,13 +41,15 @@ var
 
   procedure Check(Condition: Boolean; const Name: string);
   begin
-    if not Condition then raise Exception.Create('FAIL: ' + Name);
+    if not Condition then
+      raise Exception.Create('FAIL: ' + Name);
     Report.Add('PASS: ' + Name);
     Report.SaveToFile(TPlatformPath.Combine(Base, 'progress.txt'), TEncoding.UTF8);
   end;
 
   procedure WaitUntil(const Ready: TFunc<Boolean>; const Name: string);
-  var Tick: UInt64;
+  var
+    Tick: UInt64;
   begin
     Tick := TThread.GetTickCount64;
     while not Ready() and (TThread.GetTickCount64 - Tick < 5000) do
@@ -56,56 +62,105 @@ var
 
   procedure WaitPreview(Editor: TGameFieldEditor);
   begin
-    WaitUntil(function: Boolean begin Result := not Editor.PreviewLoading end,
-      'Preview finishes for ' + Editor.Field.Caption);
+    WaitUntil(
+      function: Boolean
+      begin
+        Result := not Editor.PreviewLoading
+      end,
+          'Preview finishes for ' + Editor.Field.Caption);
   end;
 
   procedure TestAsyncImages;
-  var Owner, RemovedOwner: TComponent; Image, RemovedImage: TBitmap;
+  var
+    Owner, RemovedOwner: TComponent;
+    Image, RemovedImage: TBitmap;
     Done, Success, OnUI, CancelledCallback, RemovedCallback: Boolean;
   begin
     Owner := TComponent.Create(nil);
     Image := TBitmap.Create;
-    RemovedOwner := nil; RemovedImage := nil;
+    RemovedOwner := nil;
+    RemovedImage := nil;
     try
-      Done := False; Success := False; OnUI := False;
+      Done := False;
+      Success := False;
+      OnUI := False;
       Image.LoadFromFileAsync(Owner, TPlatformPath.Combine(Roms, 'replacement.png'), 48, 70,
         procedure(Loaded: Boolean)
         begin
-          Done := True; Success := Loaded; OnUI := TThread.CurrentThread.ThreadID = MainThreadID;
+          Done := True;
+          Success := Loaded;
+          OnUI := TThread.CurrentThread.ThreadID = MainThreadID;
         end);
       Check(not Done and Image.IsEmpty, 'Async decoding returns before assigning UI pixels');
-      WaitUntil(function: Boolean begin Result := Done end, 'Async file decode completes');
+      WaitUntil(
+        function: Boolean
+        begin
+          Result := Done
+        end, 'Async file decode completes');
       Check(Success and OnUI and (Image.Width = 48) and (Image.Height = 32),
         'Async thumbnails preserve aspect ratio and deliver on the UI thread');
-      CancelledCallback := False; RemovedCallback := False;
+      CancelledCallback := False;
+      RemovedCallback := False;
       Image.LoadFromFileAsync(Owner, TPlatformPath.Combine(Roms, 'replacement.png'),
-        procedure(Loaded: Boolean) begin CancelledCallback := True end);
+        procedure(Loaded: Boolean)
+        begin
+          CancelledCallback := True
+        end);
       Image.RemoveCallback(Owner);
-      RemovedOwner := TComponent.Create(nil); RemovedImage := TBitmap.Create;
+      RemovedOwner := TComponent.Create(nil);
+      RemovedImage := TBitmap.Create;
       RemovedImage.LoadFromFileAsync(RemovedOwner, TPlatformPath.Combine(Roms, 'replacement.png'),
-        procedure(Loaded: Boolean) begin RemovedCallback := True end);
-      FreeAndNil(RemovedOwner); FreeAndNil(RemovedImage);
-      Done := False; Success := True;
+        procedure(Loaded: Boolean)
+        begin
+          RemovedCallback := True
+        end);
+      FreeAndNil(RemovedOwner);
+      FreeAndNil(RemovedImage);
+      Done := False;
+      Success := True;
       Image.LoadFromFileAsync(Owner, TPlatformPath.Combine(Roms, 'missing.png'),
-        procedure(Loaded: Boolean) begin Done := True; Success := Loaded end);
-      WaitUntil(function: Boolean begin Result := Done end, 'Missing async image completes with a result');
+        procedure(Loaded: Boolean)
+        begin
+          Done := True;
+          Success := Loaded
+        end);
+      WaitUntil(
+        function: Boolean
+        begin
+          Result := Done
+        end, 'Missing async image completes with a result');
       Check(not Success and not CancelledCallback and not RemovedCallback,
         'Missing files fail safely and canceled or destroyed owners receive no callback');
-      Done := False; Success := True;
+      Done := False;
+      Success := True;
       Image.LoadFromFileAsync(Owner, TPlatformPath.Combine(Roms, 'old.png'),
-        procedure(Loaded: Boolean) begin Done := True; Success := Loaded end);
-      WaitUntil(function: Boolean begin Result := Done end, 'Corrupt async image completes with a result');
+        procedure(Loaded: Boolean)
+        begin
+          Done := True;
+          Success := Loaded
+        end);
+      WaitUntil(
+        function: Boolean
+        begin
+          Result := Done
+        end, 'Corrupt async image completes with a result');
       Check(not Success, 'Corrupt image decoding reports failure without escaping into the UI');
-    finally RemovedOwner.Free; RemovedImage.Free; Owner.Free; Image.Free end;
+    finally
+      RemovedOwner.Free;
+      RemovedImage.Free;
+      Owner.Free;
+      Image.Free
+    end;
   end;
 
   function GameIndex(const FileName: string): Integer;
-  var J: Integer;
+  var
+    J: Integer;
   begin
     Result := -1;
     for J := 0 to LibraryData.Games.Count - 1 do
-      if SamePath(LibraryData.Games[J].RomPath, TPlatformPath.Combine(Roms, FileName)) then Exit(J);
+      if SamePath(LibraryData.Games[J].RomPath, TPlatformPath.Combine(Roms, FileName)) then
+        Exit(J);
   end;
 
   procedure RunTarget(const FileName: string; Cancelled: Boolean = False);
@@ -113,20 +168,30 @@ var
     Worker := TScrapeWorker.Create(Config, Credentials, Base, 0, True, 2, TPlatformPath.Combine(Roms, FileName));
     Lines := TStringList.Create;
     try
-      if Cancelled then Worker.Terminate;
+      if Cancelled then
+        Worker.Terminate;
       Worker.Start;
       Started := TThread.GetTickCount64;
-      while not Worker.Finished and (TThread.GetTickCount64 - Started < 15000) do CheckSynchronize(20);
-      if not Worker.Finished then Worker.Terminate;
+      while not Worker.Finished and (TThread.GetTickCount64 - Started < 15000) do
+        CheckSynchronize(20);
+      if not Worker.Finished then
+        Worker.Terminate;
       Worker.WaitFor;
       Worker.Snapshot(Status, Lines);
       Lines.SaveToFile(TPlatformPath.Combine(Base, FileName + '.log'), TEncoding.UTF8);
-    finally Worker.Free; Lines.Free end;
+    finally
+      Worker.Free;
+      Lines.Free
+    end;
   end;
 
   procedure CheckField(const XML, FieldName: string; Kind: Integer; Expected: Boolean; const Name: string);
-  var TestDoc: IXMLDocument; TestFields: TObjectList<TLibraryField>; TestField: TLibraryField;
-    Error: string; HasField, Valid: Boolean;
+  var
+    TestDoc: IXMLDocument;
+    TestFields: TObjectList<TLibraryField>;
+    TestField: TLibraryField;
+    Error: string;
+    HasField, Valid: Boolean;
   begin
     TestDoc := ParseGameXML(XML, Kind);
     TestFields := TObjectList<TLibraryField>.Create(True);
@@ -141,13 +206,17 @@ var
           Check((Valid = Expected) and (Valid = (Error = '')), Name);
           Break;
         end;
-      if not HasField then raise Exception.Create('Missing test field: ' + FieldName);
-    finally TestFields.Free end;
+      if not HasField then
+        raise Exception.Create('Missing test field: ' + FieldName);
+    finally
+      TestFields.Free
+    end;
   end;
 
 begin
   Base := TPlatformPath.Combine(WritableBase, 'tests/library-' + TGUID.NewGuid.ToString.Trim(['{', '}']));
-  Roms := TPlatformPath.Combine(Base, 'roms'); ForceDirectories(Roms);
+  Roms := TPlatformPath.Combine(Base, 'roms');
+  ForceDirectories(Roms);
   ListFile := TPlatformPath.Combine(Roms, 'gamelist.xml');
   CheckField('<game><rating>0.85</rating></game>', 'rating', 1, True, 'Unit rating accepts decimal values');
   CheckField('<game><rating>1</rating></game>', 'rating', 1, True, 'Unit rating includes its upper bound');
@@ -192,14 +261,21 @@ begin
   TFile.WriteAllText(TPlatformPath.Combine(Roms, 'C.rom'), 'C');
   TFile.WriteAllText(TPlatformPath.Combine(Roms, 'old.png'), 'old-media');
   Bitmap := TBitmap.Create(96, 64);
-  try Bitmap.Clear($FF60CDFF); Bitmap.SaveToFile(TPlatformPath.Combine(Roms, 'replacement.png')) finally Bitmap.Free end;
+  try
+    Bitmap.Clear($FF60CDFF);
+    Bitmap.SaveToFile(TPlatformPath.Combine(Roms, 'replacement.png'))
+  finally
+    Bitmap.Free
+  end;
   TFile.WriteAllText(ListFile, '<gameList><game id="42" custom="keep"><path>./A.rom</path>' +
     '<name>Alpha</name><desc><![CDATA[Original description]]></desc><favorite>true</favorite>' +
     '<image>./old.png</image><maps><map path="./map.png" title="Level 1"/></maps>' +
     '<customflag>preserved</customflag></game>' +
     '<game id="99"><path>./B.rom</path><name>Beta</name><hidden>true</hidden>' +
     '<custom><child value="untouched"/></custom></game><folder><path>./sub</path><name>Folder</name></folder></gameList>', TEncoding.UTF8);
-  Sys := TJSONObject.Create; Config := TJSONObject.Create; Credentials := TJSONObject.Create;
+  Sys := TJSONObject.Create;
+  Config := TJSONObject.Create;
+  Credentials := TJSONObject.Create;
   try
     JSet(Sys, 'SystemId', TJSONNumber.Create(1));
     JSet(Sys, 'Overriden', TJSONNumber.Create(31));
@@ -223,17 +299,30 @@ begin
       Found := False;
       for F in Fields do
       begin
-        if F.Caption = 'desc' then begin Check(F.Value = 'Original description', 'CDATA description is editable'); F.SetValue('Новое описание & details'); end;
-        if F.Caption = 'image' then F.SetValue(LibraryData.MediaReference(TPlatformPath.Combine(Roms, 'replacement.png')));
-        if F.Caption = 'favorite' then F.SetValue('false');
-        if F.Caption = 'maps/map/@title' then F.SetValue('New level');
-        if F.Caption = 'video' then Found := F.IsMedia;
+        if F.Caption = 'desc' then
+        begin
+          Check(F.Value = 'Original description', 'CDATA description is editable');
+          F.SetValue('Новое описание & details');
+        end;
+        if F.Caption = 'image' then
+          F.SetValue(LibraryData.MediaReference(TPlatformPath.Combine(Roms, 'replacement.png')));
+        if F.Caption = 'favorite' then
+          F.SetValue('false');
+        if F.Caption = 'maps/map/@title' then
+          F.SetValue('New level');
+        if F.Caption = 'video' then
+          Found := F.IsMedia;
       end;
       Check(Found, 'Empty supported media fields are offered in the field editor');
       Before := TFile.ReadAllText(ListFile);
       Draft.DocumentElement.ChildNodes['rating'].Text := '2';
       Raised := False;
-      try LibraryData.Save(N, Draft) except on E: EGameLibraryValidation do Raised := True end;
+      try
+        LibraryData.Save(N, Draft)
+      except
+        on E: EGameLibraryValidation do
+          Raised := True
+      end;
       Check(Raised and (TFile.ReadAllText(ListFile) = Before), 'Model validation prevents invalid data from reaching disk');
       Check(Length(TDirectory.GetFiles(Roms, 'gamelist.xml.*.bak')) = 0, 'Validation failure does not create a backup or partially save a game');
       Draft.DocumentElement.ChildNodes['rating'].Text := '';
@@ -251,24 +340,40 @@ begin
       Before := TFile.ReadAllText(ListFile);
       TFile.WriteAllText(ListFile, Before.Replace('Beta', 'External update'), TEncoding.UTF8);
       Raised := False;
-      try LibraryData.Save(N, Draft) except on E: Exception do Raised := True end;
+      try
+        LibraryData.Save(N, Draft)
+      except
+        on E: Exception do
+          Raised := True
+      end;
       Check(Raised and TFile.ReadAllText(ListFile).Contains('External update'), 'Editor detects external library changes instead of overwriting them');
       TFile.WriteAllText(ListFile, Before, TEncoding.UTF8);
-    finally Fields.Free; LibraryData.Free end;
+    finally
+      Fields.Free;
+      LibraryData.Free
+    end;
 
     Raised := False;
-    try Draft := ParseGameXML('<gameList/>', 1) except on E: Exception do Raised := True end;
+    try
+      Draft := ParseGameXML('<gameList/>', 1)
+    except
+      on E: Exception do
+        Raised := True
+    end;
     Check(Raised, 'XML editor rejects a full library in place of a game record');
 
     JSet(Config, 'AllSystems', Sys.Clone as TJSONValue);
-    Systems := TJSONArray.Create; Systems.AddElement(Sys.Clone as TJSONValue);
+    Systems := TJSONArray.Create;
+    Systems.AddElement(Sys.Clone as TJSONValue);
     JSet(Config, 'Systems', Systems);
     JSet(Config, 'Anonymous', TJSONBool.Create(True));
     JSet(Config, 'FrontEnd.Type', TJSONNumber.Create(4));
     Response := TJSONObject.ParseJSONValue('{"response":{"jeu":{"id":42,"romid":7,"noms":[{"region":"us","text":"Scraped Alpha"}],"rom":{"romregions":"us"}}}}') as TJSONObject;
     try
       WriteJSON(TPlatformPath.Combine(Base, 'Cache/api/' + THashSHA2.GetHashString('jeuInfos.php?systemeid=1&romtype=jeu&romnom=A') + '.json'), Response);
-    finally Response.Free end;
+    finally
+      Response.Free
+    end;
     Before := TFile.ReadAllText(ListFile);
     RunTarget('A.rom');
     Check((Status.Errors = 0) and (Status.Total = 1) and (Status.Completed = 1) and
@@ -284,8 +389,11 @@ begin
     RunTarget('A.rom', True);
     Check(Status.Cancelled and (TFile.ReadAllText(ListFile) = Before), 'Cancelled targeted scrape preserves the original library');
     Response := TJSONObject.ParseJSONValue('{"response":{}}') as TJSONObject;
-    try WriteJSON(TPlatformPath.Combine(Base, 'Cache/api/' + THashSHA2.GetHashString('jeuInfos.php?systemeid=1&romtype=jeu&romnom=A') + '.json'), Response)
-    finally Response.Free end;
+    try
+      WriteJSON(TPlatformPath.Combine(Base, 'Cache/api/' + THashSHA2.GetHashString('jeuInfos.php?systemeid=1&romtype=jeu&romnom=A') + '.json'), Response)
+    finally
+      Response.Free
+    end;
     RunTarget('A.rom');
     Doc := LoadXMLDocument(ListFile);
     Check((Status.Missing = 1) and (Doc.DocumentElement.ChildNodes[0].ChildNodes['name'].Text = 'Scraped Alpha'), 'A not-found targeted result preserves the existing game');
@@ -293,7 +401,8 @@ begin
     Check((Status.Errors > 0) and (Status.Completed = 0), 'Targeted scrape refuses missing ROM files');
 
     TestAsyncImages;
-    Main := TFormMain.Create(nil); Window := TFormGameLibrary.Create(nil);
+    Main := TFormMain.Create(nil);
+    Window := TFormGameLibrary.Create(nil);
     try
       Window.StyleBook := Main.StyleBookWinUI3;
       Window.FieldsScroll.ScrollAnimation := TBehaviorBoolean.False;
@@ -331,7 +440,8 @@ begin
       Check((TFile.ReadAllText(ListFile) = Before) and not Window.SaveButton.Enabled,
         'Invalid form save preserves disk contents and the unsaved draft');
       Window.InfoClick(Window.FieldEditor('rating').InfoButton);
-      Window.ClientWidth := 1280; Window.ClientHeight := 850;
+      Window.ClientWidth := 1280;
+      Window.ClientHeight := 850;
       Window.ValidateDraft;
       Application.ProcessMessages;
       Check(Window.FieldEditor('rating').ValueEdit.AbsoluteRect.Left >
@@ -345,9 +455,15 @@ begin
       Bitmap := TBitmap.Create(1280, 850);
       try
         if Bitmap.Canvas.BeginScene then
-        try Window.PaintTo(Bitmap.Canvas) finally Bitmap.Canvas.EndScene end;
+        try
+          Window.PaintTo(Bitmap.Canvas)
+        finally
+          Bitmap.Canvas.EndScene
+        end;
         Bitmap.SaveToFile(TPlatformPath.Combine(WritableBase, 'tests/library-validation.png'));
-      finally Bitmap.Free end;
+      finally
+        Bitmap.Free
+      end;
       Window.InfoClick(Window.FieldEditor('rating').InfoButton);
       Window.FieldEditor('rating').Text := '0.8';
       Check(not Window.FieldEditor('rating').ErrorLabel.Visible and Window.ValidateDraft,
@@ -360,14 +476,19 @@ begin
       Window.SaveClick(nil);
       Check((TFile.ReadAllText(ListFile) = Before) and Window.FieldEditor('rating').ErrorLabel.Visible,
         'XML editing cannot bypass field validation');
-      Window.FieldEditor('rating').Text := '0.8'; Window.SaveClick(nil);
+      Window.FieldEditor('rating').Text := '0.8';
+      Window.SaveClick(nil);
       Check((Window.GameList.Count = 3) and (Window.FieldCount > 20), 'Game library form streams and exposes all fields from FMX');
-      Window.SearchEdit.Text := 'B.rom'; Window.SearchChanged(nil);
+      Window.SearchEdit.Text := 'B.rom';
+      Window.SearchChanged(nil);
       Check(Window.GameList.Count = 1, 'Game library search finds a ROM filename');
-      Window.GameList.ItemIndex := 0; Window.GameChanged(nil);
+      Window.GameList.ItemIndex := 0;
+      Window.GameChanged(nil);
       Check(Window.XMLMemo.Text.Contains('Beta'), 'Game selection loads its own editable XML');
-      Window.SearchEdit.Text := ''; Window.SearchChanged(nil);
-      Window.GameList.ItemIndex := 0; Window.GameChanged(nil);
+      Window.SearchEdit.Text := '';
+      Window.SearchChanged(nil);
+      Window.GameList.ItemIndex := 0;
+      Window.GameChanged(nil);
       Window.FieldEditor('desc').Text := 'Edited through the form';
       Window.FieldEditor('developer').Text := 'Edited developer';
       Check(Window.SaveButton.Enabled, 'Editing a field marks the selected game dirty');
@@ -383,7 +504,12 @@ begin
       Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['customflag'].Text = 'XML edit', 'Advanced XML edits persist custom game fields');
       Window.EditorTabs.ActiveTab := Window.FieldsTab;
       Bitmap := TBitmap.Create(96, 64);
-      try Bitmap.Clear($FF60CDFF); Bitmap.SaveToFile(TPlatformPath.Combine(Roms, 'replacement.png')) finally Bitmap.Free end;
+      try
+        Bitmap.Clear($FF60CDFF);
+        Bitmap.SaveToFile(TPlatformPath.Combine(Roms, 'replacement.png'))
+      finally
+        Bitmap.Free
+      end;
       Window.FieldEditor('image').Text := './replacement.png';
       Window.ValueChanged(Window.FieldEditor('image').ValueEdit);
       Check(Window.FieldEditor('image').PreviewLoading and Window.FieldEditor('image').MediaImage.Bitmap.IsEmpty,
@@ -423,10 +549,11 @@ begin
       Window.SaveClick(nil);
       Doc := LoadXMLDocument(ListFile);
       Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['image'].Text = './replacement.png', 'Media reference survives form editing without added line breaks');
-      Window.ClientWidth := 1120; Window.ClientHeight := 740;
+      Window.ClientWidth := 1120;
+      Window.ClientHeight := 740;
       Application.ProcessMessages;
       Report.Add(Format('Editor geometry: content %.0fx%.0f, scroll %.0fx%.0f',
-        [Window.FieldsContent.Width, Window.FieldsContent.Height, Window.FieldsScroll.Width, Window.FieldsScroll.Height]));
+          [Window.FieldsContent.Width, Window.FieldsContent.Height, Window.FieldsScroll.Width, Window.FieldsScroll.Height]));
       Check(Window.FieldsContent.Width > 500, 'Vertical editor uses the full available field width');
       Check((Window.SaveButton.AbsoluteRect.Right < Window.ScrapeButton.AbsoluteRect.Left) and
         (Window.ScrapeButton.AbsoluteRect.Right < Window.CloseButton.AbsoluteRect.Left),
@@ -447,17 +574,27 @@ begin
         'Editing a field preserves the current scroll position');
       Window.SaveClick(nil);
       Window.FieldsScroll.ViewportPosition := PointF(0, 0);
-      Window.ClientWidth := 1280; Window.ClientHeight := 850;
+      Window.ClientWidth := 1280;
+      Window.ClientHeight := 850;
       Application.ProcessMessages;
       Bitmap := TBitmap.Create(1280, 850);
       try
         if Bitmap.Canvas.BeginScene then
-        try Window.PaintTo(Bitmap.Canvas) finally Bitmap.Canvas.EndScene end;
+        try
+          Window.PaintTo(Bitmap.Canvas)
+        finally
+          Bitmap.Canvas.EndScene
+        end;
         Bitmap.SaveToFile(TPlatformPath.Combine(WritableBase, 'tests/library-editor.png'));
-      finally Bitmap.Free end;
+      finally
+        Bitmap.Free
+      end;
       Window.ValueChanged(Window.FieldEditor('image').ValueEdit);
       Check(Window.FieldEditor('image').PreviewLoading, 'Window destruction is exercised with a pending preview');
-    finally Window.Free; Main.Free end;
+    finally
+      Window.Free;
+      Main.Free
+    end;
     Application.ProcessMessages;
 
     // The same editor retains format-specific and unknown fields in LaunchBox and DAT.
@@ -470,37 +607,65 @@ begin
         TFile.WriteAllText(Path, '<LaunchBox><Game><ApplicationPath>' + TPlatformPath.Combine(Roms, 'A.rom') +
           '</ApplicationPath><Title>LB</Title><Custom>untouched</Custom></Game>' +
           '<AdditionalApplication><Name>Helper</Name></AdditionalApplication></LaunchBox>', TEncoding.UTF8)
-      else TFile.WriteAllText(Path, '<datafile><header><author>Custom author</author></header>' +
-        '<game name="DAT"><rom name="./A.rom" crc="abcdef12"/><custom>untouched</custom></game></datafile>', TEncoding.UTF8);
+      else
+        TFile.WriteAllText(Path, '<datafile><header><author>Custom author</author></header>' +
+          '<game name="DAT"><rom name="./A.rom" crc="abcdef12"/><custom>untouched</custom></game></datafile>', TEncoding.UTF8);
       LibraryData := TGameLibrary.Create(Sys);
       try
-        N := GameIndex('A.rom'); Draft := LibraryData.Draft(N);
-        if I = 2 then Draft.DocumentElement.ChildNodes['Title'].Text := 'Edited LB'
-        else Draft.DocumentElement.Attributes['name'] := 'Edited DAT';
+        N := GameIndex('A.rom');
+        Draft := LibraryData.Draft(N);
+        if I = 2 then
+          Draft.DocumentElement.ChildNodes['Title'].Text := 'Edited LB'
+        else
+          Draft.DocumentElement.Attributes['name'] := 'Edited DAT';
         LibraryData.Save(N, Draft);
         Doc := LoadXMLDocument(Path);
-        if I = 2 then Check(Doc.DocumentElement.ChildNodes[1].ChildNodes['Name'].Text = 'Helper', 'LaunchBox edit preserves additional applications')
-        else Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['author'].Text = 'Custom author', 'DAT edit preserves the existing header');
-      finally LibraryData.Free end;
+        if I = 2 then
+          Check(Doc.DocumentElement.ChildNodes[1].ChildNodes['Name'].Text = 'Helper', 'LaunchBox edit preserves additional applications')
+        else
+          Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['author'].Text = 'Custom author', 'DAT edit preserves the existing header');
+      finally
+        LibraryData.Free
+      end;
     end;
 
     Path := TPlatformPath.Combine(Roms, 'gamelist.zip');
     Zip := TZipFile.Create;
-    try Zip.Open(Path, zmWrite); Zip.Add(TEncoding.UTF8.GetBytes(Before), 'gamelist.xml') finally Zip.Free end;
-    JSet(Sys, 'GameList.Type', TJSONNumber.Create(1)); JSet(Sys, 'GameList.OutputFile', TJSONString.Create(Path));
+    try
+      Zip.Open(Path, zmWrite);
+      Zip.Add(TEncoding.UTF8.GetBytes(Before), 'gamelist.xml')
+    finally
+      Zip.Free
+    end;
+    JSet(Sys, 'GameList.Type', TJSONNumber.Create(1));
+    JSet(Sys, 'GameList.OutputFile', TJSONString.Create(Path));
     LibraryData := TGameLibrary.Create(Sys);
     try
-      N := GameIndex('A.rom'); Draft := LibraryData.Draft(N);
-      Draft.DocumentElement.ChildNodes['name'].Text := 'Edited ZIP'; LibraryData.Save(N, Draft);
+      N := GameIndex('A.rom');
+      Draft := LibraryData.Draft(N);
+      Draft.DocumentElement.ChildNodes['name'].Text := 'Edited ZIP';
+      LibraryData.Save(N, Draft);
       Zip := TZipFile.Create;
-      try Zip.Open(Path, zmRead); Zip.Read('gamelist.xml', Bytes) finally Zip.Free end;
+      try
+        Zip.Open(Path, zmRead);
+        Zip.Read('gamelist.xml', Bytes)
+      finally
+        Zip.Free
+      end;
       Check(TEncoding.UTF8.GetString(Bytes).Contains('Edited ZIP'), 'Compressed gamelist supports a single-game edit');
-    finally LibraryData.Free end;
-  finally Credentials.Free; Config.Free; Sys.Free end;
+    finally
+      LibraryData.Free
+    end;
+  finally
+    Credentials.Free;
+    Config.Free;
+    Sys.Free
+  end;
 end;
 
 procedure RunGameLibrarySelfTests;
-var Report: TStringList;
+var
+  Report: TStringList;
 begin
   Report := TStringList.Create;
   try
@@ -508,10 +673,17 @@ begin
       RunGameLibraryTests(Report);
       Report.Add('ALL LIBRARY TESTS PASSED');
     except
-      on E: Exception do begin Report.Add(E.ClassName + ': ' + E.Message); ExitCode := 1 end;
+      on E: Exception do
+      begin
+        Report.Add(E.ClassName + ': ' + E.Message);
+        ExitCode := 1
+      end;
     end;
     Report.SaveToFile(TPlatformPath.Combine(WritableBase, 'tests/library-results.txt'), TEncoding.UTF8);
-  finally Report.Free end;
+  finally
+    Report.Free
+  end;
 end;
 
 end.
+

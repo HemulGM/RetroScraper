@@ -305,7 +305,8 @@ end;
 
 procedure TScrapeWorker.Trace(const S: string);
 begin
-  if FVerbose then Log('TRACE: ' + S);
+  if FVerbose then
+    Log('TRACE: ' + S);
 end;
 
 procedure TScrapeWorker.DoTerminate;
@@ -528,7 +529,8 @@ var
       if SameText(FileDigest(Candidate), Digest) then
         Exit(Candidate);
     // Explicit cache clearing also invalidates bootstrap from old output images.
-    if MediaCacheEpoch(FBase, JInt(Sys, 'SystemId')) <> '' then Exit;
+    if MediaCacheEpoch(FBase, JInt(Sys, 'SystemId')) <> '' then
+      Exit;
     // Bootstrap files produced before the source index existed using configured slots.
     for Slot := 0 to TJSONArray(Configs).Count - 1 do
     begin
@@ -545,10 +547,12 @@ var
           SlotKind := ScreenScraperExtendedImageTypes[ImageIndex];
         if SlotKind.Contains(':') then
         begin
-          if not SameText(SlotKind.Substring(0, SlotKind.IndexOf(':')), JStr(Media, 'parent')) then Continue;
+          if not SameText(SlotKind.Substring(0, SlotKind.IndexOf(':')), JStr(Media, 'parent')) then
+            Continue;
           SlotKind := SlotKind.Substring(SlotKind.IndexOf(':') + 1);
         end;
-        if SlotKind.Contains('#') then SlotKind := SlotKind.Substring(0, SlotKind.IndexOf('#'));
+        if SlotKind.Contains('#') then
+          SlotKind := SlotKind.Substring(0, SlotKind.IndexOf('#'));
         if (SlotKind = '') or not SameText(SlotKind, JStr(Media, 'type')) then
           Continue;
       end
@@ -822,7 +826,8 @@ begin
     SourceIndex := TJSONObject.Create;
   if JStr(SourceIndex, '_epoch') <> MediaCacheEpoch(FBase, JInt(Sys, 'SystemId')) then
   begin
-    SourceIndex.Free; SourceIndex := TJSONObject.Create;
+    SourceIndex.Free;
+    SourceIndex := TJSONObject.Create;
   end;
   JSet(SourceIndex, '_epoch', TJSONString.Create(MediaCacheEpoch(FBase, JInt(Sys, 'SystemId'))));
   RegisterCacheFile(FBase, JInt(Sys, 'SystemId'), 'source-index', SourceIndexFile);
@@ -1179,7 +1184,11 @@ var
 begin
   FProduced.Clear;
   FVerbose := JBool(Sys, 'Miscellaneous.VerboseLogs');
-  FAPI.Diagnostic := procedure(MessageText: string) begin Trace(MessageText) end;
+  FAPI.Diagnostic :=
+    procedure(MessageText: string)
+    begin
+      Trace(MessageText)
+    end;
   FCleanupRoots.Clear;
   TMonitor.Enter(FLock);
   try
@@ -1742,7 +1751,8 @@ end;
 
 procedure TScrapeWorker.PrepareTargetSystem(Sys: TJSONObject);
 begin
-  if FTargetRom = '' then Exit;
+  if FTargetRom = '' then
+    Exit;
   if not (TFile.Exists(FTargetRom) or TDirectory.Exists(FTargetRom)) then
     raise Exception.Create(SK.Locale.L('ROM выбранной игры не найден'));
   if not IsPathWithin(FTargetRom, JStr(Sys, 'GamesAndRoms.Path')) then
@@ -1835,15 +1845,18 @@ begin
                 JSet(Sys, SettingsGroups[J], Value.Clone as TJSONValue);
             end;
           JSet(Sys, 'GamesAndRoms.Path', TJSONString.Create(JStr(Systems.Items[i], 'GamesAndRoms.Path')));
-          if (JValue(FConfig, 'FrontEnd.Type') <> nil) and (JInt(FConfig, 'FrontEnd.Type') = 0) then EnsureRecalboxMedia(Sys);
+          if (JValue(FConfig, 'FrontEnd.Type') <> nil) and (JInt(FConfig, 'FrontEnd.Type') = 0) then
+            EnsureRecalboxMedia(Sys);
           ResolveFrontendPaths(Sys, JValue(FConfig, 'FrontEnd') as TJSONObject, FSystemCatalog);
           PrepareTargetSystem(Sys);
-          if FTargetRom <> '' then InputFiles := TArray<string>.Create(FTargetRom)
-          else InputFiles := ScanInputs(Sys,
-            function: Boolean
-            begin
-              Result := Terminated
-            end);
+          if FTargetRom <> '' then
+            InputFiles := TArray<string>.Create(FTargetRom)
+          else
+            InputFiles := ScanInputs(Sys,
+              function: Boolean
+              begin
+                Result := Terminated
+              end);
           FScanned.AddOrSetValue(THashSHA2.GetHashString(Sys.ToJSON), InputFiles);
           TMonitor.Enter(FLock);
           try
@@ -1887,8 +1900,9 @@ begin
             end;
           end;
           try
-            if (JValue(FConfig, 'FrontEnd.Type') <> nil) and (JInt(FConfig, 'FrontEnd.Type') = 0) then EnsureRecalboxMedia(Sys);
-          ResolveFrontendPaths(Sys, JValue(FConfig, 'FrontEnd') as TJSONObject, FSystemCatalog);
+            if (JValue(FConfig, 'FrontEnd.Type') <> nil) and (JInt(FConfig, 'FrontEnd.Type') = 0) then
+              EnsureRecalboxMedia(Sys);
+            ResolveFrontendPaths(Sys, JValue(FConfig, 'FrontEnd') as TJSONObject, FSystemCatalog);
             PrepareTargetSystem(Sys);
             ScrapeSystem(Sys);
           except

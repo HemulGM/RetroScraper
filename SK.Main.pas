@@ -10,7 +10,8 @@ uses
   FMX.Edit, FMX.ListBox, FMX.TabControl, FMX.Memo, FMX.ScrollBox,
   FMX.DialogService, FMX.DialogService.Sync, FMX.Styles, FMX.Filter.Effects,
   SK.Platform, System.Generics.Collections, SK.Core, SK.Engine, SK.Setup, SK.Mix,
-  SK.Frontend, SK.Data, SK.Catalog, SK.Cache, SK.Preview, SK.Locale, FMX.Memo.Types;
+  SK.Frontend, SK.Data, SK.Catalog, SK.Cache, SK.Preview, SK.Locale,
+  FMX.Memo.Types;
 
 type
   TFolderItemCount = record
@@ -1409,7 +1410,11 @@ begin
   SetLocale(CommandLineCulture(JStr(FConfig.Root, 'Culture', 'ru')));
   JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
   FRefreshing := True;
-  try ApplyLocale(Self) finally FRefreshing := False end;
+  try
+    ApplyLocale(Self)
+  finally
+    FRefreshing := False
+  end;
   FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
   FCatalog := ReadJSON(TPlatformPath.Combine(WritableBase, SystemsCatalogPath));
   if FCatalog = nil then
@@ -1459,30 +1464,41 @@ end;
 
 procedure TFormMain.FormShow(Sender: TObject);
 begin
-  if FStartupWizardShown then Exit;
+  if FStartupWizardShown then
+    Exit;
   FStartupWizardShown := True;
   if not JBool(FConfig.Root, 'IsConfigured') and not FindCmdLineSwitch('selftest') and
     not FindCmdLineSwitch('directorytest') and not FindCmdLineSwitch('librarytest') and
     not FindCmdLineSwitch('paritytest') and not FindCmdLineSwitch('editvisibilitytest') and
-    not FindCmdLineSwitch('wizardconcepttest') then RunWizard;
+    not FindCmdLineSwitch('wizardconcepttest') then
+    RunWizard;
 end;
 
 procedure TFormMain.RunWizard;
-var Setup: TFormSetup;
+var
+  Setup: TFormSetup;
 begin
   Setup := TFormSetup.Create(nil);
   try
     Setup.StyleBook := StyleBookWinUI3;
     if Setup.Execute(FConfig, FCatalog, True) then
     begin
-      FSelected := -1; FMedia := 0;
+      FSelected := -1;
+      FMedia := 0;
       FCatalog.Free;
       FCatalog := ReadJSON(TPlatformPath.Combine(WritableBase, SystemsCatalogPath));
-      if FCatalog = nil then FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
+      if FCatalog = nil then
+        FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
       FCheckedSystems.Clear;
-      FillCatalog; BuildSystems; BuildMedia; RefreshSettings; SaveConfig;
+      FillCatalog;
+      BuildSystems;
+      BuildMedia;
+      RefreshSettings;
+      SaveConfig;
     end;
-  finally Setup.Free end;
+  finally
+    Setup.Free
+  end;
 end;
 
 procedure TFormMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -1534,7 +1550,8 @@ begin
     if A is TJSONArray then
       for V in TJSONArray(A) do
       begin
-        if not SelectablePlatform(V) then Continue;
+        if not SelectablePlatform(V) then
+          Continue;
         Name := JStr(V, 'noms.nom_us', JStr(V, 'noms.nom_eu', JStr(V, 'noms.nom_jp', JStr(V, 'id'))));
         RollingButtonSystemSelect.Items.AddObject(Name, TObject(NativeInt(JInt(V, 'id'))));
       end;
@@ -1682,11 +1699,18 @@ begin
       if ImageFile <> '' then
       begin
         ArtworkImage := TImage.Create(B);
-        ArtworkImage.Parent := Prefix; ArtworkImage.Align := TAlignLayout.Right;
-        ArtworkImage.Width := 28; ArtworkImage.Margins.Rect := RectF(0, 8, 8, 8);
-        ArtworkImage.HitTest := False; ArtworkImage.WrapMode := TImageWrapMode.Fit;
-        try ArtworkImage.Bitmap.LoadFromFile(ImageFile); P.Visible := False
-        except ArtworkImage.Free end;
+        ArtworkImage.Parent := Prefix;
+        ArtworkImage.Align := TAlignLayout.Right;
+        ArtworkImage.Width := 28;
+        ArtworkImage.Margins.Rect := RectF(0, 8, 8, 8);
+        ArtworkImage.HitTest := False;
+        ArtworkImage.WrapMode := TImageWrapMode.Fit;
+        try
+          ArtworkImage.Bitmap.LoadFromFile(ImageFile);
+          P.Visible := False
+        except
+          ArtworkImage.Free
+        end;
       end;
       L := TLabel.Create(B);
       L.Parent := Grid;
@@ -1780,10 +1804,13 @@ begin
               TCheckBox(Child).IsChecked := FCheckedSystems[SystemKey(B.Tag)]
             else if Child is TLabel then
             begin
-              if TLabel(Child).StyleName = 'systempath' then TLabel(Child).Text := JStr(FConfig.SystemAt(B.Tag), 'GamesAndRoms.Path');
+              if TLabel(Child).StyleName = 'systempath' then
+                TLabel(Child).Text := JStr(FConfig.SystemAt(B.Tag), 'GamesAndRoms.Path');
               if TLabel(Child).StyleName = 'systemsettings' then
-                if JInt(FConfig.SystemAt(B.Tag), 'Overriden') = 0 then TLabel(Child).Text := SK.Locale.L('Общие')
-                else TLabel(Child).Text := SK.Locale.L('Индивидуальные');
+                if JInt(FConfig.SystemAt(B.Tag), 'Overriden') = 0 then
+                  TLabel(Child).Text := SK.Locale.L('Общие')
+                else
+                  TLabel(Child).Text := SK.Locale.L('Индивидуальные');
             end;
           end;
         end;
@@ -1855,9 +1882,13 @@ begin
   ImageFile := PlatformArtwork(WritableBase, JInt(FConfig.SystemAt(FSelected), 'SystemId'), 'photo');
   PictureBoxPhoto.Visible := ImageFile <> '';
   PictureBoxPhotoFrame.Visible := ImageFile <> '';
-    if ImageFile <> '' then
-      try PictureBoxPhoto.Bitmap.LoadFromFile(ImageFile)
-    except PictureBoxPhoto.Visible := False; PictureBoxPhotoFrame.Visible := False end;
+  if ImageFile <> '' then
+  try
+    PictureBoxPhoto.Bitmap.LoadFromFile(ImageFile)
+  except
+    PictureBoxPhoto.Visible := False;
+    PictureBoxPhotoFrame.Visible := False
+  end;
   InspectorID.Text := 'ScreenScraper ID: ' + JStr(FConfig.SystemAt(FSelected), 'SystemId', '—');
   E := FConfig.EffectiveSystem(FSelected);
   try
@@ -1902,10 +1933,15 @@ begin
 end;
 
 procedure TFormMain.OpenPlatformLibraryClick(Sender: TObject);
-var Window: TFormGameLibrary; Config, RunConfig: TJSONObject; Rom: string;
+var
+  Window: TFormGameLibrary;
+  Config, RunConfig: TJSONObject;
+  Rom: string;
 begin
-  if (FWorker <> nil) and not FWorker.Finished then Exit;
-  if FSelected < 0 then Exit;
+  if (FWorker <> nil) and not FWorker.Finished then
+    Exit;
+  if FSelected < 0 then
+    Exit;
   Window := nil;
   Config := FConfig.EffectiveSystem(FSelected);
   Rom := '';
@@ -1918,10 +1954,15 @@ begin
       Window.ShowModal;
       Rom := Window.RequestedRom;
     except
-      on E: Exception do TDialogServiceSync.ShowMessage(E.Message);
+      on E: Exception do
+        TDialogServiceSync.ShowMessage(E.Message);
     end;
-  finally Window.Free; Config.Free end;
-  if Rom = '' then Exit;
+  finally
+    Window.Free;
+    Config.Free
+  end;
+  if Rom = '' then
+    Exit;
   SaveConfig;
   FreeAndNil(FWorker);
   // The selected platform index refers to the complete config, independent of checkboxes.
@@ -1929,7 +1970,9 @@ begin
   try
     FWorker := TScrapeWorker.Create(RunConfig, FConfig.Credentials, WritableBase,
       FSelected, False, 1, Rom);
-  finally RunConfig.Free end;
+  finally
+    RunConfig.Free
+  end;
   BeginScrapeDisplay;
   FWorker.Start;
 end;
@@ -2149,7 +2192,8 @@ begin
     else
       MediaSelectionTitle.Text := RollingButtonMediaTypeSelector.Text;
     end;
-  if (FWorker = nil) or FWorker.Finished then PreviewMedia;
+  if (FWorker = nil) or FWorker.Finished then
+    PreviewMedia;
 end;
 
 procedure TFormMain.SettingChanged(Sender: TObject);
@@ -2171,9 +2215,16 @@ begin
     SetLocale(UILocaleCode(UILanguage.ItemIndex));
     JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
     FRefreshing := True;
-    try ApplyLocale(Self) finally FRefreshing := False end;
+    try
+      ApplyLocale(Self)
+    finally
+      FRefreshing := False
+    end;
     FPreviewKey := '';
-    BuildSystems; BuildMedia; RefreshSettings; PageTabChanged(nil);
+    BuildSystems;
+    BuildMedia;
+    RefreshSettings;
+    PageTabChanged(nil);
     Exit;
   end;
   if (C = EditLogin) or (C = EditPassword) then
@@ -2195,7 +2246,9 @@ begin
         JInt(FConfig.Root, 'FrontEnd.Type'),
         TArray<Integer>.Create(NativeInt(RollingButtonSystemSelect.Items.Objects[RollingButtonSystemSelect.ItemIndex])),
         JStr(FConfig.SystemAt(FSelected), 'GamesAndRoms.Path'));
-      BuildSystems; BuildMedia; RefreshSettings;
+      BuildSystems;
+      BuildMedia;
+      RefreshSettings;
     end;
     Exit;
   end;
@@ -2225,12 +2278,19 @@ begin
           if S.Trim <> '' then
           begin
             if not TryStrToInt(S.Trim, N) or (N <= 0) or (CatalogSystem(FCatalog, N) = nil) then
-            begin Value.Free; A.Free; ShowMessage(SK.Locale.L('Введите действительные ID систем через запятую.')); Exit end;
-            if N <> JInt(FConfig.SystemAt(FSelected), 'SystemId') then TJSONArray(Value).Add(N);
+            begin
+              Value.Free;
+              A.Free;
+              ShowMessage(SK.Locale.L('Введите действительные ID систем через запятую.'));
+              Exit
+            end;
+            if N <> JInt(FConfig.SystemAt(FSelected), 'SystemId') then
+              TJSONArray(Value).Add(N);
           end;
         A.Free;
       end
-      else Value := A;
+      else
+        Value := A;
     end
     else if JValue(Obj, Path) is TJSONNumber then
     begin
@@ -2310,10 +2370,13 @@ begin
     A := TJSONArray.Create;
     try
       for N := 0 to TJSONArray(JValue(FConfig.SystemAt(FSelected), 'Medias')).Count - 1 do
-        if N <> FMedia then A.AddElement(TJSONArray(JValue(FConfig.SystemAt(FSelected), 'Medias')).Items[N].Clone as TJSONValue);
+        if N <> FMedia then
+          A.AddElement(TJSONArray(JValue(FConfig.SystemAt(FSelected), 'Medias')).Items[N].Clone as TJSONValue);
       JSet(Obj, 'OutputFolder', TJSONString.Create(DefaultMediaFolder(JInt(FConfig.Root, 'FrontEnd.Type'),
-        JInt(Obj, 'Type'), JInt(Obj, 'Image'), A)));
-    finally A.Free end;
+            JInt(Obj, 'Type'), JInt(Obj, 'Image'), A)));
+    finally
+      A.Free
+    end;
   end;
   if C = RollingButtonFrontEnd then
   begin
@@ -2373,9 +2436,11 @@ begin
       Title := RollingButtonMediaTypeSelector.Items[Kind];
     if (Kind = 0) and (JInt(A.Items[i], 'Image') < RollingButtonImageSelector.Items.Count) then
       Title := RollingButtonImageSelector.Items[Max(0, JInt(A.Items[i], 'Image'))];
-    if Kind = 1 then Title := MixTitle(TPlatformPath.Combine(AppBase, 'Mixes/' +
-      BuiltInMixFiles[EnsureRange(JInt(A.Items[i], 'InternalMix'), 0, 6)]))
-    else if Kind = 2 then Title := MixTitle(JStr(A.Items[i], 'LocalMixFile'));
+    if Kind = 1 then
+      Title := MixTitle(TPlatformPath.Combine(AppBase, 'Mixes/' +
+          BuiltInMixFiles[EnsureRange(JInt(A.Items[i], 'InternalMix'), 0, 6)]))
+    else if Kind = 2 then
+      Title := MixTitle(JStr(A.Items[i], 'LocalMixFile'));
     P := FMX.Objects.TPath.Create(B);
     P.Parent := B;
     P.Align := TAlignLayout.Left;
@@ -2428,7 +2493,9 @@ begin
     Exit;
   SaveConfig;
   FAccountBusy := True;
-  CheckBoxAnonymous.Enabled := False; EditLogin.Enabled := False; EditPassword.Enabled := False;
+  CheckBoxAnonymous.Enabled := False;
+  EditLogin.Enabled := False;
+  EditPassword.Enabled := False;
   ButtonTestAccount.Enabled := False;
   LabelThreadAvailable.Text := SK.Locale.L('Проверка подключения…');
   ServiceState.Text := SK.Locale.L('Проверка подключения…');
@@ -2465,19 +2532,27 @@ begin
           begin
             User := API.Authenticate;
             try
-              if JValue(User, 'response.ssuser') = nil then raise EScreenScraper.Create('No user information returned');
+              if JValue(User, 'response.ssuser') = nil then
+                raise EScreenScraper.Create('No user information returned');
               Verified := True;
               ThreadsText := JStr(User, 'response.ssuser.maxthreads', '—');
               QuotaText := JStr(User, 'response.ssuser.requeststoday', '—') + ' / ' + JStr(User, 'response.ssuser.maxrequestsperday', '—');
               MessageText := SK.Locale.L('Авторизация выполнена');
-            finally User.Free end;
+            finally
+              User.Free
+            end;
           end;
           try
             Catalog := API.Systems;
             if JValue(Catalog, 'response') is TJSONObject then
             begin
               if Anonymous then
-              begin Verified := True; ThreadsText := '1'; QuotaText := SK.Locale.L('Без аккаунта'); MessageText := SK.Locale.L('Анонимное подключение выполнено') end;
+              begin
+                Verified := True;
+                ThreadsText := '1';
+                QuotaText := SK.Locale.L('Без аккаунта');
+                MessageText := SK.Locale.L('Анонимное подключение выполнено')
+              end;
               WriteJSON(Base + NativePath('Resources\systems.json'), JValue(Catalog, 'response'));
               try
                 ArtworkCount := RefreshPlatformArtwork(JValue(Catalog, 'response') as TJSONObject,
@@ -2485,12 +2560,16 @@ begin
                   procedure(Done, Total: Integer)
                   begin
                     if (Done mod 8 = 0) or (Done = Total) then
-                      TThread.Queue(nil, TThreadProcedure(procedure
-                      begin ServiceState.Text := SK.Locale.L('Изображения платформ: %d / %d', [Done, Total]) end));
+                      TThread.Queue(nil, TThreadProcedure(
+                        procedure
+                        begin
+                          ServiceState.Text := SK.Locale.L('Изображения платформ: %d / %d', [Done, Total])
+                        end));
                   end);
                 MessageText := MessageText + SK.Locale.L(' — изображений платформ: %d', [ArtworkCount]);
-              except on E: Exception do
-                MessageText := MessageText + SK.Locale.L(' — изображения платформ недоступны');
+              except
+                on E: Exception do
+                  MessageText := MessageText + SK.Locale.L(' — изображения платформ недоступны');
               end;
             end;
           except
@@ -2504,7 +2583,8 @@ begin
       finally
         API.Free;
         Catalog.Free;
-        ArtworkCredentials.Free; ArtworkSettings.Free;
+        ArtworkCredentials.Free;
+        ArtworkSettings.Free;
       end;
       System.Classes.TThread.Queue(nil, TThreadProcedure(
         procedure
@@ -2530,7 +2610,8 @@ begin
           FAccountBusy := False;
           FCatalog.Free;
           FCatalog := ReadJSON(Base + NativePath('Resources\systems.json'));
-          if FCatalog = nil then FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
+          if FCatalog = nil then
+            FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
           FillCatalog;
           BuildSystems;
           RefreshSettings;
@@ -2539,23 +2620,36 @@ begin
 end;
 
 procedure TFormMain.Browse(Edit: TEdit; IsFile: Boolean);
-var Folder, Key: string;
+var
+  Folder, Key: string;
 begin
   Key := 'GameAndRomFolder';
-  if Edit = EditFrontEndPath then Key := 'FrontEndPath'
-  else if Edit = EditMediaOutputFolder then Key := 'MediaOutputFolder'
-  else if IsFile then Key := 'MixFolder';
+  if Edit = EditFrontEndPath then
+    Key := 'FrontEndPath'
+  else if Edit = EditMediaOutputFolder then
+    Key := 'MediaOutputFolder'
+  else if IsFile then
+    Key := 'MixFolder';
   Folder := FConfig.DialogFolder(Key, Edit.Text);
   if IsFile then
   begin
     OpenDialog.Filter := SK.Locale.L('XML-файлы|*.xml|Все файлы|*.*');
     OpenDialog.InitialDir := Folder;
-    if TFile.Exists(Edit.Text) then OpenDialog.FileName := Edit.Text else OpenDialog.FileName := '';
+    if TFile.Exists(Edit.Text) then
+      OpenDialog.FileName := Edit.Text
+    else
+      OpenDialog.FileName := '';
     if OpenDialog.Execute then
-    begin Edit.Text := OpenDialog.FileName; FConfig.RememberFolder(Key, ExtractFilePath(OpenDialog.FileName)) end;
+    begin
+      Edit.Text := OpenDialog.FileName;
+      FConfig.RememberFolder(Key, ExtractFilePath(OpenDialog.FileName))
+    end;
   end
   else if SelectDirectory(SK.Locale.L('Выберите папку'), '', Folder) then
-  begin Edit.Text := Folder; FConfig.RememberFolder(Key, Folder) end;
+  begin
+    Edit.Text := Folder;
+    FConfig.RememberFolder(Key, Folder)
+  end;
 end;
 
 procedure TFormMain.AddSystem;
@@ -2598,81 +2692,131 @@ begin
 end;
 
 procedure TFormMain.PreviewMedia;
-var Settings: TJSONObject; Medias: TJSONValue; Media: TJSONObject; FileName, Key, Title: string;
+var
+  Settings: TJSONObject;
+  Medias: TJSONValue;
+  Media: TJSONObject;
+  FileName, Key, Title: string;
 begin
-  if FConfig = nil then Exit;
+  if FConfig = nil then
+    Exit;
   Settings := FConfig.EffectiveSystem(FSelected);
   try
     Medias := JValue(Settings, 'Medias');
     if not (Medias is TJSONArray) or (FMedia < 0) or (FMedia >= TJSONArray(Medias).Count) then
-    begin MediaPreviewImage.Bitmap.Clear(0); MediaPreviewCaption.Text := SK.Locale.L('Добавьте медиа для предпросмотра'); Exit end;
+    begin
+      MediaPreviewImage.Bitmap.Clear(0);
+      MediaPreviewCaption.Text := SK.Locale.L('Добавьте медиа для предпросмотра');
+      Exit
+    end;
     Media := TJSONArray(Medias).Items[FMedia] as TJSONObject;
     Key := Settings.ToJSON + '|' + FMedia.ToString + '|' + FSample.ToString + '|' + CurrentLocale;
-    if Key = FPreviewKey then Exit;
-    FPreviewKey := Key; MediaPreviewImage.Bitmap.SetSize(0, 0);
+    if Key = FPreviewKey then
+      Exit;
+    FPreviewKey := Key;
+    MediaPreviewImage.Bitmap.SetSize(0, 0);
     try
       FileName := MediaPreview(Media, Settings, FCatalog, FSample, TPlatformPath.Combine(WritableBase, 'Cache/preview'));
-      if FileName <> '' then MediaPreviewImage.Bitmap.LoadFromFile(FileName);
+      if FileName <> '' then
+        MediaPreviewImage.Bitmap.LoadFromFile(FileName);
       Title := MediaSelectionTitle.Text;
-      if JInt(Media, 'Type') = 1 then Title := MixTitle(TPlatformPath.Combine(AppBase, 'Mixes/' +
-        BuiltInMixFiles[EnsureRange(JInt(Media, 'InternalMix'), 0, 6)]))
-      else if JInt(Media, 'Type') = 2 then Title := MixTitle(JStr(Media, 'LocalMixFile'));
+      if JInt(Media, 'Type') = 1 then
+        Title := MixTitle(TPlatformPath.Combine(AppBase, 'Mixes/' +
+            BuiltInMixFiles[EnsureRange(JInt(Media, 'InternalMix'), 0, 6)]))
+      else if JInt(Media, 'Type') = 2 then
+        Title := MixTitle(JStr(Media, 'LocalMixFile'));
       MediaSelectionTitle.Text := Title;
       MediaPreviewCaption.Text := Title + sLineBreak + SK.Locale.L('Образец: %s', [MixSamplePrefixes[FSample mod 6]]);
-      if FileName = '' then MediaPreviewCaption.Text := MediaPreviewCaption.Text + sLineBreak + SK.Locale.L('Изображение образца отсутствует');
+      if FileName = '' then
+        MediaPreviewCaption.Text := MediaPreviewCaption.Text + sLineBreak + SK.Locale.L('Изображение образца отсутствует');
     except
-      on E: Exception do MediaPreviewCaption.Text := SK.Locale.L('Не удалось построить предпросмотр: %s', [E.Message]);
+      on E: Exception do
+        MediaPreviewCaption.Text := SK.Locale.L('Не удалось построить предпросмотр: %s', [E.Message]);
     end;
-  finally Settings.Free end;
+  finally
+    Settings.Free
+  end;
 end;
 
 function TFormMain.PrepareRequiredMedia: Integer;
-var V: TJSONValue;
+var
+  V: TJSONValue;
 begin
   Result := 0;
-  if JInt(FConfig.Root, 'FrontEnd.Type') <> 0 then Exit;
+  if JInt(FConfig.Root, 'FrontEnd.Type') <> 0 then
+    Exit;
   Inc(Result, EnsureRecalboxMedia(FConfig.SystemAt(-1)));
   for V in FConfig.Root.GetValue<TJSONArray>('Systems') do
-    if JInt(V, 'Overriden') and 8 <> 0 then Inc(Result, EnsureRecalboxMedia(V as TJSONObject));
-  if Result > 0 then begin BuildMedia; RefreshSettings end;
+    if JInt(V, 'Overriden') and 8 <> 0 then
+      Inc(Result, EnsureRecalboxMedia(V as TJSONObject));
+  if Result > 0 then
+  begin
+    BuildMedia;
+    RefreshSettings
+  end;
 end;
 
 procedure TFormMain.CleanCache(Information, Media: Boolean);
-var Config: TJSONObject; Base: string; SystemID: Integer;
+var
+  Config: TJSONObject;
+  Base: string;
+  SystemID: Integer;
 begin
-  if FCacheBusy then Exit;
-  FCacheBusy := True; PanelSettings.Enabled := False; PanelLeftPan.Enabled := False;
-  ButtonScrap.Enabled := False; CacheStatusLabel.Text := SK.Locale.L('Очистка кэша…');
+  if FCacheBusy then
+    Exit;
+  FCacheBusy := True;
+  PanelSettings.Enabled := False;
+  PanelLeftPan.Enabled := False;
+  ButtonScrap.Enabled := False;
+  CacheStatusLabel.Text := SK.Locale.L('Очистка кэша…');
   Config := FConfig.Root.Clone as TJSONObject;
-  Base := WritableBase; SystemID := JInt(FConfig.SystemAt(FSelected), 'SystemId');
+  Base := WritableBase;
+  SystemID := JInt(FConfig.SystemAt(FSelected), 'SystemId');
   FCacheTask := TTask.Run(
     procedure
-    var ErrorText: string;
+    var
+      ErrorText: string;
     begin
       ErrorText := '';
       try
         try
           ClearSystemCache(Base, Config, SystemID, Information, Media,
             procedure(Done, Total: Integer)
-            var MessageText: string;
+            var
+              MessageText: string;
             begin
-              if (Done mod 25 <> 0) and (Done <> Total) then Exit;
+              if (Done mod 25 <> 0) and (Done <> Total) then
+                Exit;
               MessageText := SK.Locale.L('Очистка кэша: %d / %d', [Done, Total]);
-              TThread.Queue(nil, TThreadProcedure(procedure begin CacheStatusLabel.Text := MessageText end));
+              TThread.Queue(nil, TThreadProcedure(
+                procedure
+                begin
+                  CacheStatusLabel.Text := MessageText
+                end));
             end);
-        except on E: Exception do ErrorText := E.Message end;
-      finally Config.Free end;
+        except
+          on E: Exception do
+            ErrorText := E.Message
+        end;
+      finally
+        Config.Free
+      end;
       TThread.Queue(nil, TThreadProcedure(
         procedure
         begin
-          FCacheBusy := False; PanelSettings.Enabled := True; PanelLeftPan.Enabled := True;
+          FCacheBusy := False;
+          PanelSettings.Enabled := True;
+          PanelLeftPan.Enabled := True;
           UpdateSelectionCount;
           if ErrorText = '' then
           begin
-            if SystemID = 0 then CacheStatusLabel.Text := SK.Locale.L('Кэш всех систем очищен')
-            else CacheStatusLabel.Text := SK.Locale.L('Кэш выбранной системы очищен');
+            if SystemID = 0 then
+              CacheStatusLabel.Text := SK.Locale.L('Кэш всех систем очищен')
+            else
+              CacheStatusLabel.Text := SK.Locale.L('Кэш выбранной системы очищен');
           end
-          else CacheStatusLabel.Text := SK.Locale.L('Ошибка очистки кэша: %s', [ErrorText]);
+          else
+            CacheStatusLabel.Text := SK.Locale.L('Ошибка очистки кэша: %s', [ErrorText]);
         end));
     end);
 end;
@@ -2687,7 +2831,8 @@ var
   Setup: TFormSetup;
 begin
   Name := TComponent(Sender).Name;
-  if FCacheBusy or FAccountBusy then Exit;
+  if FCacheBusy or FAccountBusy then
+    Exit;
   if (FWorker <> nil) and not FWorker.Finished and (Sender <> ButtonScrap) then
     Exit;
   if Sender = ImportConfigButton then
@@ -2702,7 +2847,11 @@ begin
       SetLocale(JStr(FConfig.Root, 'Culture', CurrentLocale));
       JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
       FRefreshing := True;
-      try ApplyLocale(Self) finally FRefreshing := False end;
+      try
+        ApplyLocale(Self)
+      finally
+        FRefreshing := False
+      end;
       FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
       FSelected := -1;
       FMedia := 0;
@@ -2777,7 +2926,8 @@ begin
       O.Free
     end;
     BeginScrapeDisplay;
-    if Required > 0 then FastColoredTextBoxLogging.Lines.Add(SK.Locale.L('Добавлено обязательных медиа Recalbox: %d', [Required]));
+    if Required > 0 then
+      FastColoredTextBoxLogging.Lines.Add(SK.Locale.L('Добавлено обязательных медиа Recalbox: %d', [Required]));
     ButtonScrap.Text := SK.Locale.L('Остановить');
     IconScrap.Visible := False;
     IconStop.Visible := False;
@@ -2810,8 +2960,10 @@ begin
   begin
     SaveDialog.Filter := SK.Locale.L('Файл списка игр|*.xml;*.dat;*.zip');
     SaveDialog.InitialDir := FConfig.DialogFolder('GamelistFolder', EditDestinationFolder.Text);
-    if not EditDestinationFolder.Text.Contains('%') then SaveDialog.FileName := EditDestinationFolder.Text
-    else SaveDialog.FileName := 'gamelist.xml';
+    if not EditDestinationFolder.Text.Contains('%') then
+      SaveDialog.FileName := EditDestinationFolder.Text
+    else
+      SaveDialog.FileName := 'gamelist.xml';
     if SaveDialog.Execute then
     begin
       EditDestinationFolder.Text := SaveDialog.FileName;
@@ -2901,7 +3053,8 @@ begin
   end;
   if (Sender = ButtonMediaLeft) or (Sender = ButtonMediaRight) then
   begin
-    if FEffective <> nil then A := FEffective.GetValue<TJSONArray>('Medias');
+    if FEffective <> nil then
+      A := FEffective.GetValue<TJSONArray>('Medias');
     if Sender = ButtonMediaLeft then
       i := -1
     else
@@ -2915,7 +3068,10 @@ begin
   if Sender = ButtonAddMedia then
   begin
     A.AddElement(DefaultMedia(JInt(FConfig.Root, 'FrontEnd.Type'), A));
-    FMedia := A.Count - 1; BuildMedia; RefreshSettings; Exit;
+    FMedia := A.Count - 1;
+    BuildMedia;
+    RefreshSettings;
+    Exit;
   end;
   if Sender = ButtonDeleteMedia then
   begin
@@ -2943,10 +3099,16 @@ begin
       O := Setup.ExecuteMedia(FConfig, FCatalog, FSelected);
       if O <> nil then
       try
-        EnsureGroup('Medias', 8); AppendSystemMedia(FConfig.SystemAt(FSelected), O);
-        BuildMedia; RefreshSettings;
-      finally O.Free end;
-    finally Setup.Free end;
+        EnsureGroup('Medias', 8);
+        AppendSystemMedia(FConfig.SystemAt(FSelected), O);
+        BuildMedia;
+        RefreshSettings;
+      finally
+        O.Free
+      end;
+    finally
+      Setup.Free
+    end;
     Exit;
   end;
   if Name.Contains('Clear') and Name.Contains('Cache') then
@@ -3336,8 +3498,10 @@ procedure TFormMain.ShowPage(Page: Integer);
 begin
   if (Page < 0) or (Page >= PageTabControl.TabCount) then
     raise EArgumentOutOfRangeException.Create('Page');
-  if PageTabControl.TabIndex = Page then PageTabChanged(nil)
-  else PageTabControl.TabIndex := Page;
+  if PageTabControl.TabIndex = Page then
+    PageTabChanged(nil)
+  else
+    PageTabControl.TabIndex := Page;
 end;
 
 procedure TFormMain.SyncFullLog;
@@ -3354,7 +3518,8 @@ begin
     Reset := Source[FFullLogCount - 1] <> FFullLogTail;
   // Never touch the memo for a status tick that contains no new lines.
   // This also leaves its active wheel animation and selection undisturbed.
-  if not Reset and (Count = FFullLogCount) then Exit;
+  if not Reset and (Count = FFullLogCount) then
+    Exit;
   OldViewport := FullLog.ViewportPosition;
   FollowTail := Reset or (OldViewport.Y + FullLog.ViewportSize.Height >= FullLog.ContentSize.Height - 2);
   SelectionStart := FullLog.SelStart;
@@ -3370,8 +3535,10 @@ begin
   try
     FullLog.Lines.BeginUpdate;
     try
-      if Reset then FullLog.Lines.Clear;
-      for I := First to Count - 1 do FullLog.Lines.Add(Source[I]);
+      if Reset then
+        FullLog.Lines.Clear;
+      for I := First to Count - 1 do
+        FullLog.Lines.Add(Source[I]);
     finally
       FullLog.Lines.EndUpdate;
     end;
@@ -3385,10 +3552,12 @@ begin
   if FollowTail then
     FullLog.ViewportPosition := PointF(OldViewport.X,
       Max(0, FullLog.ContentSize.Height - FullLog.ViewportSize.Height))
-  else FullLog.ViewportPosition := OldViewport;
+  else
+    FullLog.ViewportPosition := OldViewport;
   FFullLogCount := Count;
   FFullLogTail := '';
-  if Count > 0 then FFullLogTail := Source[Count - 1];
+  if Count > 0 then
+    FFullLogTail := Source[Count - 1];
   FFullLogReset := False;
 end;
 
@@ -3399,9 +3568,11 @@ var
   Icons: array[0..3] of FMX.Objects.TPath;
   i: Integer;
 begin
-  if (csLoading in ComponentState) or (csDestroying in ComponentState) or (FConfig = nil) then Exit;
+  if (csLoading in ComponentState) or (csDestroying in ComponentState) or (FConfig = nil) then
+    Exit;
   Page := PageTabControl.TabIndex;
-  if Page < 0 then Exit;
+  if Page < 0 then
+    Exit;
   if Page = 1 then
     ScrapeLogChanged(nil);
   ScrapeStateBadge.Visible := Page = 1;
@@ -3421,10 +3592,14 @@ begin
   NavSettings.IsPressed := Page = 2;
   NavLog.IsPressed := Page = 3;
   case Page of
-    0: ActiveButton := NavLibrary;
-    1: ActiveButton := NavScraping;
-    2: ActiveButton := NavSettings;
-  else ActiveButton := NavLog;
+    0:
+      ActiveButton := NavLibrary;
+    1:
+      ActiveButton := NavScraping;
+    2:
+      ActiveButton := NavSettings;
+  else
+    ActiveButton := NavLog;
   end;
   NavMarker.Parent := ActiveButton;
   NavMarker.BringToFront;
@@ -3465,7 +3640,8 @@ var
   Page: Integer;
 begin
   Page := TControl(Sender).Tag;
-  if FCacheBusy then Exit;
+  if FCacheBusy then
+    Exit;
   if (Page in [2, 4, 5, 6, 8, 9, 10]) and (FWorker <> nil) and not FWorker.Finished then
   begin
     ShowPage(1);
@@ -3514,7 +3690,11 @@ begin
           ReplaceObject(FConfig.Credentials, FCredentialSnapshot);
           SetLocale(JStr(FConfig.Root, 'Culture', 'ru'));
           FRefreshing := True;
-          try ApplyLocale(Self) finally FRefreshing := False end;
+          try
+            ApplyLocale(Self)
+          finally
+            FRefreshing := False
+          end;
           FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
         end;
         FreeAndNil(FSettingsSnapshot);
@@ -3724,3 +3904,4 @@ begin
 end;
 
 end.
+

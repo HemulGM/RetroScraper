@@ -467,14 +467,22 @@ begin
       DateMatch := TRegEx.Match(Tag, '^(19\d{2}|20\d{2})(?:-(\d{2})(?:-(\d{2}))?)?$');
       DiscMatch := TRegEx.Match(Tag, '^(?:disc|disk|cd|tape|side)\s*(\d+)(?:\s*(?:of|/)\s*(\d+))?$', [roIgnoreCase]);
       Flag := '';
-      if TRegEx.IsMatch(Tag, '^beta(?:\s.*)?$', [roIgnoreCase]) then Flag := 'beta'
-      else if TRegEx.IsMatch(Tag, '^demo(?:\s.*)?$', [roIgnoreCase]) then Flag := 'demo'
-      else if TRegEx.IsMatch(Tag, '^(?:proto|prototype)(?:\s.*)?$', [roIgnoreCase]) then Flag := 'proto'
-      else if TRegEx.IsMatch(Tag, '^(?:hack|h\d*)(?:\s.*)?$', [roIgnoreCase]) then Flag := 'hack'
-      else if TRegEx.IsMatch(Tag, '^(?:alt|alternate|a\d*)\.?(?:\s.*)?$', [roIgnoreCase]) then Flag := 'alt'
-      else if TRegEx.IsMatch(Tag, '^(?:unl|unlicensed)\.?$', [roIgnoreCase]) then Flag := 'unl'
-      else if TRegEx.IsMatch(Tag, '^(?:trans|translation|translated)\.?(?:\s.*)?$|^t[+-].*$', [roIgnoreCase]) then Flag := 'trad'
-      else if Tag = '!' then Flag := 'best';
+      if TRegEx.IsMatch(Tag, '^beta(?:\s.*)?$', [roIgnoreCase]) then
+        Flag := 'beta'
+      else if TRegEx.IsMatch(Tag, '^demo(?:\s.*)?$', [roIgnoreCase]) then
+        Flag := 'demo'
+      else if TRegEx.IsMatch(Tag, '^(?:proto|prototype)(?:\s.*)?$', [roIgnoreCase]) then
+        Flag := 'proto'
+      else if TRegEx.IsMatch(Tag, '^(?:hack|h\d*)(?:\s.*)?$', [roIgnoreCase]) then
+        Flag := 'hack'
+      else if TRegEx.IsMatch(Tag, '^(?:alt|alternate|a\d*)\.?(?:\s.*)?$', [roIgnoreCase]) then
+        Flag := 'alt'
+      else if TRegEx.IsMatch(Tag, '^(?:unl|unlicensed)\.?$', [roIgnoreCase]) then
+        Flag := 'unl'
+      else if TRegEx.IsMatch(Tag, '^(?:trans|translation|translated)\.?(?:\s.*)?$|^t[+-].*$', [roIgnoreCase]) then
+        Flag := 'trad'
+      else if Tag = '!' then
+        Flag := 'best';
       if IsRegion then
         Recognized := True
       else if DateMatch.Success then
@@ -490,7 +498,7 @@ begin
         begin
           if PickText(Result, 'dates', 'region', '*') = '' then
             JSet(Result, 'dates', TJSONArray.Create.Add(TJSONObject.Create.AddPair('region', 'wor').
-              AddPair('text', FormatDateTime('yyyymmdd', Date))));
+                AddPair('text', FormatDateTime('yyyymmdd', Date))));
           Recognized := True;
         end;
       end
@@ -957,8 +965,10 @@ begin
     Put(Node, 'Hide', LowerCase(BoolToStr(OldHidden or JBool(Item, 'hidden'), True)));
     Put(Node, 'Platform', FPlatform);
     Put(Node, 'Region', JStr(Item, 'region'));
-    if not FPreserveMissingMedia or (JValue(Item, 'video') <> nil) then Put(Node, 'VideoPath', JStr(Item, 'video'));
-    if not FPreserveMissingMedia or (JValue(Item, 'manual') <> nil) then Put(Node, 'ManualPath', JStr(Item, 'manual'));
+    if not FPreserveMissingMedia or (JValue(Item, 'video') <> nil) then
+      Put(Node, 'VideoPath', JStr(Item, 'video'));
+    if not FPreserveMissingMedia or (JValue(Item, 'manual') <> nil) then
+      Put(Node, 'ManualPath', JStr(Item, 'manual'));
     if ChildText(Node, 'ID') = '' then
       Put(Node, 'ID', TGUID.NewGuid.ToString.Trim(['{', '}']));
     if ChildText(Node, 'DateAdded') = '' then

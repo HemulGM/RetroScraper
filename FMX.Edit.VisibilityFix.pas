@@ -17,7 +17,8 @@ type
     procedure ContentPaint(Sender: TObject; ACanvas: TCanvas; const ARect: TRectF); override;
   end;
 
-var PreviousPresentation: TPresentationProxyClass;
+var
+  PreviousPresentation: TPresentationProxyClass;
 
 procedure TVisibleStyledEdit.ContentPaint(Sender: TObject; ACanvas: TCanvas; const ARect: TRectF);
 begin
@@ -39,10 +40,13 @@ initialization
     TPresentationProxyFactory.GeneratePresentationName(TEdit, TControlType.Styled));
   TPresentationProxyFactory.Current.Replace(TEdit, TControlType.Styled,
     TStyledPresentationProxy<TVisibleStyledEdit>);
+
 finalization
   if (PreviousPresentation <> nil) and
     (TPresentationProxyFactory.Current.FindPresentationProxyClass(
-      TPresentationProxyFactory.GeneratePresentationName(TEdit, TControlType.Styled)) =
-      TStyledPresentationProxy<TVisibleStyledEdit>) then
+    TPresentationProxyFactory.GeneratePresentationName(TEdit, TControlType.Styled)) =
+    TStyledPresentationProxy<TVisibleStyledEdit>) then
     TPresentationProxyFactory.Current.Replace(TEdit, TControlType.Styled, PreviousPresentation);
+
 end.
+

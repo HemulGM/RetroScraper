@@ -3,11 +3,12 @@
 interface
 
 uses
-  SK.Platform, System.SysUtils, System.Types, System.UITypes, System.Classes, System.JSON,
-  System.IOUtils, System.StrUtils, System.Generics.Collections, System.Threading, System.SyncObjs, FMX.Types, FMX.Controls,
+  SK.platform, System.SysUtils, System.Types, System.UITypes, System.Classes,
+  System.JSON, System.IOUtils, System.StrUtils, System.Generics.Collections,
+  System.Threading, System.SyncObjs, FMX.Types, FMX.Controls,
   FMX.Controls.Presentation, FMX.Forms, FMX.Objects, FMX.StdCtrls, FMX.Edit,
-  FMX.ListBox, FMX.Dialogs, FMX.Layouts,
-  SK.Core, SK.Frontend, SK.Catalog, SK.Locale, FMX.ScrollBox, FMX.Ani, FMX.Graphics;
+  FMX.ListBox, FMX.Dialogs, FMX.Layouts, SK.Core, SK.Frontend, SK.Catalog,
+  SK.Locale, FMX.ScrollBox, FMX.Ani, FMX.Graphics;
 
 type
   TWizardResourceStage = (wrIdle, wrConnecting, wrCatalog, wrArtwork, wrReady, wrOffline, wrFailed);
@@ -129,8 +130,7 @@ type
     BackButton: TButton;
     WizardAccountLayout: TVertScrollBox;
     WizardAccountFields: TLayout;
-    WizardAccountInfo, WizardDeveloperLabel, WizardDeveloperPasswordLabel,
-      WizardLoginLabel, WizardPasswordLabel: TLabel;
+    WizardAccountInfo, WizardDeveloperLabel, WizardDeveloperPasswordLabel, WizardLoginLabel, WizardPasswordLabel: TLabel;
     WizardDeveloper, WizardDeveloperPassword, WizardLogin, WizardPassword: TEdit;
     WizardAnonymous, WizardOffline, ShowCategories: TCheckBox;
     WizardSummaryLayout: TLayout;
@@ -205,7 +205,8 @@ uses
   SK.Consts, FMX.BehaviorManager, SK.Artwork, System.Math;
 {$R *.fmx}
 
-type TWizardEditAccess = class(TEdit);
+type
+  TWizardEditAccess = class(TEdit);
 
 procedure TFormSetup.WizardEditApplyStyle(Sender: TObject);
 begin
@@ -229,8 +230,17 @@ begin
   if WizardStep1 <> nil then
   begin
     if ClientWidth >= 1120 then
-    begin WizardStep1.Padding.Left := 90; WizardStep2.Padding.Left := 24; WizardStep3.Padding.Left := 32 end
-    else begin WizardStep1.Padding.Left := 0; WizardStep2.Padding.Left := 0; WizardStep3.Padding.Left := 0 end;
+    begin
+      WizardStep1.Padding.Left := 90;
+      WizardStep2.Padding.Left := 24;
+      WizardStep3.Padding.Left := 32
+    end
+    else
+    begin
+      WizardStep1.Padding.Left := 0;
+      WizardStep2.Padding.Left := 0;
+      WizardStep3.Padding.Left := 0
+    end;
   end;
   ProgressResize(nil);
 end;
@@ -244,15 +254,20 @@ end;
 
 procedure TFormSetup.MaskPasswords;
 begin
-  WizardPassword.Password := True; WizardDeveloperPassword.Password := True;
-  WizardPasswordEye.Visible := False; WizardPasswordEyeOff.Visible := True;
-  WizardDeveloperPasswordEye.Visible := False; WizardDeveloperPasswordEyeOff.Visible := True;
+  WizardPassword.Password := True;
+  WizardDeveloperPassword.Password := True;
+  WizardPasswordEye.Visible := False;
+  WizardPasswordEyeOff.Visible := True;
+  WizardDeveloperPasswordEye.Visible := False;
+  WizardDeveloperPasswordEyeOff.Visible := True;
 end;
 
 procedure TFormSetup.PasswordRevealClick(Sender: TObject);
-var AppPassword: Boolean;
+var
+  AppPassword: Boolean;
 begin
-  if FScanning or (FResourceStage in [Ord(wrConnecting), Ord(wrCatalog), Ord(wrArtwork)]) then Exit;
+  if FScanning or (FResourceStage in [Ord(wrConnecting), Ord(wrCatalog), Ord(wrArtwork)]) then
+    Exit;
   AppPassword := TEditButton(Sender).Tag = 1;
   if AppPassword then
   begin
@@ -269,7 +284,9 @@ begin
 end;
 
 procedure TFormSetup.WizardOptionsChanged(Sender: TObject);
-begin UpdateSelection end;
+begin
+  UpdateSelection
+end;
 
 procedure TFormSetup.WizardHelpClick(Sender: TObject);
 begin
@@ -277,21 +294,43 @@ begin
 end;
 
 procedure TFormSetup.UpdateWizardSteps;
-var I: Integer; Circle: TCircle; Number, Caption: TLabel;
+var
+  I: Integer;
+  Circle: TCircle;
+  Number, Caption: TLabel;
 begin
   for I := 0 to 2 do
   begin
     case I of
-      0: begin Circle := WizardStep1Circle; Number := WizardStep1Number; Caption := WizardStep1Text end;
-      1: begin Circle := WizardStep2Circle; Number := WizardStep2Number; Caption := WizardStep2Text end;
-      else begin Circle := WizardStep3Circle; Number := WizardStep3Number; Caption := WizardStep3Text end;
+      0:
+        begin
+          Circle := WizardStep1Circle;
+          Number := WizardStep1Number;
+          Caption := WizardStep1Text
+        end;
+      1:
+        begin
+          Circle := WizardStep2Circle;
+          Number := WizardStep2Number;
+          Caption := WizardStep2Text
+        end;
+    else
+      begin
+        Circle := WizardStep3Circle;
+        Number := WizardStep3Number;
+        Caption := WizardStep3Text
+      end;
     end;
-    Circle.Fill.Kind := TBrushKind.None; Circle.Stroke.Color := $FF777777;
-    Number.TextSettings.FontColor := $FFB7BFC8; Caption.TextSettings.FontColor := $FFB7BFC8;
+    Circle.Fill.Kind := TBrushKind.None;
+    Circle.Stroke.Color := $FF777777;
+    Number.TextSettings.FontColor := $FFB7BFC8;
+    Caption.TextSettings.FontColor := $FFB7BFC8;
     if I <= FWizardPage then
     begin
-      Circle.Fill.Kind := TBrushKind.Solid; Circle.Fill.Color := $FF4CC9F0;
-      Circle.Stroke.Color := $FF4CC9F0; Number.TextSettings.FontColor := $FF161616;
+      Circle.Fill.Kind := TBrushKind.Solid;
+      Circle.Fill.Color := $FF4CC9F0;
+      Circle.Stroke.Color := $FF4CC9F0;
+      Number.TextSettings.FontColor := $FF161616;
       Caption.TextSettings.FontColor := $FF4CC9F0;
     end;
   end;
@@ -302,27 +341,36 @@ end;
 destructor TFormSetup.Destroy;
 begin
   TInterlocked.Exchange(FScanCancelled, 1);
-  if FScanTask <> nil then FScanTask.Wait;
+  if FScanTask <> nil then
+    FScanTask.Wait;
   TThread.RemoveQueuedEvents(nil, FinishDetection);
   TThread.RemoveQueuedEvents(nil, FinishWizardResources);
   TThread.RemoveQueuedEvents(nil, UpdateWizardProgress);
   TThread.RemoveQueuedEvents(nil, RebuildCategories);
-  FPendingCatalog.Free; FOwnedCatalog.Free; FWorkingConfig.Free; FCategories.Free;
+  FPendingCatalog.Free;
+  FOwnedCatalog.Free;
+  FWorkingConfig.Free;
+  FCategories.Free;
   inherited;
 end;
 
 procedure TFormSetup.Configure(Config: TSkraperConfig; Catalog: TJSONObject; Wizard: Boolean);
 begin
-  FreeAndNil(FWorkingConfig); FreeAndNil(FOwnedCatalog);
+  FreeAndNil(FWorkingConfig);
+  FreeAndNil(FOwnedCatalog);
   FOriginalConfig := Config;
   if Wizard then
   begin
-    FWorkingConfig := TSkraperConfig.CreateSnapshot(Config); FConfig := FWorkingConfig;
-    if Catalog <> nil then FOwnedCatalog := Catalog.Clone as TJSONObject
-    else FOwnedCatalog := TJSONObject.Create;
+    FWorkingConfig := TSkraperConfig.CreateSnapshot(Config);
+    FConfig := FWorkingConfig;
+    if Catalog <> nil then
+      FOwnedCatalog := Catalog.Clone as TJSONObject
+    else
+      FOwnedCatalog := TJSONObject.Create;
     Catalog := FOwnedCatalog;
   end
-  else FConfig := Config;
+  else
+    FConfig := Config;
   FWizard := Wizard;
   FCopyMode := False;
   FrontendHomeEdit.Text := JStr(Config.Root, 'FrontEnd.HomePath');
@@ -337,26 +385,36 @@ begin
   WizardPassword.Text := JStr(Config.Credentials, 'sspassword');
   WizardAnonymous.IsChecked := JBool(Config.Root, 'Anonymous');
   WizardOffline.IsChecked := False;
-  FScanError := ''; MaskPasswords;
+  FScanError := '';
+  MaskPasswords;
   LoadCatalog(Catalog);
   ShowWizardPage(0);
   ShowResourceStatus(wrIdle, 0, 0, 0);
 end;
 
 procedure TFormSetup.SummaryMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Single);
-var Row: TListBoxItem;
+var
+  Row: TListBoxItem;
 begin
   // List items do not intercept mouse events; keep selection and scrolling on the list.
   Row := WizardSummary.ItemByPoint(X, Y);
-  if Row <> nil then WizardSummary.Hint := Row.Hint else WizardSummary.Hint := '';
+  if Row <> nil then
+    WizardSummary.Hint := Row.Hint
+  else
+    WizardSummary.Hint := '';
 end;
 
 procedure TFormSetup.BuildWizardSummary;
-var Item: TDetectedPlatform; ID: Integer; Name: string; Row: TListBoxItem;
+var
+  Item: TDetectedPlatform;
+  ID: Integer;
+  Name: string;
+  Row: TListBoxItem;
   Grid: TGridPanelLayout;
 
   procedure AddCell(const ComponentName, Text: string; Color: TAlphaColor);
-  var Cell: TLabel;
+  var
+    Cell: TLabel;
   begin
     Cell := TLabel.Create(Row);
     Cell.Name := ComponentName;
@@ -391,7 +449,8 @@ begin
       Name := '';
       for ID in Item.IDs do
       begin
-        if Name <> '' then Name := Name + ', ';
+        if Name <> '' then
+          Name := Name + ', ';
         Name := Name + PlatformName(FCatalog, FConfig.SystemAt(-1), ID);
       end;
       Row := TListBoxItem.Create(WizardSummary);
@@ -409,7 +468,9 @@ begin
       AddCell('SummaryPlatform', Name, $FFF3F3F3);
       AddCell('SummaryFolder', Item.Folder, $FFB7BFC8);
     end;
-  finally WizardSummary.EndUpdate end;
+  finally
+    WizardSummary.EndUpdate
+  end;
 end;
 
 procedure TFormSetup.ShowWizardPage(Page: Integer);
@@ -426,52 +487,76 @@ begin
   WizardSubtitle.Visible := FWizard;
   if FWizard then
   begin
-    ClientWidth := 1200; ClientHeight := 760;
+    ClientWidth := 1200;
+    ClientHeight := 760;
     Caption := 'SkraperFMX · ' + SK.Locale.L('Настройка библиотеки');
-    WizardHeaderLayout.Height := 156; WizardHeaderLayout.Padding.Rect := RectF(40, 20, 36, 0);
-    SetupBodyLayout.Margins.Left := 40; SetupBodyLayout.Margins.Right := 36;
-    TitleLabel.Height := 44; TitleLabel.TextSettings.Font.Size := 32;
+    WizardHeaderLayout.Height := 156;
+    WizardHeaderLayout.Padding.Rect := RectF(40, 20, 36, 0);
+    SetupBodyLayout.Margins.Left := 40;
+    SetupBodyLayout.Margins.Right := 36;
+    TitleLabel.Height := 44;
+    TitleLabel.TextSettings.Font.Size := 32;
     TitleLabel.TextSettings.Font.Style := [TFontStyle.fsBold];
     TitleLabel.Text := SK.Locale.L('Настройка библиотеки');
     case Page of
-      0: WizardSubtitle.Text := SK.Locale.L('Подключение к ScreenScraper и загрузка ресурсов');
-      1: WizardSubtitle.Text := SK.Locale.L('Выберите игровую оболочку, папки и платформы');
-      2: WizardSubtitle.Text := SK.Locale.L('Проверьте библиотеку перед сохранением');
+      0:
+        WizardSubtitle.Text := SK.Locale.L('Подключение к ScreenScraper и загрузка ресурсов');
+      1:
+        WizardSubtitle.Text := SK.Locale.L('Выберите игровую оболочку, папки и платформы');
+      2:
+        WizardSubtitle.Text := SK.Locale.L('Проверьте библиотеку перед сохранением');
     end;
     UpdateWizardSteps;
-    if Page > 0 then MaskPasswords;
+    if Page > 0 then
+      MaskPasswords;
   end
   else
   begin
-    ClientWidth := 940; ClientHeight := 720;
+    ClientWidth := 940;
+    ClientHeight := 720;
     Caption := SK.Locale.L('Добавление систем');
-    WizardHeaderLayout.Height := 88; WizardHeaderLayout.Padding.Rect := RectF(24, 18, 24, 0);
-    SetupBodyLayout.Margins.Left := 24; SetupBodyLayout.Margins.Right := 24;
-    TitleLabel.Height := 36; TitleLabel.TextSettings.Font.Size := 22;
+    WizardHeaderLayout.Height := 88;
+    WizardHeaderLayout.Padding.Rect := RectF(24, 18, 24, 0);
+    SetupBodyLayout.Margins.Left := 24;
+    SetupBodyLayout.Margins.Right := 24;
+    TitleLabel.Height := 36;
+    TitleLabel.TextSettings.Font.Size := 22;
     TitleLabel.TextSettings.Font.Style := [];
   end;
   FormResize(nil);
   WizardSummary.Clear;
   if FWizard then
     case Page of
-      0: ApplyButton.Text := SK.Locale.L('Далее');
-      1: ApplyButton.Text := SK.Locale.L('Найти платформы');
-      2: begin
-        ApplyButton.Text := SK.Locale.L('Сохранить');
-        BuildWizardSummary;
-      end;
+      0:
+        ApplyButton.Text := SK.Locale.L('Далее');
+      1:
+        ApplyButton.Text := SK.Locale.L('Найти платформы');
+      2:
+        begin
+          ApplyButton.Text := SK.Locale.L('Сохранить');
+          BuildWizardSummary;
+        end;
     end
-  else begin TitleLabel.Text := SK.Locale.L('Системы и игровая оболочка'); ApplyButton.Text := SK.Locale.L('Добавить') end;
+  else
+  begin
+    TitleLabel.Text := SK.Locale.L('Системы и игровая оболочка');
+    ApplyButton.Text := SK.Locale.L('Добавить')
+  end;
   UpdateSelection;
 end;
 
 procedure TFormSetup.BackButtonClick(Sender: TObject);
 begin
-  if not FScanning then ShowWizardPage(Max(0, FWizardPage - 1));
+  if not FScanning then
+    ShowWizardPage(Max(0, FWizardPage - 1));
 end;
 
 procedure TFormSetup.StartWizardResources;
-var Credentials, Settings: TJSONObject; Base: string; V: TJSONValue; Count: Integer;
+var
+  Credentials, Settings: TJSONObject;
+  Base: string;
+  V: TJSONValue;
+  Count: Integer;
 begin
   JSet(FConfig.Root, 'Anonymous', TJSONBool.Create(WizardAnonymous.IsChecked));
   JSet(FConfig.Credentials, 'devid', TJSONString.Create(WizardDeveloper.Text.Trim));
@@ -482,26 +567,44 @@ begin
   begin
     Count := 0;
     if JValue(FCatalog, 'systemes') is TJSONArray then
-      for V in TJSONArray(JValue(FCatalog, 'systemes')) do if SelectablePlatform(V) then Inc(Count);
-    ShowResourceStatus(wrOffline, Count, 0, 0); ShowWizardPage(1); Exit;
+      for V in TJSONArray(JValue(FCatalog, 'systemes')) do
+        if SelectablePlatform(V) then
+          Inc(Count);
+    ShowResourceStatus(wrOffline, Count, 0, 0);
+    ShowWizardPage(1);
+    Exit;
   end;
   if (WizardDeveloper.Text.Trim = '') or (WizardDeveloperPassword.Text = '') or
     (not WizardAnonymous.IsChecked and ((WizardLogin.Text.Trim = '') or (WizardPassword.Text = ''))) then
   begin
     FScanError := SK.Locale.L('Заполните данные подключения или выберите настройку без подключения.');
-    FResourceFailureStage := Ord(wrConnecting); ShowResourceStatus(wrFailed, 0, 0, 0); Exit;
+    FResourceFailureStage := Ord(wrConnecting);
+    ShowResourceStatus(wrFailed, 0, 0, 0);
+    Exit;
   end;
   Credentials := FConfig.Credentials.Clone as TJSONObject;
   JSet(Credentials, 'anonymous', TJSONBool.Create(WizardAnonymous.IsChecked));
   Settings := FConfig.SystemAt(-1).Clone as TJSONObject;
   Base := FConfig.Base;
-  FScanning := True; TInterlocked.Exchange(FScanCancelled, 0);
-  FScanError := ''; MaskPasswords; ShowResourceStatus(wrConnecting, 0, 0, 0);
-  FScanTask := TTask.Run(procedure
-    var API: TScreenScraper; Response, User: TJSONObject; V: TJSONValue; PlatformCount: Integer;
+  FScanning := True;
+  TInterlocked.Exchange(FScanCancelled, 0);
+  FScanError := '';
+  MaskPasswords;
+  ShowResourceStatus(wrConnecting, 0, 0, 0);
+  FScanTask := TTask.Run(
+    procedure
+    var
+      API: TScreenScraper;
+      Response, User: TJSONObject;
+      V: TJSONValue;
+      PlatformCount: Integer;
     begin
       API := TScreenScraper.Create(Credentials, TPlatformPath.Combine(Base, 'Cache/api'));
-      API.IsCancelled := function: Boolean begin Result := TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0 end;
+      API.IsCancelled :=
+        function: Boolean
+        begin
+          Result := TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0
+        end;
       Response := nil;
       try
         try
@@ -509,15 +612,21 @@ begin
           begin
             User := API.Authenticate;
             try
-              if JValue(User, 'response.ssuser') = nil then raise EScreenScraper.Create('No user information returned');
-            finally User.Free end;
+              if JValue(User, 'response.ssuser') = nil then
+                raise EScreenScraper.Create('No user information returned');
+            finally
+              User.Free
+            end;
           end;
           PublishResourceStatus(wrCatalog, 0, 0, 0);
           Response := API.Systems;
-          if not (JValue(Response, 'response.systemes') is TJSONArray) then raise EScreenScraper.Create('No platforms returned');
+          if not (JValue(Response, 'response.systemes') is TJSONArray) then
+            raise EScreenScraper.Create('No platforms returned');
           FPendingCatalog := JValue(Response, 'response').Clone as TJSONObject;
           PlatformCount := 0;
-          for V in TJSONArray(JValue(FPendingCatalog, 'systemes')) do if SelectablePlatform(V) then Inc(PlatformCount);
+          for V in TJSONArray(JValue(FPendingCatalog, 'systemes')) do
+            if SelectablePlatform(V) then
+              Inc(PlatformCount);
           PublishResourceStatus(wrArtwork, PlatformCount, 0, PlatformCount * 4);
           RefreshPlatformArtwork(FPendingCatalog, Settings, Credentials, Base, False, API.IsCancelled,
             procedure(Done, Total: Integer)
@@ -528,10 +637,17 @@ begin
               end;
             end);
         except
-          on E: EAbort do ;
-          on E: Exception do FScanError := E.Message;
+          on E: EAbort do
+            ;
+          on E: Exception do
+            FScanError := E.Message;
         end;
-      finally API.Free; Response.Free; Credentials.Free; Settings.Free end;
+      finally
+        API.Free;
+        Response.Free;
+        Credentials.Free;
+        Settings.Free
+      end;
       TThread.Queue(nil, FinishWizardResources);
     end);
 end;
@@ -540,7 +656,8 @@ procedure TFormSetup.ShowResourceStatus(Stage: TWizardResourceStage; Platforms, 
 begin
   TInterlocked.Exchange(FResourceStage, Ord(Stage));
   TInterlocked.Exchange(FResourcePlatforms, Platforms);
-  TInterlocked.Exchange(FResourceDone, Done); TInterlocked.Exchange(FResourceTotal, Total);
+  TInterlocked.Exchange(FResourceDone, Done);
+  TInterlocked.Exchange(FResourceTotal, Total);
   UpdateWizardProgress;
 end;
 
@@ -548,30 +665,48 @@ procedure TFormSetup.PublishResourceStatus(Stage: TWizardResourceStage; Platform
 begin
   TInterlocked.Exchange(FResourceStage, Ord(Stage));
   TInterlocked.Exchange(FResourcePlatforms, Platforms);
-  TInterlocked.Exchange(FResourceDone, Done); TInterlocked.Exchange(FResourceTotal, Total);
+  TInterlocked.Exchange(FResourceDone, Done);
+  TInterlocked.Exchange(FResourceTotal, Total);
   TThread.Queue(nil, UpdateWizardProgress);
 end;
 
 procedure TFormSetup.UpdateWizardProgress;
-var Stage: TWizardResourceStage; Done, Total, Count, Phase: Integer;
+var
+  Stage: TWizardResourceStage;
+  Done, Total, Count, Phase: Integer;
 
   procedure State(Circle: TCircle; Check: FMX.Objects.TPath; Complete, Active, Failed: Boolean);
   begin
-    Circle.Fill.Kind := TBrushKind.Solid; Circle.Fill.Color := $FF333333;
-    Circle.Stroke.Color := $FF777777; Check.Visible := Complete;
-    if Complete then begin Circle.Fill.Color := $FF39D12A; Circle.Stroke.Color := $FF39D12A end
-    else if Active then Circle.Stroke.Color := $FF4CC9F0
-    else if Failed then Circle.Stroke.Color := $FFF0B455;
+    Circle.Fill.Kind := TBrushKind.Solid;
+    Circle.Fill.Color := $FF333333;
+    Circle.Stroke.Color := $FF777777;
+    Check.Visible := Complete;
+    if Complete then
+    begin
+      Circle.Fill.Color := $FF39D12A;
+      Circle.Stroke.Color := $FF39D12A
+    end
+    else if Active then
+      Circle.Stroke.Color := $FF4CC9F0
+    else if Failed then
+      Circle.Stroke.Color := $FFF0B455;
   end;
 
   function PlatformCountText: string;
-  var Word: string;
+  var
+    Word: string;
   begin
     Result := SK.Locale.L('%d платформ.', [Count]);
-    if CurrentLocale <> 'ru' then Exit;
+    if CurrentLocale <> 'ru' then
+      Exit;
     Word := 'платформ';
     if not (Count mod 100 in [11..14]) then
-      case Count mod 10 of 1: Word := 'платформа'; 2..4: Word := 'платформы' end;
+      case Count mod 10 of
+        1:
+          Word := 'платформа';
+        2..4:
+          Word := 'платформы'
+      end;
     Result := Format('%d %s.', [Count, Word]);
   end;
 
@@ -587,7 +722,9 @@ begin
   Count := TInterlocked.CompareExchange(FResourcePlatforms, 0, 0);
   Done := TInterlocked.CompareExchange(FResourceDone, 0, 0);
   Total := TInterlocked.CompareExchange(FResourceTotal, 0, 0);
-  Phase := Ord(Stage); if Stage = wrFailed then Phase := FResourceFailureStage;
+  Phase := Ord(Stage);
+  if Stage = wrFailed then
+    Phase := FResourceFailureStage;
   State(WizardConnectCircle, WizardConnectCheck, (Phase >= Ord(wrCatalog)) and (Stage <> wrOffline),
     Stage = wrConnecting, (Stage = wrFailed) and (Phase = Ord(wrConnecting)));
   State(WizardCatalogCircle, WizardCatalogCheck, (Count > 0) and (Phase >= Ord(wrArtwork)),
@@ -597,38 +734,54 @@ begin
   WizardConnectTitle.Text := SK.Locale.L('Подключение не проверено');
   WizardConnectDetail.Text := SK.Locale.L('Введите реквизиты ScreenScraper.');
   if Stage = wrConnecting then
-  begin WizardConnectTitle.Text := SK.Locale.L('Проверка подключения…'); WizardConnectDetail.Text := SK.Locale.L('Соединение с ScreenScraper.') end
+  begin
+    WizardConnectTitle.Text := SK.Locale.L('Проверка подключения…');
+    WizardConnectDetail.Text := SK.Locale.L('Соединение с ScreenScraper.')
+  end
   else if WizardConnectCheck.Visible then
-  begin WizardConnectTitle.Text := SK.Locale.L('Подключение проверено'); WizardConnectDetail.Text := SK.Locale.L('Успешное соединение с API ScreenScraper.') end;
+  begin
+    WizardConnectTitle.Text := SK.Locale.L('Подключение проверено');
+    WizardConnectDetail.Text := SK.Locale.L('Успешное соединение с API ScreenScraper.')
+  end;
   WizardCatalogTitle.Text := SK.Locale.L('Каталог платформ');
   WizardCatalogDetail.Text := SK.Locale.L('Каталог ещё не загружен.');
   if Stage = wrCatalog then
-  begin WizardCatalogTitle.Text := SK.Locale.L('Загрузка каталога…'); WizardCatalogDetail.Text := SK.Locale.L('Получение списка платформ.') end
+  begin
+    WizardCatalogTitle.Text := SK.Locale.L('Загрузка каталога…');
+    WizardCatalogDetail.Text := SK.Locale.L('Получение списка платформ.')
+  end
   else if WizardCatalogCheck.Visible then
-  begin WizardCatalogTitle.Text := SK.Locale.L('Каталог получен'); WizardCatalogDetail.Text := PlatformCountText end;
+  begin
+    WizardCatalogTitle.Text := SK.Locale.L('Каталог получен');
+    WizardCatalogDetail.Text := PlatformCountText
+  end;
   WizardMediaTitle.Text := SK.Locale.L('Загрузка изображений платформ');
   WizardMediaCount.Visible := (Stage in [wrArtwork, wrReady]) or
     ((Stage = wrFailed) and (Phase = Ord(wrArtwork)) and (Total > 0));
   WizardMediaProgress.Visible := WizardMediaCount.Visible;
   WizardMediaProgressTrack.Visible := WizardMediaProgress.Visible;
-  WizardMediaProgress.Max := Max(1, Total); WizardMediaProgress.Value := Done;
+  WizardMediaProgress.Max := Max(1, Total);
+  WizardMediaProgress.Value := Done;
   ProgressResize(nil);
   WizardMediaCount.Text := Format('%d / %d   (%d%%)', [Done, Total, Round(100.0 * Done / Max(1, Total))]);
   WizardMediaSpinner.Visible := Stage = wrArtwork;
   WizardMediaSpin.Enabled := Stage = wrArtwork;
   WizardAccountInfo.Text := SK.Locale.L('После загрузки можно выбрать папки и платформы.');
   WizardAccountInfo.TextSettings.FontColor := $FFB7BFC8;
-  if Stage = wrReady then WizardMediaTitle.Text := SK.Locale.L('Изображения платформ загружены');
+  if Stage = wrReady then
+    WizardMediaTitle.Text := SK.Locale.L('Изображения платформ загружены');
   if Stage = wrOffline then
   begin
     WizardConnectTitle.Text := SK.Locale.L('Настройка без подключения');
     WizardConnectDetail.Text := SK.Locale.L('Сеть не используется.');
-    WizardCatalogTitle.Text := SK.Locale.L('Сохранённый каталог'); WizardCatalogDetail.Text := PlatformCountText;
+    WizardCatalogTitle.Text := SK.Locale.L('Сохранённый каталог');
+    WizardCatalogDetail.Text := PlatformCountText;
     WizardMediaTitle.Text := SK.Locale.L('Изображения из кэша');
   end;
   if Stage = wrFailed then
   begin
-    WizardAccountInfo.Text := FScanError; WizardAccountInfo.TextSettings.FontColor := $FFF0B455;
+    WizardAccountInfo.Text := FScanError;
+    WizardAccountInfo.TextSettings.FontColor := $FFF0B455;
     WizardMediaSpinner.Visible := False;
   end;
   UpdateSelection;
@@ -638,14 +791,20 @@ procedure TFormSetup.FinishWizardResources;
 begin
   FScanning := False;
   if TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0 then
-  begin ModalResult := mrCancel; Exit end;
+  begin
+    ModalResult := mrCancel;
+    Exit
+  end;
   if FScanError <> '' then
   begin
     FResourceFailureStage := TInterlocked.CompareExchange(FResourceStage, 0, 0);
     ShowResourceStatus(wrFailed, FResourcePlatforms, FResourceDone, FResourceTotal);
-    FreeAndNil(FPendingCatalog); Exit;
+    FreeAndNil(FPendingCatalog);
+    Exit;
   end;
-  FOwnedCatalog.Free; FOwnedCatalog := FPendingCatalog; FPendingCatalog := nil;
+  FOwnedCatalog.Free;
+  FOwnedCatalog := FPendingCatalog;
+  FPendingCatalog := nil;
   LoadCatalog(FOwnedCatalog);
   ShowResourceStatus(wrReady, FResourcePlatforms, FResourceTotal, FResourceTotal);
   ShowWizardPage(1);
@@ -670,18 +829,26 @@ var
   Previous: TObject;
   Query, Names, Key, Category, ImageFile: string;
   Index, MatchCount, J: Integer;
-  Matches: TList<TJSONValue>; Categories: TStringList; Header: TListBoxItem;
+  Matches: TList<TJSONValue>;
+  Categories: TStringList;
+  Header: TListBoxItem;
 
   procedure AddPlatform(Value: TJSONValue);
   begin
     SystemList.Items.AddObject(PlatformName(FCatalog, nil, JInt(Value, 'id')), Value);
-    if Value = Previous then Index := SystemList.Items.Count - 1;
-    if FConfig <> nil then ImageFile := PlatformArtwork(FConfig.Base, JInt(Value, 'id'), 'icon')
-    else ImageFile := PlatformArtwork(WritableBase, JInt(Value, 'id'), 'icon');
+    if Value = Previous then
+      Index := SystemList.Items.Count - 1;
+    if FConfig <> nil then
+      ImageFile := PlatformArtwork(FConfig.Base, JInt(Value, 'id'), 'icon')
+    else
+      ImageFile := PlatformArtwork(WritableBase, JInt(Value, 'id'), 'icon');
     if ImageFile <> '' then
-      try SystemList.ListItems[SystemList.Items.Count - 1].ItemData.Bitmap.LoadFromFile(ImageFile)
-      except end;
+    try
+      SystemList.ListItems[SystemList.Items.Count - 1].ItemData.Bitmap.LoadFromFile(ImageFile)
+    except
+    end;
   end;
+
 begin
   if FFiltering then
     Exit;
@@ -691,7 +858,8 @@ begin
   Query := PlatformSearch.Text.Trim.ToLower;
   FFiltering := True;
   SystemList.BeginUpdate;
-  Matches := TList<TJSONValue>.Create; Categories := TStringList.Create;
+  Matches := TList<TJSONValue>.Create;
+  Categories := TStringList.Create;
   try
     SystemList.Clear;
     Index := -1;
@@ -701,15 +869,18 @@ begin
         if (Query = '') or JStr(V, '_name').ToLower.Contains(Query) then
         begin
           SystemList.Items.AddObject(JStr(V, '_name'), V);
-          if V = Previous then Index := SystemList.Items.Count - 1;
+          if V = Previous then
+            Index := SystemList.Items.Count - 1;
         end;
       A := nil;
     end
-    else A := JValue(FCatalog, 'systemes');
+    else
+      A := JValue(FCatalog, 'systemes');
     if A is TJSONArray then
       for V in TJSONArray(A) do
       begin
-        if not SelectablePlatform(V) then Continue;
+        if not SelectablePlatform(V) then
+          Continue;
         Names := JStr(V, 'id');
         for Key in ['nom_us', 'nom_eu', 'nom_jp', 'nom_recalbox', 'nom_retropie', 'nom_launchbox', 'noms_commun'] do
           Names := Names + ' ' + JStr(V, 'noms.' + Key);
@@ -718,30 +889,44 @@ begin
         Matches.Add(V);
       end;
     MatchCount := Matches.Count;
-    if FCopyMode then MatchCount := SystemList.Items.Count;
+    if FCopyMode then
+      MatchCount := SystemList.Items.Count;
     if ShowCategories.IsChecked and not FCopyMode then
     begin
-      Categories.Sorted := True; Categories.Duplicates := dupIgnore;
-      for V in Matches do Categories.Add(JStr(V, 'type', 'Other'));
+      Categories.Sorted := True;
+      Categories.Duplicates := dupIgnore;
+      for V in Matches do
+        Categories.Add(JStr(V, 'type', 'Other'));
       for Category in Categories do
       begin
         SystemList.Items.AddObject(SK.Locale.L(Category), nil);
         Header := SystemList.ListItems[SystemList.Items.Count - 1];
-        Header.TagString := Category; Header.OnClick := ToggleCategory;
+        Header.TagString := Category;
+        Header.OnClick := ToggleCategory;
         Header.TextSettings.Font.Style := [TFontStyle.fsBold];
-        if FCategories.ContainsKey(Category) and FCategories[Category] then Continue;
-        for V in Matches do if JStr(V, 'type', 'Other') = Category then AddPlatform(V);
+        if FCategories.ContainsKey(Category) and FCategories[Category] then
+          Continue;
+        for V in Matches do
+          if JStr(V, 'type', 'Other') = Category then
+            AddPlatform(V);
       end;
     end
-    else for V in Matches do AddPlatform(V);
+    else
+      for V in Matches do
+        AddPlatform(V);
     if (Index < 0) and (SystemList.Items.Count > 0) then
       for J := 0 to SystemList.Items.Count - 1 do
-        if SystemList.Items.Objects[J] <> nil then begin Index := J; Break end;
+        if SystemList.Items.Objects[J] <> nil then
+        begin
+          Index := J;
+          Break
+        end;
     SystemList.ItemIndex := Index;
   finally
     SystemList.EndUpdate;
     FFiltering := False;
-    Categories.Free; Matches.Free;
+    Categories.Free;
+    Matches.Free;
   end;
   PlatformCount.Text := SK.Locale.L('Найдено платформ: %d', [MatchCount]);
   EmptyLabel.Visible := MatchCount = 0;
@@ -753,7 +938,9 @@ begin
 end;
 
 procedure TFormSetup.ToggleCategory(Sender: TObject);
-var Category: string; Folded: Boolean;
+var
+  Category: string;
+  Folded: Boolean;
 begin
   Category := TListBoxItem(Sender).TagString;
   Folded := FCategories.ContainsKey(Category) and FCategories[Category];
@@ -762,7 +949,9 @@ begin
 end;
 
 procedure TFormSetup.RebuildCategories;
-begin SearchChanged(nil) end;
+begin
+  SearchChanged(nil)
+end;
 
 procedure TFormSetup.SelectionChanged(Sender: TObject);
 begin
@@ -776,16 +965,21 @@ var
   Busy: Boolean;
 begin
   Busy := FScanning or (FResourceStage in [Ord(wrConnecting), Ord(wrCatalog), Ord(wrArtwork)]);
-  if Busy then ApplyButton.Opacity := 0.7 else ApplyButton.Opacity := 1;
+  if Busy then
+    ApplyButton.Opacity := 0.7
+  else
+    ApplyButton.Opacity := 1;
   RootEdit.Enabled := not Busy;
   BackButton.Enabled := not Busy;
   WizardAccountLayout.Enabled := True;
-  WizardDeveloper.Enabled := not Busy; WizardDeveloperPassword.Enabled := not Busy;
+  WizardDeveloper.Enabled := not Busy;
+  WizardDeveloperPassword.Enabled := not Busy;
   WizardLogin.Enabled := not Busy and not WizardAnonymous.IsChecked;
   WizardPassword.Enabled := WizardLogin.Enabled;
   WizardPasswordReveal.Enabled := WizardPassword.Enabled;
   WizardDeveloperPasswordReveal.Enabled := not Busy;
-  WizardAnonymous.Enabled := not Busy; WizardOffline.Enabled := not Busy;
+  WizardAnonymous.Enabled := not Busy;
+  WizardOffline.Enabled := not Busy;
   FrontEndCombo.Enabled := not Busy;
   BrowseButton.Enabled := not Busy;
   DetectCheck.Enabled := not Busy;
@@ -793,8 +987,11 @@ begin
   FrontendHomeBrowse.Enabled := not Busy;
   if Busy then
   begin
-    ApplyButton.Enabled := False; PlatformSearch.Enabled := False;
-    SystemList.Enabled := False; RecursiveCheck.Enabled := False; SearchAllCheck.Enabled := False;
+    ApplyButton.Enabled := False;
+    PlatformSearch.Enabled := False;
+    SystemList.Enabled := False;
+    RecursiveCheck.Enabled := False;
+    SearchAllCheck.Enabled := False;
     Exit;
   end;
   SearchAllCheck.Visible := FrontEndCombo.ItemIndex in [0, 1];
@@ -803,7 +1000,10 @@ begin
     (not SearchAllCheck.Visible or SearchAllCheck.IsChecked);
   FrontendHomePanel.Visible := not FCopyMode and (FrontEndCombo.ItemIndex = 2);
   if FCopyMode then
-  begin ApplyButton.Enabled := SystemList.ItemIndex >= 0; Exit end;
+  begin
+    ApplyButton.Enabled := SystemList.ItemIndex >= 0;
+    Exit
+  end;
   A := JValue(FCatalog, 'systemes');
   ApplyButton.Enabled := False;
   if A is TJSONArray then
@@ -811,9 +1011,11 @@ begin
       (DetectCheck.IsChecked or (SystemList.ItemIndex >= 0));
   PlatformSearch.Enabled := not DetectCheck.IsChecked;
   SystemList.Enabled := not DetectCheck.IsChecked;
-  if FWizard and (FWizardPage <> 1) then ApplyButton.Enabled := not FScanning;
+  if FWizard and (FWizardPage <> 1) then
+    ApplyButton.Enabled := not FScanning;
   if not DetectCheck.IsChecked and (SystemList.ItemIndex >= 0) and
-    (SystemList.Items.Objects[SystemList.ItemIndex] = nil) then ApplyButton.Enabled := False;
+    (SystemList.Items.Objects[SystemList.ItemIndex] = nil) then
+    ApplyButton.Enabled := False;
 end;
 
 procedure TFormSetup.BrowseButtonClick(Sender: TObject);
@@ -829,7 +1031,8 @@ begin
 end;
 
 procedure TFormSetup.FrontendHomeBrowseClick(Sender: TObject);
-var Folder: string;
+var
+  Folder: string;
 begin
   Folder := FConfig.DialogFolder('FrontEndPath', FrontendHomeEdit.Text);
   if SelectDirectory(SK.Locale.L('Папка игровой оболочки'), '', Folder) then
@@ -840,21 +1043,32 @@ begin
 end;
 
 function TFormSetup.ExecuteMedia(Config: TSkraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
-var I: Integer; Source: TJSONObject;
+var
+  I: Integer;
+  Source: TJSONObject;
 begin
-  Result := nil; FConfig := Config; FCatalog := Catalog; FCopyMode := True;
+  Result := nil;
+  FConfig := Config;
+  FCatalog := Catalog;
+  FCopyMode := True;
   FMediaSources := TObjectList<TJSONObject>.Create(True);
   try
     for I := -1 to Config.Root.GetValue<TJSONArray>('Systems').Count - 1 do
     begin
-      if I = TargetIndex then Continue;
+      if I = TargetIndex then
+        Continue;
       Source := Config.EffectiveSystem(I);
       if not (JValue(Source, 'Medias') is TJSONArray) or
         (TJSONArray(JValue(Source, 'Medias')).Count = 0) then
-      begin Source.Free; Continue end;
-      if I < 0 then JSet(Source, '_name', TJSONString.Create(SK.Locale.L('Все системы')))
-      else JSet(Source, '_name', TJSONString.Create(PlatformName(Catalog, Source, JInt(Source, 'SystemId')) +
-        ' · ' + JStr(Source, 'GamesAndRoms.Path')));
+      begin
+        Source.Free;
+        Continue
+      end;
+      if I < 0 then
+        JSet(Source, '_name', TJSONString.Create(SK.Locale.L('Все системы')))
+      else
+        JSet(Source, '_name', TJSONString.Create(PlatformName(Catalog, Source, JInt(Source, 'SystemId')) +
+            ' · ' + JStr(Source, 'GamesAndRoms.Path')));
       FMediaSources.Add(Source);
     end;
     SetupSourceLayout.Visible := False;
@@ -864,25 +1078,36 @@ begin
     SystemLabel.Text := SK.Locale.L('Система-источник');
     ApplyButton.Text := SK.Locale.L('Копировать');
     DetectCheck.IsChecked := False;
-    PlatformSearch.Text := ''; SearchChanged(nil);
+    PlatformSearch.Text := '';
+    SearchChanged(nil);
     if (ShowModal = mrOk) and (SystemList.ItemIndex >= 0) then
       Result := TJSONValue(SystemList.Items.Objects[SystemList.ItemIndex]).Clone as TJSONObject;
   finally
-    SystemList.Clear; FMediaSources.Free; FMediaSources := nil;
+    SystemList.Clear;
+    FMediaSources.Free;
+    FMediaSources := nil;
   end;
 end;
 
 procedure TFormSetup.AddSystem(const IDs: TArray<Integer>; const Folder: string);
-var S: TJSONObject; A: TJSONArray; V: TJSONValue;
+var
+  S: TJSONObject;
+  A: TJSONArray;
+  V: TJSONValue;
 begin
   A := FConfig.Root.GetValue<TJSONArray>('Systems');
-  for V in A do if SamePath(JStr(V, 'GamesAndRoms.Path'), Folder) then Exit;
+  for V in A do
+    if SamePath(JStr(V, 'GamesAndRoms.Path'), Folder) then
+      Exit;
   S := FConfig.SystemAt(-1).Clone as TJSONObject;
   try
     JSet(S, 'UniqueId', TJSONString.Create(TGUID.NewGuid.ToString));
     ConfigurePlatform(S, FConfig.SystemAt(-1), FCatalog, FrontEndCombo.ItemIndex, IDs, Folder);
     A.AddElement(S);
-  except S.Free; raise end;
+  except
+    S.Free;
+    raise
+  end;
 end;
 
 procedure TFormSetup.CancelButtonClick(Sender: TObject);
@@ -892,19 +1117,23 @@ begin
     TInterlocked.Exchange(FScanCancelled, 1);
     PlatformCount.Text := SK.Locale.L('Остановка…');
   end
-  else ModalResult := mrCancel;
+  else
+    ModalResult := mrCancel;
 end;
 
 procedure TFormSetup.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   CanClose := not FScanning;
-  if not CanClose then TInterlocked.Exchange(FScanCancelled, 1);
+  if not CanClose then
+    TInterlocked.Exchange(FScanCancelled, 1);
 end;
 
 procedure TFormSetup.CommitDetected(const Found: TArray<TDetectedPlatform>);
-var Item: TDetectedPlatform;
+var
+  Item: TDetectedPlatform;
 begin
-  if FWizard then JSet(FConfig.Root, 'Systems', TJSONArray.Create);
+  if FWizard then
+    JSet(FConfig.Root, 'Systems', TJSONArray.Create);
   if FWizard or (JInt(FConfig.Root, 'FrontEnd.Type') <> FrontEndCombo.ItemIndex) then
   begin
     JSet(FConfig.Root, 'FrontEnd.Type', TJSONNumber.Create(FrontEndCombo.ItemIndex));
@@ -915,8 +1144,10 @@ begin
     JSet(FConfig.Root, 'FrontEnd.HomePath', TJSONString.Create(FrontendHomeEdit.Text));
     FConfig.RememberFolder('FrontEndPath', FrontendHomeEdit.Text);
   end;
-  for Item in Found do AddSystem(Item.IDs, Item.Folder);
-  if DetectCheck.IsChecked then JSet(FConfig.Root, 'AllSystems.GamesAndRoms.Path', TJSONString.Create(RootEdit.Text));
+  for Item in Found do
+    AddSystem(Item.IDs, Item.Folder);
+  if DetectCheck.IsChecked then
+    JSet(FConfig.Root, 'AllSystems.GamesAndRoms.Path', TJSONString.Create(RootEdit.Text));
   FConfig.RememberFolder('GameAndRomFolder', RootEdit.Text);
   if FWizard then
   begin
@@ -930,83 +1161,159 @@ end;
 
 procedure TFormSetup.FinishDetection;
 begin
-  FScanning := False; UpdateSelection;
+  FScanning := False;
+  UpdateSelection;
   if TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0 then
-  begin ModalResult := mrCancel; Exit end;
+  begin
+    ModalResult := mrCancel;
+    Exit
+  end;
   if FScanError <> '' then
-  begin ShowMessage(SK.Locale.L('Ошибка поиска платформ: %s', [FScanError])); Exit end;
+  begin
+    ShowMessage(SK.Locale.L('Ошибка поиска платформ: %s', [FScanError]));
+    Exit
+  end;
   if Length(FScanFound) = 0 then
   begin
     PlatformCount.Text := SK.Locale.L('Найдено платформ: %d', [0]);
     ShowMessage(SK.Locale.L('Подходящие папки не найдены. Отключите автоопределение и выберите платформу.'));
     Exit;
   end;
-  if FWizard then begin FWizardFound := FScanFound; ShowWizardPage(2) end
-  else CommitDetected(FScanFound);
+  if FWizard then
+  begin
+    FWizardFound := FScanFound;
+    ShowWizardPage(2)
+  end
+  else
+    CommitDetected(FScanFound);
 end;
 
 procedure TFormSetup.StartDetection;
-var Catalog: TJSONObject; Root: string; Frontend: Integer; Recursive, SearchAll: Boolean;
+var
+  Catalog: TJSONObject;
+  Root: string;
+  Frontend: Integer;
+  Recursive, SearchAll: Boolean;
 begin
-  if FScanning then Exit;
-  Catalog := FCatalog.Clone as TJSONObject; Root := RootEdit.Text;
-  Frontend := FrontEndCombo.ItemIndex; Recursive := RecursiveCheck.IsChecked; SearchAll := SearchAllCheck.IsChecked;
-  FScanning := True; TInterlocked.Exchange(FScanCancelled, 0);
-  PlatformCount.Text := SK.Locale.L('Поиск платформ…'); UpdateSelection;
+  if FScanning then
+    Exit;
+  Catalog := FCatalog.Clone as TJSONObject;
+  Root := RootEdit.Text;
+  Frontend := FrontEndCombo.ItemIndex;
+  Recursive := RecursiveCheck.IsChecked;
+  SearchAll := SearchAllCheck.IsChecked;
+  FScanning := True;
+  TInterlocked.Exchange(FScanCancelled, 0);
+  PlatformCount.Text := SK.Locale.L('Поиск платформ…');
+  UpdateSelection;
   FScanTask := TTask.Run(
     procedure
-    var Found: TArray<TDetectedPlatform>; ErrorText: string;
+    var
+      Found: TArray<TDetectedPlatform>;
+      ErrorText: string;
     begin
       ErrorText := '';
       try
         try
           Found := DetectPlatforms(Catalog, Root, Frontend, Recursive, SearchAll,
-            function: Boolean begin Result := TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0 end);
+            function: Boolean
+            begin
+              Result := TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0
+            end);
         except
-          on E: EAbort do ;
-          on E: Exception do ErrorText := E.Message;
+          on E: EAbort do
+            ;
+          on E: Exception do
+            ErrorText := E.Message;
         end;
-      finally Catalog.Free end;
-      FScanFound := Found; FScanError := ErrorText;
+      finally
+        Catalog.Free
+      end;
+      FScanFound := Found;
+      FScanError := ErrorText;
       TThread.Queue(nil, FinishDetection);
     end);
 end;
 
 procedure TFormSetup.ApplyButtonClick(Sender: TObject);
-var Found: TArray<TDetectedPlatform>;
-  IDs, Matches: TArray<Integer>; Chosen, ID, Other: Integer; LIDs: TList<Integer>;
+var
+  Found: TArray<TDetectedPlatform>;
+  IDs, Matches: TArray<Integer>;
+  Chosen, ID, Other: Integer;
+  LIDs: TList<Integer>;
 begin
-  if FCopyMode then begin ModalResult := mrOk; Exit end;
+  if FCopyMode then
+  begin
+    ModalResult := mrOk;
+    Exit
+  end;
   if FWizard then
     case FWizardPage of
-      0: begin StartWizardResources; Exit end;
-      2: begin CommitDetected(FWizardFound); Exit end;
+      0:
+        begin
+          StartWizardResources;
+          Exit
+        end;
+      2:
+        begin
+          CommitDetected(FWizardFound);
+          Exit
+        end;
     end;
   if not TDirectory.Exists(RootEdit.Text) then
-  begin ShowMessage(SK.Locale.L('Выберите существующую папку ROM.')); Exit end;
+  begin
+    ShowMessage(SK.Locale.L('Выберите существующую папку ROM.'));
+    Exit
+  end;
   if (FrontEndCombo.ItemIndex = 2) and not TDirectory.Exists(FrontendHomeEdit.Text) then
-  begin ShowMessage(SK.Locale.L('Выберите существующую папку LaunchBox.')); Exit end;
+  begin
+    ShowMessage(SK.Locale.L('Выберите существующую папку LaunchBox.'));
+    Exit
+  end;
   if not (JValue(FCatalog, 'systemes') is TJSONArray) or
     (TJSONArray(JValue(FCatalog, 'systemes')).Count = 0) then
-  begin ShowMessage(SK.Locale.L('Проверьте подключение, чтобы загрузить каталог платформ.')); Exit end;
+  begin
+    ShowMessage(SK.Locale.L('Проверьте подключение, чтобы загрузить каталог платформ.'));
+    Exit
+  end;
   if DetectCheck.IsChecked then
-  begin StartDetection; Exit end
+  begin
+    StartDetection;
+    Exit
+  end
   else
   begin
-    if (SystemList.ItemIndex < 0) or (SystemList.Items.Objects[SystemList.ItemIndex] = nil) then Exit;
+    if (SystemList.ItemIndex < 0) or (SystemList.Items.Objects[SystemList.ItemIndex] = nil) then
+      Exit;
     Chosen := JInt(TJSONValue(SystemList.Items.Objects[SystemList.ItemIndex]), 'id');
     Matches := LookupPlatforms(FCatalog, System.IOUtils.TPath.GetFileName(RootEdit.Text), FrontEndCombo.ItemIndex, True, True);
     LIDs := TList<Integer>.Create;
     try
       LIDs.Add(Chosen);
-      for ID in Matches do if ID = Chosen then
-      begin for Other in Matches do if not LIDs.Contains(Other) then LIDs.Add(Other); Break end;
+      for ID in Matches do
+        if ID = Chosen then
+        begin
+          for Other in Matches do
+            if not LIDs.Contains(Other) then
+              LIDs.Add(Other);
+          Break
+        end;
       IDs := LIDs.ToArray;
-    finally LIDs.Free end;
-    SetLength(Found, 1); Found[0].Folder := RootEdit.Text; Found[0].IDs := IDs;
+    finally
+      LIDs.Free
+    end;
+    SetLength(Found, 1);
+    Found[0].Folder := RootEdit.Text;
+    Found[0].IDs := IDs;
   end;
-  if FWizard then begin FWizardFound := Found; ShowWizardPage(2) end
-  else CommitDetected(Found);
+  if FWizard then
+  begin
+    FWizardFound := Found;
+    ShowWizardPage(2)
+  end
+  else
+    CommitDetected(Found);
 end;
 
 end.
+

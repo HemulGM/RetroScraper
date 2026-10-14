@@ -132,23 +132,32 @@ end;
 
 function DirectoryIdentity(const Path: string): string;
 {$IFDEF MSWINDOWS}
-var Handle: THandle; Info: TByHandleFileInformation;
+var
+  Handle: THandle;
+  Info: TByHandleFileInformation;
 {$ELSE}
-var Info: _stat; EncodedPath: UTF8String;
+var
+  Info: _stat;
+  EncodedPath: UTF8String;
 {$ENDIF}
 begin
   {$IFDEF MSWINDOWS}
   Handle := CreateFile(PChar(Path), 0, FILE_SHARE_READ or FILE_SHARE_WRITE or
     FILE_SHARE_DELETE, nil, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-  if Handle = INVALID_HANDLE_VALUE then RaiseLastOSError;
+  if Handle = INVALID_HANDLE_VALUE then
+    RaiseLastOSError;
   try
-    if not GetFileInformationByHandle(Handle, Info) then RaiseLastOSError;
+    if not GetFileInformationByHandle(Handle, Info) then
+      RaiseLastOSError;
     Result := UInt64(Info.dwVolumeSerialNumber).ToString + ':' +
       UInt64(Info.nFileIndexHigh).ToString + ':' + UInt64(Info.nFileIndexLow).ToString;
-  finally CloseHandle(Handle) end;
+  finally
+    CloseHandle(Handle)
+  end;
   {$ELSE}
   EncodedPath := UTF8String(ExcludeTrailingPathDelimiter(Path));
-  if stat(MarshaledAString(EncodedPath), Info) <> 0 then RaiseLastOSError;
+  if stat(MarshaledAString(EncodedPath), Info) <> 0 then
+    RaiseLastOSError;
   Result := UInt64(Info.st_dev).ToString + ':' + UInt64(Info.st_ino).ToString;
   {$ENDIF}
 end;
@@ -176,7 +185,8 @@ begin
 end;
 
 function WritableBase: string;
-var TestBase: string;
+var
+  TestBase: string;
 {$IFNDEF MSWINDOWS}
   Home: string;
 {$ENDIF}

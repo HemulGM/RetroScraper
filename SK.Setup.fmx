@@ -1,4 +1,4 @@
-﻿object FormSetup: TFormSetup
+object FormSetup: TFormSetup
   Left = 0
   Top = 0
   BorderStyle = Single
@@ -129,7 +129,7 @@
       Margins.Top = 18.000000000000000000
       Margins.Right = 24.000000000000000000
       Margins.Bottom = 18.000000000000000000
-      Position.X = 920.000000000000000000
+      Position.X = 836.000000000000000000
       Position.Y = 19.000000000000000000
       Size.Width = 340.000000000000000000
       Size.Height = 41.000000000000000000
@@ -149,7 +149,7 @@
       object ApplyButton: TButton
         Align = Client
         StyledSettings = [Family, Style, FontColor]
-        Size.Width = 124.000000000000000000
+        Size.Width = 208.000000000000000000
         Size.Height = 41.000000000000000000
         Size.PlatformDefault = False
         StyleLookup = 'buttonstyle_accent'
@@ -201,7 +201,7 @@
       HitTest = False
       Margins.Top = 10.000000000000000000
       Position.X = 40.000000000000000000
-      Position.Y = 112.000000000000000000
+      Position.Y = 104.000000000000000000
       Size.Width = 1124.000000000000000000
       Size.Height = 44.000000000000000000
       Size.PlatformDefault = False
@@ -298,7 +298,7 @@
               Align = Client
               Fill.Color = xFF777777
               HitTest = False
-              Size.Width = 96.079986572265630000
+              Size.Width = 196.079986572265600000
               Size.Height = 1.000000000000000000
               Size.PlatformDefault = False
               Stroke.Kind = None
@@ -307,7 +307,7 @@
               Align = Contents
               Fill.Color = xFF4CC9F0
               HitTest = False
-              Size.Width = 100.000000000000000000
+              Size.Width = 196.079986572265600000
               Size.Height = 1.000000000000000000
               Size.PlatformDefault = False
               Stroke.Kind = None
@@ -378,7 +378,7 @@
               Align = Client
               Fill.Color = xFF777777
               HitTest = False
-              Size.Width = 139.600006103515600000
+              Size.Width = 239.600006103515600000
               Size.Height = 1.000000000000000000
               Size.PlatformDefault = False
               Stroke.Kind = None
@@ -387,7 +387,7 @@
               Align = Contents
               Fill.Color = xFF4CC9F0
               HitTest = False
-              Size.Width = 100.000000000000000000
+              Size.Width = 239.600006103515600000
               Size.Height = 1.000000000000000000
               Size.PlatformDefault = False
               Stroke.Kind = None
@@ -471,79 +471,81 @@
       end
       object WizardSummaryFrontend: TLabel
         Align = Top
-        Size.PlatformDefault = False
-        Size.Height = 24
         StyledSettings = [Family]
-        TextSettings.Font.Size = 14
+        Position.Y = 64.000000000000000000
+        Size.Width = 50.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
         TextSettings.FontColor = xFFB7BFC8
         TextSettings.WordWrap = False
-        TextSettings.Trimming = Character
-        Text = ''
       end
       object WizardSummaryRoot: TLabel
         Align = Top
-        Size.PlatformDefault = False
-        Size.Height = 24
         StyledSettings = [Family]
-        TextSettings.Font.Size = 14
+        Position.Y = 88.000000000000000000
+        Size.Width = 50.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
         TextSettings.FontColor = xFFB7BFC8
         TextSettings.WordWrap = False
-        TextSettings.Trimming = Character
-        Text = ''
+        ParentShowHint = False
         ShowHint = True
       end
       object WizardSummaryHome: TLabel
         Align = Top
-        Size.PlatformDefault = False
-        Size.Height = 24
         StyledSettings = [Family]
-        TextSettings.Font.Size = 14
+        Size.Width = 120.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
         TextSettings.FontColor = xFFB7BFC8
         TextSettings.WordWrap = False
-        TextSettings.Trimming = Character
-        Text = ''
-        ShowHint = True
         Visible = False
+        ParentShowHint = False
+        ShowHint = True
       end
       object WizardSummaryCount: TLabel
         Align = Top
-        Size.PlatformDefault = False
-        Size.Height = 24
         StyledSettings = [Family]
-        TextSettings.Font.Size = 14
+        Margins.Bottom = 12.000000000000000000
+        Position.Y = 112.000000000000000000
+        Size.Width = 50.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
         TextSettings.FontColor = xFFB7BFC8
         TextSettings.WordWrap = False
-        TextSettings.Trimming = Character
-        Text = ''
-        Margins.Bottom = 12
       end
       object WizardSummaryCard: TRectangle
         Align = Client
-        Size.PlatformDefault = False
-        Margins.Bottom = 16
         Fill.Color = xFF2D2D2D
+        Padding.Left = 8.000000000000000000
+        Padding.Top = 8.000000000000000000
+        Padding.Right = 8.000000000000000000
+        Padding.Bottom = 8.000000000000000000
+        Margins.Bottom = 16.000000000000000000
+        Size.Width = 50.000000000000000000
+        Size.Height = 0.000000000000000000
+        Size.PlatformDefault = False
         Stroke.Color = xFF454545
-        XRadius = 8
-        YRadius = 8
-        Padding.Left = 8
-        Padding.Top = 8
-        Padding.Right = 8
-        Padding.Bottom = 8
+        XRadius = 8.000000000000000000
+        YRadius = 8.000000000000000000
         object WizardSummaryHeader: TGridPanelLayout
           Align = Top
-          Size.PlatformDefault = False
-          Size.Height = 40
           HitTest = False
+          Position.X = 8.000000000000000000
+          Position.Y = 8.000000000000000000
+          Size.Width = 34.000000000000000000
+          Size.Height = 40.000000000000000000
+          Size.PlatformDefault = False
           ColumnCollection = <
             item
-              Value = 35.000000
+              Value = 35.000000000000000000
             end
             item
-              Value = 65.000000
-            end>
-          RowCollection = <
-            item
-              Value = 100.000000
+              Value = 65.000000000000000000
             end>
           ControlCollection = <
             item
@@ -556,51 +558,66 @@
               Control = WizardSummaryFolderColumn
               Row = 0
             end>
+          RowCollection = <
+            item
+              Value = 100.000000000000000000
+            end>
           object WizardSummaryPlatformColumn: TLabel
             Align = Client
-            Size.PlatformDefault = False
-            Size.Height = 40
             StyledSettings = [Family]
-            TextSettings.Font.Size = 14
+            Margins.Left = 12.000000000000000000
+            Margins.Right = 12.000000000000000000
+            Size.Width = 0.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 14.000000000000000000
             TextSettings.FontColor = xFFF3F3F3
             TextSettings.WordWrap = False
-            TextSettings.Trimming = Character
-            Text = 'Платформа'
-            Margins.Left = 12
-            Margins.Right = 12
+            Text = #1055#1083#1072#1090#1092#1086#1088#1084#1072
           end
           object WizardSummaryFolderColumn: TLabel
             Align = Client
-            Size.PlatformDefault = False
-            Size.Height = 40
             StyledSettings = [Family]
-            TextSettings.Font.Size = 14
+            Margins.Left = 12.000000000000000000
+            Margins.Right = 12.000000000000000000
+            Size.Width = 0.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 14.000000000000000000
             TextSettings.FontColor = xFFF3F3F3
             TextSettings.WordWrap = False
-            TextSettings.Trimming = Character
-            Text = 'Папка ROM'
-            Margins.Left = 12
-            Margins.Right = 12
+            Text = #1055#1072#1087#1082#1072' ROM'
           end
         end
         object WizardSummaryDivider: TRectangle
           Align = Top
-          Size.PlatformDefault = False
-          Size.Height = 1
           Fill.Color = xFF454545
-          Stroke.Kind = None
           HitTest = False
+          Position.X = 8.000000000000000000
+          Position.Y = 48.000000000000000000
+          Size.Width = 34.000000000000000000
+          Size.Height = 1.000000000000000000
+          Size.PlatformDefault = False
+          Stroke.Kind = None
         end
         object WizardSummary: TListBox
           Align = Client
+          Margins.Top = 4.000000000000000000
+          Size.Width = 34.000000000000000000
+          Size.Height = 0.000000000000000000
           Size.PlatformDefault = False
-          Margins.Top = 4
-          ItemHeight = 44
-          ShowScrollBars = True
+          TabOrder = 0
+          ParentShowHint = False
           ShowHint = True
           OnMouseMove = SummaryMouseMove
           AlternatingRowBackground = True
-          TabOrder = 0
+          DisableFocusEffect = True
+          ItemHeight = 44.000000000000000000
+          DefaultItemStyles.ItemStyle = ''
+          DefaultItemStyles.GroupHeaderStyle = ''
+          DefaultItemStyles.GroupFooterStyle = ''
+          Viewport.Width = 46.000000000000000000
+          Viewport.Height = 46.000000000000000000
         end
       end
     end
@@ -608,14 +625,14 @@
       Align = Right
       Fill.Color = xFF2D2D2D
       Margins.Left = 24.000000000000000000
+      Margins.Bottom = 16.000000000000000000
       Position.X = 616.000000000000000000
       Size.Width = 508.000000000000000000
-      Size.Height = 526.000000000000000000
+      Size.Height = 510.000000000000000000
       Size.PlatformDefault = False
       Stroke.Color = xFF454545
       XRadius = 8.000000000000000000
       YRadius = 8.000000000000000000
-      Margins.Bottom = 16.000000000000000000
       object SystemLabel: TLabel
         Align = Top
         StyledSettings = [Family, Style, FontColor]
@@ -666,7 +683,7 @@
         Margins.Right = 12.000000000000000000
         Margins.Bottom = 6.000000000000000000
         Size.Width = 484.000000000000000000
-        Size.Height = 344.000000000000000000
+        Size.Height = 328.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
         ScrollAnimation = True
@@ -677,7 +694,7 @@
         DefaultItemStyles.GroupFooterStyle = ''
         OnChange = SelectionChanged
         Viewport.Width = 480.000000000000000000
-        Viewport.Height = 340.000000000000000000
+        Viewport.Height = 324.000000000000000000
       end
       object PlatformCount: TLabel
         Align = Bottom
@@ -686,7 +703,7 @@
         Margins.Right = 28.000000000000000000
         Margins.Bottom = 12.000000000000000000
         Position.X = 28.000000000000000000
-        Position.Y = 490.000000000000000000
+        Position.Y = 474.000000000000000000
         Size.Width = 452.000000000000000000
         Size.Height = 24.000000000000000000
         Size.PlatformDefault = False
@@ -696,7 +713,7 @@
       object EmptyLabelFrame: TLayout
         Align = Contents
         Size.Width = 508.000000000000000000
-        Size.Height = 526.000000000000000000
+        Size.Height = 510.000000000000000000
         Size.PlatformDefault = False
         object EmptyLabelRow: TLayout
           Align = Top
@@ -1355,11 +1372,11 @@
         Size.Height = 50.000000000000000000
         Size.PlatformDefault = False
         Visible = False
-        Viewport.Width = 50.000000000000000000
+        Viewport.Width = 34.000000000000000000
         Viewport.Height = 50.000000000000000000
         object WizardAccountFields: TLayout
           Align = Top
-          Size.Width = 50.000000000000000000
+          Size.Width = 34.000000000000000000
           Size.Height = 524.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 0
@@ -1370,7 +1387,7 @@
             Padding.Top = 20.000000000000000000
             Padding.Right = 20.000000000000000000
             Padding.Bottom = 16.000000000000000000
-            Size.Width = 50.000000000000000000
+            Size.Width = 34.000000000000000000
             Size.Height = 260.000000000000000000
             Size.PlatformDefault = False
             Stroke.Color = xFF454545
@@ -1381,7 +1398,7 @@
               StyledSettings = [Family]
               Position.X = 20.000000000000000000
               Position.Y = 20.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 28.000000000000000000
               Size.PlatformDefault = False
               TextSettings.Font.Size = 18.000000000000000000
@@ -1396,7 +1413,7 @@
               Margins.Top = 6.000000000000000000
               Position.X = 20.000000000000000000
               Position.Y = 54.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 20.000000000000000000
               Size.PlatformDefault = False
               TextSettings.Font.Size = 16.000000000000000000
@@ -1410,7 +1427,7 @@
               Position.X = 20.000000000000000000
               Position.Y = 78.000000000000000000
               Margins.Top = 4.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 40.000000000000000000
               Size.PlatformDefault = False
               StyledSettings = [Family, Style, FontColor]
@@ -1422,7 +1439,7 @@
               Margins.Top = 6.000000000000000000
               Position.X = 20.000000000000000000
               Position.Y = 124.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 20.000000000000000000
               Size.PlatformDefault = False
               TextSettings.Font.Size = 16.000000000000000000
@@ -1437,7 +1454,7 @@
               Position.X = 20.000000000000000000
               Position.Y = 148.000000000000000000
               Margins.Top = 4.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 40.000000000000000000
               Size.PlatformDefault = False
               StyledSettings = [Family, Style, FontColor]
@@ -1538,7 +1555,7 @@
               Margins.Top = 8.000000000000000000
               Position.X = 20.000000000000000000
               Position.Y = 196.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 28.000000000000000000
               Size.PlatformDefault = False
               Text = #1041#1077#1079' '#1091#1095#1105#1090#1085#1086#1081' '#1079#1072#1087#1080#1089#1080
@@ -1569,7 +1586,7 @@
             Padding.Bottom = 14.000000000000000000
             Margins.Top = 14.000000000000000000
             Position.Y = 274.000000000000000000
-            Size.Width = 50.000000000000000000
+            Size.Width = 34.000000000000000000
             Size.Height = 202.000000000000000000
             Size.PlatformDefault = False
             Stroke.Color = xFF454545
@@ -1580,7 +1597,7 @@
               StyledSettings = [Family]
               Position.X = 20.000000000000000000
               Position.Y = 20.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 28.000000000000000000
               Size.PlatformDefault = False
               TextSettings.Font.Size = 18.000000000000000000
@@ -1595,7 +1612,7 @@
               Margins.Top = 6.000000000000000000
               Position.X = 20.000000000000000000
               Position.Y = 54.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 20.000000000000000000
               Size.PlatformDefault = False
               TextSettings.Font.Size = 16.000000000000000000
@@ -1609,7 +1626,7 @@
               Position.X = 20.000000000000000000
               Position.Y = 78.000000000000000000
               Margins.Top = 4.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 40.000000000000000000
               Size.PlatformDefault = False
               StyledSettings = [Family, Style, FontColor]
@@ -1621,7 +1638,7 @@
               Margins.Top = 6.000000000000000000
               Position.X = 20.000000000000000000
               Position.Y = 124.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 20.000000000000000000
               Size.PlatformDefault = False
               TextSettings.Font.Size = 16.000000000000000000
@@ -1636,7 +1653,7 @@
               Position.X = 20.000000000000000000
               Position.Y = 148.000000000000000000
               Margins.Top = 4.000000000000000000
-              Size.Width = 10.000000000000000000
+              Size.Width = 0.000000000000000000
               Size.Height = 40.000000000000000000
               Size.PlatformDefault = False
               StyledSettings = [Family, Style, FontColor]
@@ -1738,7 +1755,7 @@
             StyledSettings = [Family, Style, FontColor]
             Margins.Top = 10.000000000000000000
             Position.Y = 486.000000000000000000
-            Size.Width = 50.000000000000000000
+            Size.Width = 34.000000000000000000
             Size.Height = 36.000000000000000000
             Size.PlatformDefault = False
             Text = #1053#1072#1089#1090#1088#1086#1080#1090#1100' '#1073#1077#1079' '#1087#1086#1076#1082#1083#1102#1095#1077#1085#1080#1103
