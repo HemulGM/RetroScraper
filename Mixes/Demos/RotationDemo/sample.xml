@@ -1,0 +1,29 @@
+<ImageComposition xsi:noNamespaceSchemaLocation="https://www.skraper.net/ImageComposition.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Information ShortName="Rotation Demo"
+               LongName="4 Images Rotation Demo Mix"
+               Description="3 Image classic mix (ScreenShot + 3D Box + Wheel) with rotated ScreenScraper logo"
+               Author="Bkg2k" />
+  <Viewport Color="#00000000" Width="1024" Height="768" />
+  <Drawings>
+    <!-- Screenshot -->
+    <Item Type="Screenshot">
+      <Display Anchor="TopHCenter" X="50%" Y="0%" Width="90%" Height="90%" KeepRatio="true" Antialiasing="None" />
+      <Fallback Type="ScreenshotTitle">
+        <Fallback Type="LocalFile" LocalFilePath="noscreenshot.png" />
+      </Fallback>
+    </Item>
+    <!-- 3D Box -->
+    <Item Type="Box3D">
+      <Display Anchor="BottomLeft" X="0%" Y="100%" Width="50%" Height="50%" KeepRatio="true" Antialiasing="High" />
+    </Item>
+    <!-- Wheel -->
+    <Item Type="Wheel">
+      <Display Anchor="BottomRight" X="100%" Y="100%" Width="50%" Height="33%" KeepRatio="true" Antialiasing="High" />
+    </Item>
+    <!-- ScreenScraper rotated logo -->
+    <Item Type="LocalFile" LocalFilePath="screenscraper.png">
+      <Display Anchor="TopLeft" X="7%" Y="20%" Width="50%" Height="20%" KeepRatio="true" Antialiasing="High" Transparency="50.0" />
+      <Rotation Angle="20.0" XOffset="50%" YOffset="50%" />
+    </Item>
+  </Drawings>
+</ImageComposition>

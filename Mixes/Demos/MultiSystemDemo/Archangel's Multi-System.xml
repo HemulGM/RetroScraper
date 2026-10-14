@@ -1,0 +1,86 @@
+<ImageComposition xsi:noNamespaceSchemaLocation="https://www.skraper.net/ImageComposition.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Information ShortName="Mix A"
+               LongName="Mix Archangel"
+               Description="Foregroung + 3DBox + Screenshot + Wheel + Regions"
+               Author="Archangel54" />
+  <Viewport Color="#00FFFFFF" Width="845" Height="745" />
+  <Drawings>
+    <Item IfSystem="IsNotInTheList:9,52" TestOnly="true">
+      <Children>
+        <Item Type="Screenshot" IfOrientation="IsPortrait" TestOnly="true">
+          <Fallback Type="ScreenshotTitle" TestOnly="true" />
+          <Children>
+            <Item Type="LocalFile" LocalFilePath="Background_V_%SYSTEM%.png">
+              <Display X="100%" Y="0%" Width="100%" Height="100%" Anchor="TopRight" />
+            </Item>
+            <Item Type="Screenshot">
+              <Display X="398" Y="370" Width="567" Height="714" Anchor="VCenterHCenter" Antialiasing="None" />
+              <Fallback Type="ScreenshotTitle" IfOrientation="IsPortrait">
+                <Fallback Type="LocalFile" LocalFilePath="NoScreenshot_%SYSTEM%.png" />
+              </Fallback>
+            </Item>
+            <Item Type="LocalFile" LocalFilePath="Foreground_V_%SYSTEM%.png">
+              <Display X="100%" Y="0%" Width="100%" Height="100%" Anchor="TopRight" />
+            </Item>
+          </Children>
+        </Item>
+        <Item Type="Screenshot" IfOrientation="IsLandscape" TestOnly="true">
+          <Fallback Type="ScreenshotTitle" TestOnly="true"/>
+            <Children DrawIfNoParent="true">
+              <Item Type="LocalFile" LocalFilePath="Background_H_%SYSTEM%.png">
+                <Display X="100%" Y="0%" Width="100%" Height="100%" Anchor="TopRight" />
+              </Item>
+              <Item Type="Screenshot">
+                <Display X="474" Y="297" Width="714" Height="567" Anchor="VCenterHCenter" Antialiasing="None" />
+                <Fallback Type="ScreenshotTitle" IfOrientation="IsLandscape">
+                  <Fallback Type="LocalFile" LocalFilePath="NoScreenshot_0.png" />
+                </Fallback>
+              </Item>
+              <Item Type="LocalFile" LocalFilePath="Foreground_H_%SYSTEM%.png">
+                <Display X="100%" Y="0%" Width="100%" Height="100%" Anchor="TopRight" />
+              </Item>
+            </Children>
+        </Item>
+      </Children>
+    </Item>
+    <Item IfSystem="IsInTheList:9" TestOnly="true">
+      <Children>
+        <Item Type="Screenshot" >
+          <Display X="472" Y="277" Width="469" Height="430" Anchor="VCenterHCenter" KeepRatio="false" Antialiasing="None" />
+          <Fallback Type="ScreenshotTitle">
+            <Fallback Type="LocalFile" LocalFilePath="NoScreenshot_%SYSTEM%.png"/>
+          </Fallback>
+        </Item>
+        <Item Type="LocalFile" LocalFilePath="Foreground_%SYSTEM%.png">
+          <Display X="100%" Y="0%" Width="100%" Height="100%" Anchor="TopRight" />
+        </Item>
+      </Children>
+    </Item>
+    <Item Type="SupportTexture" IfSystem="IsInTheList:52">
+      <Display X="474" Y="298" Width="742" Height="596" Anchor="VCenterHCenter" />
+      <Fallback Type="Screenshot">
+        <Display X="474" Y="298" Width="742" Height="596" Anchor="VCenterHCenter" Antialiasing="None" />
+        <Fallback Type="LocalFile" LocalFilePath="NoScreenshot_%SYSTEM%.png" />
+      </Fallback>
+    </Item>
+    <Item Type="Box3D" IfSystem="IsNotInTheList:75">
+      <Display X="0%" Y="100%" Width="445" Height="445" Anchor="BottomLeft" />
+    </Item>
+    <Item Type="LocalFile" LocalFilePath="Arcade_Support.png" IfSystem="IsInTheList:75">
+      <Display X="0%" Y="100%" Width="290" Height="290" Anchor="BottomLeft" />
+    </Item>
+    <Item Type="Wheel">
+      <Display X="630" Y="545" Width="390" Height="190" Anchor="TopHCenter" />
+    </Item>
+    <Item IfSystem="IsNotInTheList:52,68,75,20" TestOnly="true">
+      <Children>
+        <Item Type="Region2">
+          <Display X="45" Y="17" Width="80" Height="80" Anchor="TopHCenter" />
+        </Item>
+        <Item Type="Region1">
+          <Display X="95" Y="17" Width="80" Height="80" Anchor="TopHCenter" />
+        </Item>
+      </Children>
+    </Item>
+  </Drawings>
+</ImageComposition>

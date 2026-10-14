@@ -1,0 +1,562 @@
+﻿object FormGameLibrary: TFormGameLibrary
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnCloseQuery = FormCloseQuery
+  Caption = 'Библиотека игр'
+  ClientWidth = 1280
+  ClientHeight = 850
+  Position = ScreenCenter
+  Constraints.MinWidth = 1120
+  Constraints.MinHeight = 700
+  FormFactor.Width = 1280
+  FormFactor.Height = 850
+  FormFactor.Devices = [Desktop]
+  object Surface: TRectangle
+    Align = Contents
+    Size.PlatformDefault = False
+    Fill.Color = xFF202426
+    Stroke.Kind = None
+    HitTest = False
+  end
+  object RootLayout: TLayout
+    Align = Client
+    Size.PlatformDefault = False
+    Padding.Left = 24
+    Padding.Right = 24
+    Padding.Top = 16
+    Padding.Bottom = 16
+    object Header: TLayout
+      Align = Top
+      Size.PlatformDefault = False
+      Size.Height = 44
+      Margins.Bottom = 16
+      object HeaderIcon: TPath
+        Data.Path = {
+          7800000000000000CFF76F410000A040020000005D8C9641B1F09F4002000000
+          A87AAF41CAF5004102000000CF00B04168143E4102000000F686B04106337B41
+          020000006A7398415EEF964102000000D9CE7341CFF7974101000000CFF76F41
+          00009841010000003108104100009841020000008DCEA540D403984102000000
+          BF2A0440350A7F410200000010F3FF3F97EB414102000000A290F73FF9CC0441
+          0200000059329E408642A4400200000027310C41C420A0400100000019041041
+          0000A04003000000CFF76F410000A04000000000CFF76F410000D04001000000
+          310810410000D040020000008F18C04029CCCF400200000021506340D4410E41
+          02000000D6745F404A3B3E41020000008B995B40C0346E4102000000F817B940
+          FC0D8B4102000000057F0C41CFF78B41010000003C08104100008C4101000000
+          DAF76F4100008C4102000000E2F98F41F60C8C41020000000196A3412CBE7141
+          020000006B11A441B6C4414102000000D58CA44140CB11410200000008BA9141
+          10C8D3400200000007817341C320D04003000000CFF76F410000D04000000000
+          000000410000104102000000BF2E034100001041020000001E3C0641A8431141
+          020000003B7C0841C58313410200000058BC0A41E2C315410200000000000C41
+          41D118410200000000000C4100001C410100000000000C41CFF7334101000000
+          00002441CFF733410200000085492841CFF7334102000000AB3F2C4154413641
+          020000006E642E41CFF7394102000000318930414AAE3D410200000031893041
+          54414241020000006E642E41CFF7454102000000AB3F2C414AAE494102000000
+          85492841CFF74B410200000000002441CFF74B410100000000000C41CFF74B41
+          0100000000000C41000064410200000000000C4185496841020000007BB60941
+          AB3F6C4102000000000006416E646E4102000000854902413189704102000000
+          F66CFB4031897041020000000000F4406E646E41020000000A93EC40AB3F6C41
+          020000000000E84085496841020000000000E84000006441010000000000E840
+          CFF74B41010000000000B840CFF74B4102000000F66CAF40CFF74B4102000000
+          A980A7404AAE4941020000002437A340CFF74541020000009FED9E4054414241
+          020000009FED9E404AAE3D41020000002437A340CFF7394102000000A980A740
+          5441364102000000F66CAF40CFF73341020000000000B840CFF7334101000000
+          0000E840CFF73341010000000000E84000001C41020000000000E84041D11841
+          020000005087EA40E1C31541020000008907EF40C483134102000000C287F340
+          A74311410200000083A2F9400000104102000000000000410000104100000000
+          00006C41000048410200000033257341000048410200000073BF7941DECF4B41
+          020000000D527D41000052410200000053728041223058410200000053728041
+          DECF5F41020000000D527D41000066410200000073BF794122306C4102000000
+          33257341000070410200000000006C410000704102000000CDDA644100007041
+          020000008D405E4122306C4102000000F3AD5A410000664102000000591B5741
+          DECF5F4102000000591B57412230584102000000F3AD5A410000524102000000
+          8D405E41DECF4B4102000000CDDA6441000048410200000000006C4100004841
+          000000000000864100001041020000009A9289410000104102000000B9DF8C41
+          DECF13410200000006A98E4100001A4102000000537290412230204102000000
+          53729041DECF27410200000006A98E4100002E4102000000B9DF8C4122303441
+          020000009A9289410000384102000000000086410000384102000000666D8241
+          00003841020000008D407E412230344102000000F3AD7A4100002E4102000000
+          591B7741DECF274102000000591B77412230204102000000F3AD7A4100001A41
+          020000008D407E41DECF134102000000666D8241000010410200000000008641
+          00001041}
+        Size.Width = 50.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        Align = Left
+        Size.Width = 24
+        Margins.Right = 12
+        Fill.Color = xFF60CDFF
+        Stroke.Kind = None
+        WrapMode = Fit
+        HitTest = False
+      end
+      object TitleLabel: TLabel
+        Align = Client
+        Size.PlatformDefault = False
+        Size.Height = 26
+        Text = 'Библиотека игр'
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        StyledSettings = [Family, Style, FontColor]
+        TextSettings.Font.Size = 22
+      end
+    end
+    object Commands: TLayout
+      Align = Bottom
+      Size.PlatformDefault = False
+      Size.Height = 64
+      Padding.Top = 16
+      object CommandButtons: TGridPanelLayout
+        Align = Right
+        Size.PlatformDefault = False
+        Size.Width = 500
+        Padding.Bottom = 8
+        ColumnCollection = <
+          item SizeStyle = Absolute Value = 174 end
+          item SizeStyle = Absolute Value = 216 end
+          item SizeStyle = Absolute Value = 110 end>
+        RowCollection = <item SizeStyle = Percent Value = 100 end>
+        ControlCollection = <
+          item Column = 0 Control = SaveButton Row = 0 end
+          item Column = 1 Control = ScrapeButton Row = 0 end
+          item Column = 2 Control = CloseButton Row = 0 end>
+        object SaveButton: TButton
+          Align = Client
+          Size.PlatformDefault = False
+          Text = 'Сохранить игру'
+          Margins.Right = 10
+          OnClick = SaveClick
+        end
+        object ScrapeButton: TButton
+          Align = Client
+          Size.PlatformDefault = False
+          Text = 'Скраппинг этой игры'
+          Margins.Right = 10
+          OnClick = ScrapeClick
+        end
+        object CloseButton: TButton
+          Align = Client
+          Size.PlatformDefault = False
+          Text = 'Закрыть'
+          OnClick = CloseClick
+        end
+      end
+      object StatusLabel: TLabel
+        Align = Client
+        Size.PlatformDefault = False
+        Size.Height = 26
+        Text = 'Выберите игру в списке слева'
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        Margins.Right = 16
+      end
+    end
+    object FooterDivider: TRectangle
+      Align = Bottom
+      Size.PlatformDefault = False
+      Size.Height = 1
+      Fill.Color = xFF3D4245
+      Stroke.Kind = None
+      HitTest = False
+      Margins.Top = 16
+    end
+    object Body: TLayout
+      Align = Client
+      Size.PlatformDefault = False
+      object GamesPanel: TLayout
+        Align = Left
+        Size.PlatformDefault = False
+        Size.Width = 290
+        Margins.Right = 20
+        object PlatformHeader: TLayout
+          Align = Top
+          Size.PlatformDefault = False
+          Size.Height = 74
+          object PlatformLabel: TLabel
+            Align = Top
+            Size.PlatformDefault = False
+            Size.Height = 34
+            Text = 'Платформа'
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            StyledSettings = [Family, Style, FontColor]
+            TextSettings.Font.Size = 18
+          end
+          object CountLabel: TLabel
+            Align = Top
+            Size.PlatformDefault = False
+            Size.Height = 26
+            Text = 'Выберите игру'
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            Opacity = 0.7
+          end
+        end
+        object SearchEdit: TEdit
+          Align = Top
+          Size.PlatformDefault = False
+          Size.Height = 40
+          TextPrompt = 'Поиск игры или ROM'
+          OnChangeTracking = SearchChanged
+          Margins.Bottom = 12
+        end
+        object GameList: TListBox
+          Align = Client
+          Size.PlatformDefault = False
+          OnChange = GameChanged
+        end
+      end
+      object LibraryDivider: TRectangle
+        Align = Left
+        Size.PlatformDefault = False
+        Size.Width = 1
+        Fill.Color = xFF3D4245
+        Stroke.Kind = None
+        HitTest = False
+        Margins.Right = 24
+      end
+      object EditorPanel: TLayout
+        Align = Client
+        Size.PlatformDefault = False
+        object GameHeader: TLayout
+          Align = Top
+          Size.PlatformDefault = False
+          Size.Height = 72
+          object GameTitleLabel: TLabel
+            Align = Top
+            Size.PlatformDefault = False
+            Size.Height = 34
+            Text = 'Выберите игру'
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            StyledSettings = [Family, Style, FontColor]
+            TextSettings.Font.Size = 22
+          end
+          object GamePlatformLabel: TLabel
+            Align = Top
+            Size.PlatformDefault = False
+            Size.Height = 26
+            Text = ''
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            Opacity = 0.7
+          end
+        end
+        object TabActions: TLayout
+          Align = Top
+          Size.Height = 42
+          Size.PlatformDefault = False
+          object FieldsTabButton: TButton
+            Align = Left
+            Size.Width = 112
+            Size.PlatformDefault = False
+            StyleLookup = 'buttonstyle_subtle'
+            StaysPressed = True
+            Text = 'Поля игры'
+            OnClick = EditorTabClick
+            object FieldsTabLine: TRectangle
+              Align = Bottom
+              Size.Height = 3
+              Size.PlatformDefault = False
+              Margins.Left = 10
+              Margins.Right = 10
+              Fill.Color = xFF60CDFF
+              Stroke.Kind = None
+              HitTest = False
+            end
+          end
+          object XMLTabButton: TButton
+            Align = Left
+            Size.Width = 140
+            Size.PlatformDefault = False
+            StyleLookup = 'buttonstyle_subtle'
+            StaysPressed = True
+            Text = 'Все поля (XML)'
+            OnClick = EditorTabClick
+            object XMLTabLine: TRectangle
+              Align = Bottom
+              Size.Height = 3
+              Size.PlatformDefault = False
+              Margins.Left = 10
+              Margins.Right = 10
+              Fill.Color = xFF60CDFF
+              Stroke.Kind = None
+              HitTest = False
+              Visible = False
+            end
+          end
+        end
+        object EditorTabs: TTabControl
+          Align = Client
+          Size.PlatformDefault = False
+          OnChange = TabChanged
+          TabPosition = None
+          object FieldsTab: TTabItem
+            Text = 'Поля игры'
+            IsSelected = True
+            object FieldsBody: TLayout
+              Align = Client
+              Size.PlatformDefault = False
+              Padding.Top = 16
+              object FieldsScroll: TVertScrollBox
+                Align = Client
+                Size.PlatformDefault = False
+                ScrollAnimation = True
+                object FieldsContent: TLayout
+                  Align = Top
+                  Size.PlatformDefault = False
+                  Size.Height = 0
+                  Padding.Right = 12
+                end
+              end
+            end
+          end
+          object XMLTab: TTabItem
+            Text = 'Все поля (XML)'
+            IsSelected = False
+            object XMLMemo: TMemo
+              Align = Client
+              Size.PlatformDefault = False
+              OnChangeTracking = XMLChanged
+              TextSettings.WordWrap = False
+            end
+          end
+        end
+      end
+    end
+  end
+  object MediaDialog: TOpenDialog
+  end
+  object FieldRowTemplate: TGameFieldEditor
+    Visible = False
+    Align = Top
+    Size.Width = 850
+    Size.Height = 40
+    Size.PlatformDefault = False
+    Margins.Bottom = 18
+    object TemplateHeader: TLayout
+      Align = Left
+      Size.PlatformDefault = False
+      Size.Width = 170
+      StyleName = 'fieldheader'
+      Margins.Right = 18
+      object TemplateCaptionBand: TLayout
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 40
+        object TemplateInfo: TButton
+          Align = Right
+          Size.PlatformDefault = False
+          Size.Width = 32
+          StyleName = 'fieldinfo'
+          Text = ''
+          StyleLookup = 'buttonstyle_subtle'
+          ShowHint = True
+          object TemplateInfoIcon: TPath
+            Data.Path = {
+              4200000000000000310840413BDFFF3F0200000033338C413BDFFF3F02000000
+              2506B0419643CF40020000002506B04118044041020000002506B04126318C41
+              0200000033338C411804B04102000000310840411804B04102000000C74BCF40
+              1904B041020000000000004027318C4102000000000000401904404102000000
+              000000409643CF4002000000C74BCF403BDFFF3F02000000310840413BDFFF3F
+              00000000310840419EEF5F400200000076150F4111D05D40020000000040C340
+              6386A2400200000025FE91401422F7400200000096784140E2DE254102000000
+              8A78414027255A410200000015FE91408139824102000000E63FC3406F609741
+              0200000066150F410848A44102000000210840411904A441020000004A4A8541
+              9E9CA341020000005A4BA341CC47854102000000584BA3410602404102000000
+              564BA341E8E8EA4002000000424A8541582B63400200000012084041A0EF5F40
+              00000000000040410000284102000000BF2E434100002841020000001E3C4641
+              A8432941020000003B7C4841C5832B410200000058BC4A41E2C32D4102000000
+              00004C4141D130410200000000004C41000034410100000000004C4100008241
+              0200000000004C41C3248441020000007BB64941D61F86410200000000004641
+              37328741020000008549424198448841020000007BB63D419844884102000000
+              00003A41373287410200000085493641D61F86410200000000003441C3248441
+              0200000000003441000082410100000000003441000034410200000000003441
+              41D1304102000000A8433541E1C32D4102000000C5833741C4832B4102000000
+              E2C33941A74329410200000041D13C4100002841020000000000404100002841
+              0000000000004041000010410200000028D64841000010410200000000005041
+              28D608410200000000005041000000410200000000005041AF53EE4002000000
+              28D648410000E04002000000000040410000E04002000000D82937410000E040
+              0200000000003041AF53EE400200000000003041000000410200000000003041
+              29D6084102000000D729374100001041020000000000404100001041}
+            Size.Width = 50.000000000000000000
+            Size.Height = 50.000000000000000000
+            Size.PlatformDefault = False
+            StyleName = 'fieldinfoicon'
+            Align = Client
+            Margins.Left = 6
+            Margins.Top = 6
+            Margins.Right = 6
+            Margins.Bottom = 6
+            Fill.Color = xFF60CDFF
+            Stroke.Kind = None
+            WrapMode = Fit
+            HitTest = False
+          end
+        end
+        object TemplateCaption: TLabel
+          Align = Client
+          Size.PlatformDefault = False
+          Size.Height = 26
+          Text = ''
+          TextSettings.WordWrap = False
+          TextSettings.Trimming = Character
+          StyleName = 'fieldcaption'
+          TextSettings.VertAlign = Leading
+          Padding.Top = 10
+        end
+      end
+    end
+    object TemplateMediaImage: TImage
+      Align = Left
+      Size.PlatformDefault = False
+      Size.Width = 104
+      StyleName = 'fieldmediaimage'
+      Margins.Right = 16
+      WrapMode = Fit
+      Visible = False
+      HitTest = False
+    end
+    object TemplateValueColumn: TLayout
+      Align = Client
+      Size.PlatformDefault = False
+      StyleName = 'fieldvaluecolumn'
+      object TemplateInputFrame: TLayout
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 40
+        StyleName = 'fieldinputframe'
+        object TemplateHelp: TMemo
+          Align = Right
+          Size.PlatformDefault = False
+          Size.Height = 128
+          Size.Width = 250
+          StyleName = 'fieldhelp'
+          Visible = False
+          ReadOnly = True
+          TextSettings.WordWrap = True
+          Margins.Left = 16
+        end
+        object TemplateEditorArea: TLayout
+          Align = Client
+          Size.PlatformDefault = False
+          StyleName = 'fieldeditorarea'
+          object TemplateInputControls: TLayout
+            Align = Top
+            Size.Height = 40
+            Size.PlatformDefault = False
+            StyleName = 'fieldinputcontrols'
+            object TemplateEdit: TEdit
+              Align = Client
+              Size.Height = 40
+              Size.PlatformDefault = False
+              StyleName = 'fieldedit'
+            end
+            object TemplateMemo: TMemo
+              Align = Client
+              Size.Height = 104
+              Size.PlatformDefault = False
+              StyleName = 'fieldmemo'
+              Visible = False
+              TextSettings.WordWrap = True
+            end
+            object TemplateErrorFrame: TRectangle
+              Align = Contents
+              Size.PlatformDefault = False
+              StyleName = 'fielderrorframe'
+              Fill.Kind = None
+              Stroke.Color = xFFFF8E8E
+              Stroke.Thickness = 1.5
+              XRadius = 4
+              YRadius = 4
+              Visible = False
+              HitTest = False
+            end
+          end
+          object TemplateError: TLabel
+            Align = Top
+            Size.PlatformDefault = False
+            Size.Height = 44
+            Text = ''
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            StyleName = 'fielderror'
+            Visible = False
+            StyledSettings = [Family, Size, Style]
+            TextSettings.WordWrap = True
+            TextSettings.FontColor = xFFFF8E8E
+          end
+        end
+      end
+      object TemplateMediaCommands: TLayout
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 48
+        StyleName = 'fieldmediacommands'
+        Visible = False
+        Padding.Top = 8
+        object TemplateReplace: TButton
+          Align = Left
+          Size.PlatformDefault = False
+          Size.Width = 158
+          StyleName = 'fieldreplace'
+          Text = 'Выбрать файл…'
+          Margins.Right = 8
+        end
+        object TemplateClear: TButton
+          Align = Left
+          Size.PlatformDefault = False
+          Size.Width = 104
+          StyleName = 'fieldclear'
+          Text = 'Очистить'
+        end
+      end
+      object TemplateMediaNote: TLabel
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 28
+        Text = ''
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        StyleName = 'fieldmedianote'
+        Visible = False
+        Opacity = 0.7
+      end
+    end
+  end
+  object FieldInfoIconTemplate: TPath
+      Data.Path = {
+        4200000000000000310840413BDFFF3F0200000033338C413BDFFF3F02000000
+        2506B0419643CF40020000002506B04118044041020000002506B04126318C41
+        0200000033338C411804B04102000000310840411804B04102000000C74BCF40
+        1904B041020000000000004027318C4102000000000000401904404102000000
+        000000409643CF4002000000C74BCF403BDFFF3F02000000310840413BDFFF3F
+        00000000310840419EEF5F400200000076150F4111D05D40020000000040C340
+        6386A2400200000025FE91401422F7400200000096784140E2DE254102000000
+        8A78414027255A410200000015FE91408139824102000000E63FC3406F609741
+        0200000066150F410848A44102000000210840411904A441020000004A4A8541
+        9E9CA341020000005A4BA341CC47854102000000584BA3410602404102000000
+        564BA341E8E8EA4002000000424A8541582B63400200000012084041A0EF5F40
+        00000000000040410000284102000000BF2E434100002841020000001E3C4641
+        A8432941020000003B7C4841C5832B410200000058BC4A41E2C32D4102000000
+        00004C4141D130410200000000004C41000034410100000000004C4100008241
+        0200000000004C41C3248441020000007BB64941D61F86410200000000004641
+        37328741020000008549424198448841020000007BB63D419844884102000000
+        00003A41373287410200000085493641D61F86410200000000003441C3248441
+        0200000000003441000082410100000000003441000034410200000000003441
+        41D1304102000000A8433541E1C32D4102000000C5833741C4832B4102000000
+        E2C33941A74329410200000041D13C4100002841020000000000404100002841
+        0000000000004041000010410200000028D64841000010410200000000005041
+        28D608410200000000005041000000410200000000005041AF53EE4002000000
+        28D648410000E04002000000000040410000E04002000000D82937410000E040
+        0200000000003041AF53EE400200000000003041000000410200000000003041
+        29D6084102000000D729374100001041020000000000404100001041}
+      Visible = False
+      HitTest = False
+      Fill.Color = xFF60CDFF
+      Stroke.Kind = None
+      WrapMode = Fit
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+end

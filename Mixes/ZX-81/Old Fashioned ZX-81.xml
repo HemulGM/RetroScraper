@@ -1,0 +1,24 @@
+﻿<ImageComposition xsi:noNamespaceSchemaLocation="https://www.skraper.net/ImageComposition.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Information ShortName="ZX-81 4:3" LongName="Old Fashioned ZX81" Description="Old fashioned TV with sepia colors for the Father of the Fathers!" Author="Bkg2k" />
+  <Viewport Color="#00FFFFFF" Width="800" Height="600" />
+  <Drawings>
+    <Item Type="LocalFile" LocalFilePath="tv.png">
+      <Display X="0" Y="0" Width="100%" Height="100%" Anchor="TopLeft" />
+      <Children Reference="Parent">
+        <Item Type="Include" LocalFilePath="ScreenShot.include.xml">
+          <Display Mode="Barrel" BarrelLevel="4" X="5.89%" Y="11.05%" Width="62.54%" Height="54.94%" Antialiasing="High" />
+        </Item>
+      </Children>
+    </Item>
+    <Item Type="LocalFile" LocalFilePath="tv.png">
+      <Display X="0" Y="0" Width="100%" Height="100%" Anchor="TopLeft" />
+    </Item>
+    <Item Type="SystemPhoto">
+      <Display X="100%" Y="100%" Width="40%" Height="60%" Anchor="BottomRight" />
+    </Item>
+    <Item Type="Wheel">
+      <Display X="0%" Y="100%" Width="75%" Height="30%" Anchor="BottomLeft" />
+      <Fallback Type="Text" Text="%name%" TextColor="#FFFFFFFF"  TextAlign="VCenterHCenter" FontFile="ka1.ttf" />
+    </Item>
+  </Drawings>
+</ImageComposition>

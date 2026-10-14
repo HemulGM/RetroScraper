@@ -1,0 +1,57 @@
+<ImageComposition xsi:noNamespaceSchemaLocation="https://www.skraper.net/ImageComposition.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Information ShortName="HomeArcade HD"
+               LongName="Home Arcade HD 4:3"
+               Description="Home Arcade cabinet w/ resources mapping"
+               Author="MarbleMad &amp; Bkg2k" />
+  <Viewport Color="#00FFFFFF" Width="1280" Height="960" />
+  <Drawings>
+    <!-- Wheel on right -->
+    <Item Type="Wheel">
+      <Display X="75%" Y="25%" Width="50%" Height="50%" Anchor="VCenterHCenter" />
+      <Fallback Type="Text" Text="%name%" TextColor="#FFFFFFFF" FontFamilly="Stencil Std" FontStyle="Bold Italic" />
+    </Item>
+    <!-- System Wheel on right -->
+    <Item Type="SystemWheel">
+      <Display X="100%" Y="50%" Width="30%" Height="30%" Anchor="TopRight" />
+    </Item>
+    <!-- Horizontal cabinet - Used as new reference for childrens -->
+    <Item Type="LocalFile" LocalFilePath="HomeCabinetH.png">
+      <Display X="0%" Y="0%" Width="100!" Height="100%" Anchor="TopLeft" />
+      <Children Reference="Parent">
+        <!-- Let the screenshot draw in another 4:3 Composition and project the result on the cabinet's screen -->
+        <Item Type="Include" LocalFilePath="ScreenShot.include.xml">
+          <Display Mode="Distord" X="8.73%" Y="27.45%" X2="57.89%" Y2="28.48%" X3="76.43%" Y3="62.35%" X4="28.58%" Y4="67.04%" Antialiasing="High" />
+        </Item>
+        <!-- Marquee projection -->
+        <Item Type ="Marquee">
+          <Display Mode="Distord" X="15.43%" Y="2.28%" X2="63.99%" Y2="7.43%" X3="69.25%" Y3="19.10%" X4="20.81%" Y4="16.24%" Antialiasing="High" />
+          <Fallback Type="ScreenMarqueeSmall">
+            <Fallback Type="LocalFile" LocalFilePath="ArcadeMarquee.jpg" />
+          </Fallback>
+        </Item>
+        <!-- Redraw the cabinet on top to apply screen/marquee antialias and shadows -->
+        <Item Type="LocalFile" LocalFilePath="HomeCabinetH.png">
+          <Display X="0%" Y="0%" Width="100%" Height="100%" Anchor="TopLeft" />
+        </Item>
+      </Children>
+    </Item>
+  </Drawings>
+</ImageComposition>
+
+<!--
+
+Cabinet: 836*874
+
+Marquee:          
+x1,y1 = 129,20  = 15.43,02.28
+x2,y2 = 535,65  = 63.99,07.43
+x3,y3 = 579,167 = 69.25,19.10
+x4,y4 = 174,142 = 20.81,16.24
+
+Screen:
+x1,y1 = 73 ,240 = 08.73,27.45
+x2,y2 = 484,249 = 57.89,28.48
+x3,y3 = 639,545 = 76.43,62.35
+x4,y4 = 239,586 = 28.58,67.04
+
+-->

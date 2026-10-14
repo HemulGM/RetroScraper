@@ -1,0 +1,1752 @@
+﻿object FormSetup: TFormSetup
+  Left = 0
+  Top = 0
+  BorderStyle = Single
+  Caption = #1044#1086#1073#1072#1074#1083#1077#1085#1080#1077' '#1089#1080#1089#1090#1077#1084
+  ClientHeight = 760
+  ClientWidth = 1200
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop, iPhone, iPad]
+  OnCreate = FormCreate
+  OnCloseQuery = FormCloseQuery
+  OnResize = FormResize
+  DesignerMasterStyle = 0
+  object SetupSurface: TRectangle
+    Align = Contents
+    Fill.Color = xFF222222
+    HitTest = False
+    Size.Width = 1200.000000000000000000
+    Size.Height = 760.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Kind = None
+  end
+  object SetupCommandsLayout: TLayout
+    Align = Bottom
+    Position.Y = 682.000000000000000000
+    Size.Width = 1200.000000000000000000
+    Size.Height = 78.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object WizardFooterDivider: TRectangle
+      Align = Top
+      Fill.Color = xFF414141
+      HitTest = False
+      Size.Width = 1200.000000000000000000
+      Size.Height = 1.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+    end
+    object WizardHelpButton: TButton
+      Align = Left
+      Margins.Left = 32.000000000000000000
+      Margins.Top = 18.000000000000000000
+      Margins.Bottom = 18.000000000000000000
+      Position.X = 32.000000000000000000
+      Position.Y = 19.000000000000000000
+      Size.Width = 124.000000000000000000
+      Size.Height = 41.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'buttonstyle_subtle'
+      OnClick = WizardHelpClick
+      object WizardHelpIconLayout: TLayout
+        Align = Left
+        Size.Width = 32.000000000000000000
+        Size.Height = 41.000000000000000000
+        Size.PlatformDefault = False
+        object WizardHelpIcon: TPath
+          Align = Center
+          Data.Path = {
+            53000000000000000000404100000040020000001B2F8C410000004002000000
+            0000B041C74BCF40020000000000B04100004041020000000000B0410E2D8C41
+            020000001B2F8C410000B04102000000000040410000B041020000009643CF40
+            0000B04102000000000000400E2D8C4102000000000000400000404102000000
+            00000040C74BCF40020000009643CF4000000040020000000000404100000040
+            030000000000404100000040000000000000404121B06A4002000000C3F5EC40
+            21B06A400200000021B06A40C3F5EC400200000021B06A400000404102000000
+            21B06A408FC2844102000000C3F5EC40FCA9A2410200000000004041FCA9A241
+            020000008FC28441FCA9A24102000000FCA9A2418FC2844102000000FCA9A241
+            0000404102000000FCA9A241C3F5EC40020000008FC2844121B06A4002000000
+            0000404121B06A40030000000000404121B06A40000000000000404100007841
+            0200000039D64841000078410200000000005041C7297F410200000000005041
+            0000844102000000000050411C6B88410200000039D6484100008C4102000000
+            0000404100008C4102000000C729374100008C4102000000000030411C6B8841
+            0200000000003041000084410200000000003041C7297F4102000000C7293741
+            0000784102000000000040410000784103000000000040410000784100000000
+            000040410000D84002000000014D58410000D8400200000000006C412766FF40
+            0200000000006C41000018410200000000006C413D2C284102000000713D6741
+            1B2F314102000000B22E5B41D3BC3D41010000001C7C58411C7C404102000000
+            CE884E41696F4A410200000000004C412AA94E410200000000004C4100005841
+            0200000000004C4190A05E410200000090A04641000064410200000000004041
+            0000644102000000705F394100006441020000000000344190A05E4102000000
+            00003441000058410200000000003441C3D34741020000008FC23841E5D03E41
+            020000004ED144412D43324101000000E4834741E4832F410200000032775141
+            979025410200000000005441D656214102000000000054410000184102000000
+            0000544149F40C4102000000E10B4B4100000441020000000000404100000441
+            0200000012A535410000044102000000C5202D41B3DE0B4102000000A01A2C41
+            7EF415410100000000002C41000018410200000000002C419BA01E4102000000
+            90A026410000244102000000000020410000244102000000655F194100002441
+            02000000000014419BA01E410200000000001441000018410200000000001441
+            2766FF4002000000FFB227410000D84002000000000040410000D84003000000
+            000040410000D840}
+          Fill.Color = xFFE6E6E6
+          HitTest = False
+          Size.Width = 24.000000000000000000
+          Size.Height = 24.000000000000000000
+          Size.PlatformDefault = False
+          Stroke.Kind = None
+          WrapMode = Fit
+        end
+      end
+      object WizardHelpText: TLabel
+        Align = Client
+        StyledSettings = [Family]
+        Margins.Left = 8.000000000000000000
+        Size.Width = 84.000000000000000000
+        Size.Height = 41.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.FontColor = xFFF3F3F3
+        TextSettings.WordWrap = False
+        Text = #1055#1086#1084#1086#1097#1100
+      end
+    end
+    object BackButton: TButton
+      Align = Left
+      Margins.Left = 12.000000000000000000
+      Margins.Top = 18.000000000000000000
+      Margins.Bottom = 18.000000000000000000
+      Size.Width = 120.000000000000000000
+      Size.Height = 40.000000000000000000
+      Size.PlatformDefault = False
+      Text = #1053#1072#1079#1072#1076
+      Visible = False
+      OnClick = BackButtonClick
+    end
+    object SetupActionLayout: TLayout
+      Align = Right
+      Margins.Top = 18.000000000000000000
+      Margins.Right = 24.000000000000000000
+      Margins.Bottom = 18.000000000000000000
+      Position.X = 920.000000000000000000
+      Position.Y = 19.000000000000000000
+      Size.Width = 340.000000000000000000
+      Size.Height = 41.000000000000000000
+      Size.PlatformDefault = False
+      object CancelButton: TButton
+        Align = Left
+        StyledSettings = [Family, Style, FontColor]
+        Margins.Right = 12.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 41.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 11
+        Text = #1054#1090#1084#1077#1085#1072
+        TextSettings.Font.Size = 14.000000000000000000
+        OnClick = CancelButtonClick
+      end
+      object ApplyButton: TButton
+        Align = Client
+        StyledSettings = [Family, Style, FontColor]
+        Size.Width = 124.000000000000000000
+        Size.Height = 41.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'buttonstyle_accent'
+        TabOrder = 10
+        Text = #1044#1086#1073#1072#1074#1080#1090#1100
+        TextSettings.Font.Size = 14.000000000000000000
+        OnClick = ApplyButtonClick
+      end
+    end
+  end
+  object WizardHeaderLayout: TLayout
+    Align = Top
+    Padding.Left = 40.000000000000000000
+    Padding.Top = 20.000000000000000000
+    Padding.Right = 36.000000000000000000
+    Size.Width = 1200.000000000000000000
+    Size.Height = 156.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object TitleLabel: TLabel
+      Align = Top
+      StyledSettings = [Family]
+      Position.X = 40.000000000000000000
+      Position.Y = 20.000000000000000000
+      Size.Width = 1124.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 32.000000000000000000
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      TextSettings.FontColor = xFFF3F3F3
+      Text = #1057#1080#1089#1090#1077#1084#1099' '#1080' '#1080#1075#1088#1086#1074#1072#1103' '#1086#1073#1086#1083#1086#1095#1082#1072
+      TabOrder = 0
+    end
+    object WizardSubtitle: TLabel
+      Align = Top
+      StyledSettings = [Family]
+      Position.X = 40.000000000000000000
+      Position.Y = 64.000000000000000000
+      Size.Width = 1124.000000000000000000
+      Size.Height = 30.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 20.000000000000000000
+      TextSettings.FontColor = xFFB7BFC8
+      TextSettings.WordWrap = False
+      Text = #1055#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077' '#1082' ScreenScraper '#1080' '#1079#1072#1075#1088#1091#1079#1082#1072' '#1088#1077#1089#1091#1088#1089#1086#1074
+    end
+    object WizardSteps: TGridPanelLayout
+      Align = Top
+      HitTest = False
+      Margins.Top = 10.000000000000000000
+      Position.X = 40.000000000000000000
+      Position.Y = 112.000000000000000000
+      Size.Width = 1124.000000000000000000
+      Size.Height = 44.000000000000000000
+      Size.PlatformDefault = False
+      ColumnCollection = <
+        item
+          Value = 42.000000000000000000
+        end
+        item
+          Value = 40.000000000000000000
+        end
+        item
+          Value = 18.000000000000000000
+        end>
+      ControlCollection = <
+        item
+          Column = 0
+          Control = WizardStep1
+          Row = 0
+        end
+        item
+          Column = 1
+          Control = WizardStep2
+          Row = 0
+        end
+        item
+          Column = 2
+          Control = WizardStep3
+          Row = 0
+        end>
+      RowCollection = <
+        item
+          Value = 100.000000000000000000
+        end>
+      object WizardStep1: TLayout
+        Align = Client
+        Padding.Left = 90.000000000000000000
+        Size.Width = 472.079986572265600000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        object WizardStep1CircleLayout: TLayout
+          Align = Left
+          Position.X = 90.000000000000000000
+          Size.Width = 34.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          object WizardStep1Circle: TCircle
+            Align = Center
+            Fill.Kind = None
+            Size.Width = 34.000000000000000000
+            Size.Height = 34.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Color = xFF777777
+            object WizardStep1Number: TLabel
+              Align = Contents
+              StyledSettings = [Family]
+              Size.Width = 34.000000000000000000
+              Size.Height = 34.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 18.000000000000000000
+              TextSettings.FontColor = xFFB7BFC8
+              TextSettings.HorzAlign = Center
+              TextSettings.WordWrap = False
+              Text = '1'
+            end
+          end
+        end
+        object WizardStep1Text: TLabel
+          Align = Left
+          StyledSettings = [Family]
+          Margins.Left = 12.000000000000000000
+          Position.X = 136.000000000000000000
+          Size.Width = 118.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 16.000000000000000000
+          TextSettings.FontColor = xFFB7BFC8
+          TextSettings.WordWrap = False
+          Text = #1055#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077
+        end
+        object WizardStep1Connector: TLayout
+          Align = Client
+          Margins.Left = 10.000000000000000000
+          Margins.Right = 12.000000000000000000
+          Size.Width = 196.079986572265600000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          object WizardStep1LineLayout: TLayout
+            Align = VertCenter
+            Position.Y = 21.000000000000000000
+            Size.Width = 196.079986572265600000
+            Size.Height = 1.000000000000000000
+            Size.PlatformDefault = False
+            object WizardStep1Line: TRectangle
+              Align = Client
+              Fill.Color = xFF777777
+              HitTest = False
+              Size.Width = 96.079986572265630000
+              Size.Height = 1.000000000000000000
+              Size.PlatformDefault = False
+              Stroke.Kind = None
+            end
+            object WizardStep1LineActive: TRectangle
+              Align = Contents
+              Fill.Color = xFF4CC9F0
+              HitTest = False
+              Size.Width = 100.000000000000000000
+              Size.Height = 1.000000000000000000
+              Size.PlatformDefault = False
+              Stroke.Kind = None
+            end
+          end
+        end
+      end
+      object WizardStep2: TLayout
+        Align = Client
+        Padding.Left = 24.000000000000000000
+        Size.Width = 449.600006103515600000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        object WizardStep2CircleLayout: TLayout
+          Align = Left
+          Position.X = 24.000000000000000000
+          Size.Width = 34.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          object WizardStep2Circle: TCircle
+            Align = Center
+            Fill.Kind = None
+            Size.Width = 34.000000000000000000
+            Size.Height = 34.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Color = xFF777777
+            object WizardStep2Number: TLabel
+              Align = Contents
+              StyledSettings = [Family]
+              Size.Width = 34.000000000000000000
+              Size.Height = 34.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 18.000000000000000000
+              TextSettings.FontColor = xFFB7BFC8
+              TextSettings.HorzAlign = Center
+              TextSettings.WordWrap = False
+              Text = '2'
+            end
+          end
+        end
+        object WizardStep2Text: TLabel
+          Align = Left
+          StyledSettings = [Family]
+          Margins.Left = 12.000000000000000000
+          Position.X = 70.000000000000000000
+          Size.Width = 118.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 16.000000000000000000
+          TextSettings.FontColor = xFFB7BFC8
+          TextSettings.WordWrap = False
+          Text = #1055#1083#1072#1090#1092#1086#1088#1084#1099
+        end
+        object WizardStep2Connector: TLayout
+          Align = Client
+          Margins.Left = 10.000000000000000000
+          Margins.Right = 12.000000000000000000
+          Size.Width = 239.600006103515600000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          object WizardStep2LineLayout: TLayout
+            Align = VertCenter
+            Position.Y = 21.000000000000000000
+            Size.Width = 239.600006103515600000
+            Size.Height = 1.000000000000000000
+            Size.PlatformDefault = False
+            object WizardStep2Line: TRectangle
+              Align = Client
+              Fill.Color = xFF777777
+              HitTest = False
+              Size.Width = 139.600006103515600000
+              Size.Height = 1.000000000000000000
+              Size.PlatformDefault = False
+              Stroke.Kind = None
+            end
+            object WizardStep2LineActive: TRectangle
+              Align = Contents
+              Fill.Color = xFF4CC9F0
+              HitTest = False
+              Size.Width = 100.000000000000000000
+              Size.Height = 1.000000000000000000
+              Size.PlatformDefault = False
+              Stroke.Kind = None
+            end
+          end
+        end
+      end
+      object WizardStep3: TLayout
+        Align = Client
+        Padding.Left = 32.000000000000000000
+        Size.Width = 202.320007324218800000
+        Size.Height = 44.000000000000000000
+        Size.PlatformDefault = False
+        object WizardStep3CircleLayout: TLayout
+          Align = Left
+          Position.X = 32.000000000000000000
+          Size.Width = 34.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          object WizardStep3Circle: TCircle
+            Align = Center
+            Fill.Kind = None
+            Size.Width = 34.000000000000000000
+            Size.Height = 34.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Color = xFF777777
+            object WizardStep3Number: TLabel
+              Align = Contents
+              StyledSettings = [Family]
+              Size.Width = 34.000000000000000000
+              Size.Height = 34.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 18.000000000000000000
+              TextSettings.FontColor = xFFB7BFC8
+              TextSettings.HorzAlign = Center
+              TextSettings.WordWrap = False
+              Text = '3'
+            end
+          end
+        end
+        object WizardStep3Text: TLabel
+          Align = Left
+          StyledSettings = [Family]
+          Margins.Left = 12.000000000000000000
+          Position.X = 78.000000000000000000
+          Size.Width = 70.000000000000000000
+          Size.Height = 44.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 16.000000000000000000
+          TextSettings.FontColor = xFFB7BFC8
+          TextSettings.WordWrap = False
+          Text = #1048#1090#1086#1075
+        end
+      end
+    end
+  end
+  object SetupBodyLayout: TLayout
+    Align = Client
+    Margins.Left = 40.000000000000000000
+    Margins.Right = 36.000000000000000000
+    Size.Width = 1124.000000000000000000
+    Size.Height = 526.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    object WizardSummaryLayout: TLayout
+      Align = Client
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Visible = False
+      object WizardSummaryInfo: TLabel
+        Align = Top
+        StyledSettings = [Family, Style]
+        Size.Width = 50.000000000000000000
+        Size.Height = 64.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.FontColor = xFFE6E6E6
+        Text = 
+          #1055#1088#1086#1074#1077#1088#1100#1090#1077' '#1085#1072#1081#1076#1077#1085#1085#1099#1077' '#1087#1083#1072#1090#1092#1086#1088#1084#1099'. '#1057#1086#1093#1088#1072#1085#1077#1085#1080#1077' '#1079#1072#1084#1077#1085#1080#1090' '#1087#1088#1077#1078#1085#1080#1081' '#1089#1087#1080#1089#1086#1082 +
+          ' '#1089#1080#1089#1090#1077#1084'; '#1086#1090#1084#1077#1085#1072' '#1089#1086#1093#1088#1072#1085#1080#1090' '#1087#1088#1077#1078#1085#1080#1077' '#1085#1072#1089#1090#1088#1086#1081#1082#1080'.'
+      end
+      object WizardSummaryFrontend: TLabel
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 24
+        StyledSettings = [Family]
+        TextSettings.Font.Size = 14
+        TextSettings.FontColor = xFFB7BFC8
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        Text = ''
+      end
+      object WizardSummaryRoot: TLabel
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 24
+        StyledSettings = [Family]
+        TextSettings.Font.Size = 14
+        TextSettings.FontColor = xFFB7BFC8
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        Text = ''
+        ShowHint = True
+      end
+      object WizardSummaryHome: TLabel
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 24
+        StyledSettings = [Family]
+        TextSettings.Font.Size = 14
+        TextSettings.FontColor = xFFB7BFC8
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        Text = ''
+        ShowHint = True
+        Visible = False
+      end
+      object WizardSummaryCount: TLabel
+        Align = Top
+        Size.PlatformDefault = False
+        Size.Height = 24
+        StyledSettings = [Family]
+        TextSettings.Font.Size = 14
+        TextSettings.FontColor = xFFB7BFC8
+        TextSettings.WordWrap = False
+        TextSettings.Trimming = Character
+        Text = ''
+        Margins.Bottom = 12
+      end
+      object WizardSummaryCard: TRectangle
+        Align = Client
+        Size.PlatformDefault = False
+        Margins.Bottom = 16
+        Fill.Color = xFF2D2D2D
+        Stroke.Color = xFF454545
+        XRadius = 8
+        YRadius = 8
+        Padding.Left = 8
+        Padding.Top = 8
+        Padding.Right = 8
+        Padding.Bottom = 8
+        object WizardSummaryHeader: TGridPanelLayout
+          Align = Top
+          Size.PlatformDefault = False
+          Size.Height = 40
+          HitTest = False
+          ColumnCollection = <
+            item
+              Value = 35.000000
+            end
+            item
+              Value = 65.000000
+            end>
+          RowCollection = <
+            item
+              Value = 100.000000
+            end>
+          ControlCollection = <
+            item
+              Column = 0
+              Control = WizardSummaryPlatformColumn
+              Row = 0
+            end
+            item
+              Column = 1
+              Control = WizardSummaryFolderColumn
+              Row = 0
+            end>
+          object WizardSummaryPlatformColumn: TLabel
+            Align = Client
+            Size.PlatformDefault = False
+            Size.Height = 40
+            StyledSettings = [Family]
+            TextSettings.Font.Size = 14
+            TextSettings.FontColor = xFFF3F3F3
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            Text = 'Платформа'
+            Margins.Left = 12
+            Margins.Right = 12
+          end
+          object WizardSummaryFolderColumn: TLabel
+            Align = Client
+            Size.PlatformDefault = False
+            Size.Height = 40
+            StyledSettings = [Family]
+            TextSettings.Font.Size = 14
+            TextSettings.FontColor = xFFF3F3F3
+            TextSettings.WordWrap = False
+            TextSettings.Trimming = Character
+            Text = 'Папка ROM'
+            Margins.Left = 12
+            Margins.Right = 12
+          end
+        end
+        object WizardSummaryDivider: TRectangle
+          Align = Top
+          Size.PlatformDefault = False
+          Size.Height = 1
+          Fill.Color = xFF454545
+          Stroke.Kind = None
+          HitTest = False
+        end
+        object WizardSummary: TListBox
+          Align = Client
+          Size.PlatformDefault = False
+          Margins.Top = 4
+          ItemHeight = 44
+          ShowScrollBars = True
+          ShowHint = True
+          OnMouseMove = SummaryMouseMove
+          AlternatingRowBackground = True
+          TabOrder = 0
+        end
+      end
+    end
+    object PlatformPanel: TRectangle
+      Align = Right
+      Fill.Color = xFF2D2D2D
+      Margins.Left = 24.000000000000000000
+      Position.X = 616.000000000000000000
+      Size.Width = 508.000000000000000000
+      Size.Height = 526.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Color = xFF454545
+      XRadius = 8.000000000000000000
+      YRadius = 8.000000000000000000
+      Margins.Bottom = 16.000000000000000000
+      object SystemLabel: TLabel
+        Align = Top
+        StyledSettings = [Family, Style, FontColor]
+        Margins.Left = 20.000000000000000000
+        Margins.Top = 12.000000000000000000
+        Margins.Right = 20.000000000000000000
+        Margins.Bottom = 12.000000000000000000
+        Position.X = 20.000000000000000000
+        Position.Y = 12.000000000000000000
+        Size.Width = 468.000000000000000000
+        Size.Height = 28.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 18.000000000000000000
+        Text = #1055#1083#1072#1090#1092#1086#1088#1084#1072
+        TabOrder = 6
+      end
+      object PlatformSearch: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        Align = Top
+        TabOrder = 0
+        Position.X = 20.000000000000000000
+        Position.Y = 52.000000000000000000
+        Margins.Left = 20.000000000000000000
+        Margins.Right = 20.000000000000000000
+        Margins.Bottom = 12.000000000000000000
+        Size.Width = 468.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        TextPrompt = #1055#1086#1080#1089#1082' '#1087#1086' '#1085#1072#1079#1074#1072#1085#1080#1102' '#1080#1083#1080' ID'
+        OnChangeTracking = SearchChanged
+      end
+      object ShowCategories: TCheckBox
+        Align = Top
+        Margins.Left = 20.000000000000000000
+        Margins.Right = 20.000000000000000000
+        Margins.Bottom = 8.000000000000000000
+        Position.X = 20.000000000000000000
+        Position.Y = 100.000000000000000000
+        Size.Width = 468.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        Text = #1043#1088#1091#1087#1087#1080#1088#1086#1074#1072#1090#1100' '#1087#1086' '#1082#1072#1090#1077#1075#1086#1088#1080#1103#1084
+        OnChange = SearchChanged
+      end
+      object SystemList: TListBox
+        Align = Client
+        Margins.Left = 12.000000000000000000
+        Margins.Right = 12.000000000000000000
+        Margins.Bottom = 6.000000000000000000
+        Size.Width = 484.000000000000000000
+        Size.Height = 344.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        ScrollAnimation = True
+        DisableFocusEffect = True
+        ItemHeight = 36.000000000000000000
+        DefaultItemStyles.ItemStyle = ''
+        DefaultItemStyles.GroupHeaderStyle = ''
+        DefaultItemStyles.GroupFooterStyle = ''
+        OnChange = SelectionChanged
+        Viewport.Width = 480.000000000000000000
+        Viewport.Height = 340.000000000000000000
+      end
+      object PlatformCount: TLabel
+        Align = Bottom
+        StyledSettings = [Family, Style]
+        Margins.Left = 28.000000000000000000
+        Margins.Right = 28.000000000000000000
+        Margins.Bottom = 12.000000000000000000
+        Position.X = 28.000000000000000000
+        Position.Y = 490.000000000000000000
+        Size.Width = 452.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.FontColor = xFFAAAAAA
+        Text = #1053#1072#1081#1076#1077#1085#1086' '#1087#1083#1072#1090#1092#1086#1088#1084': 0'
+      end
+      object EmptyLabelFrame: TLayout
+        Align = Contents
+        Size.Width = 508.000000000000000000
+        Size.Height = 526.000000000000000000
+        Size.PlatformDefault = False
+        object EmptyLabelRow: TLayout
+          Align = Top
+          Margins.Top = 164.000000000000000000
+          Position.Y = 164.000000000000000000
+          Size.Width = 508.000000000000000000
+          Size.Height = 80.000000000000000000
+          Size.PlatformDefault = False
+          object EmptyLabel: TLabel
+            Align = Left
+            StyledSettings = [Family, Style]
+            Margins.Left = 28.000000000000000000
+            Position.X = 28.000000000000000000
+            Size.Width = 452.000000000000000000
+            Size.Height = 80.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.FontColor = xFFAAAAAA
+            Text = #1050#1072#1090#1072#1083#1086#1075' '#1087#1083#1072#1090#1092#1086#1088#1084' '#1087#1091#1089#1090
+          end
+        end
+      end
+    end
+    object SetupSourceLayout: TLayout
+      Align = Client
+      Size.Width = 592.000000000000000000
+      Size.Height = 526.000000000000000000
+      Size.PlatformDefault = False
+      object FrontEndLabel: TLabel
+        Align = Top
+        StyledSettings = [Family, Style, FontColor]
+        Margins.Top = 4.000000000000000000
+        Position.Y = 4.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
+        Text = #1048#1075#1088#1086#1074#1072#1103' '#1086#1073#1086#1083#1086#1095#1082#1072
+        TabOrder = 1
+      end
+      object FrontEndCombo: TComboBox
+        Align = Top
+        DisableMouseWheel = True
+        Items.Strings = (
+          'Recalbox'
+          'RetroPie'
+          'LaunchBox'
+          'RetroBat'
+          'Generic')
+        ItemHeight = 32.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Position.Y = 36.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        OnChange = SelectionChanged
+      end
+      object RootLabel: TLabel
+        Align = Top
+        StyledSettings = [Family, Style, FontColor]
+        Margins.Top = 24.000000000000000000
+        Position.Y = 92.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
+        Text = #1055#1072#1087#1082#1072' ROM'
+        TabOrder = 3
+      end
+      object SetupFolderLayout: TLayout
+        Align = Top
+        Margins.Top = 8.000000000000000000
+        Position.Y = 124.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        object RootEdit: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Align = Client
+          TabOrder = 4
+          Size.Width = 544.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object BrowseButton: TButton
+          Align = Right
+          StyledSettings = [Family, Style, FontColor]
+          Margins.Left = 8.000000000000000000
+          Position.X = 552.000000000000000000
+          Size.Width = 40.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 5
+          TextSettings.Font.Size = 14.000000000000000000
+          OnClick = BrowseButtonClick
+          object BrowseIcon: TPath
+            Align = Center
+            Data.Path = {
+              5000000000000000000060400000C84002000000000060408716A94002000000
+              8716894000009040020000000000A84000009040010000007B14024100009040
+              02000000F34205416F01904002000000CD4F0841AF899240020000005C8F0A41
+              3C0A9740010000001E852B41C1F5D84002000000C0CA2D41D378DD4002000000
+              FDD43041FEFFDF400200000018043441FEFFDF40010000000C028641FEFFDF40
+              0200000076BE8D41FEFFDF40020000000C0294418516F940020000000C029441
+              FFFF0B410200000069039441FC620D4102000000671F9441DBB20E4102000000
+              045694419DEF0F41010000001F850B419DEF0F4102000000B225EC403FEB0F41
+              02000000707FC440A5591B41020000003D0AAF4085EB2D410100000000006040
+              2B87644103000000000060400000C8400000000000000040D34D8E4102000000
+              0D550140688B9C41020000006C115E404100A841020000000600A8400000A841
+              01000000000030410000A84102000000267830410000A8410200000091ED3041
+              96FCA7410200000042603141C3F5A741010000007D3F8241C3F5A74102000000
+              95F78C410FF6A7410200000058DF9641383EA24102000000643B9C41C3F59841
+              01000000D578B44186EB5D41020000003333BE418A413C410200000008ACB241
+              6866124102000000F0A79F413208104102000000C4E09F41CCBB0E4102000000
+              80FE9F41485F0D41020000000000A04100000C41020000000000A041E06AFC40
+              02000000BF429D41F6F6E1400200000081629841FE75CE400200000043829341
+              06F5BA400200000048E58C410000B04002000000000086410000B04001000000
+              C2F538410000B040010000001F851B410E2D6A4002000000C5C41441BB2B4F40
+              02000000A19C0B41EAFF3F40020000006210024100004040010000000000A840
+              0000404002000000E06A8C400000404002000000EBED63400BEA554002000000
+              FBEB3C40FBEB7C40020000000BEA1540F6F6914002000000FFFFFF3FE16AAC40
+              02000000000000400100C8400300000000000040D34D8E410000000006810B41
+              9EEF274101000000C2F59D419EEF2741020000006ABCA8419EEF274102000000
+              E17AAF4196433F41020000007A14AA419EEF51410100000009D79141CFF79241
+              02000000369F8E410589984102000000AAAD884182F69B41020000007C3F8241
+              C3F59B4101000000F628A840C3F59B4102000000AC1C7A40C3F59B4102000000
+              F6284440C74B904102000000C74B6F40C3F5864101000000D7A3D84086EB3941
+              020000002183E54019C92E41020000005249FD4021EE27410200000006810B41
+              9FEF2741}
+            Fill.Color = xFFE6E6E6
+            HitTest = False
+            Size.Width = 18.000000000000000000
+            Size.Height = 18.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Kind = None
+            WrapMode = Fit
+          end
+        end
+      end
+      object DetectCheck: TCheckBox
+        Align = Top
+        StyledSettings = [Family, Style, FontColor]
+        Margins.Top = 26.000000000000000000
+        Position.Y = 182.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 8
+        Text = #1054#1087#1088#1077#1076#1077#1083#1103#1090#1100' '#1089#1080#1089#1090#1077#1084#1099' '#1087#1086' '#1074#1083#1086#1078#1077#1085#1085#1099#1084' '#1087#1072#1087#1082#1072#1084
+        TextSettings.Font.Size = 14.000000000000000000
+        TextSettings.WordWrap = True
+        OnChange = SelectionChanged
+      end
+      object RecursiveCheck: TCheckBox
+        Align = Top
+        Margins.Top = 4.000000000000000000
+        Position.Y = 234.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        Text = #1048#1089#1082#1072#1090#1100' '#1074#1086' '#1074#1083#1086#1078#1077#1085#1085#1099#1093' '#1087#1072#1087#1082#1072#1093
+        OnChange = SelectionChanged
+      end
+      object SearchAllCheck: TCheckBox
+        Align = Top
+        Margins.Top = 4.000000000000000000
+        Position.Y = 270.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        Text = #1056#1072#1089#1087#1086#1079#1085#1072#1074#1072#1090#1100' '#1085#1077#1089#1090#1072#1085#1076#1072#1088#1090#1085#1099#1077' '#1085#1072#1079#1074#1072#1085#1080#1103
+        OnChange = SelectionChanged
+      end
+      object FrontendHomePanel: TLayout
+        Align = Top
+        Margins.Top = 12.000000000000000000
+        Position.Y = 314.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 64.000000000000000000
+        Size.PlatformDefault = False
+        object FrontendHomeLabel: TLabel
+          Align = Top
+          Size.Width = 592.000000000000000000
+          Size.Height = 24.000000000000000000
+          Size.PlatformDefault = False
+          Text = #1055#1072#1087#1082#1072' LaunchBox'
+        end
+        object FrontendHomeRow: TLayout
+          Align = Client
+          Margins.Top = 4.000000000000000000
+          Size.Width = 592.000000000000000000
+          Size.Height = 36.000000000000000000
+          Size.PlatformDefault = False
+          object FrontendHomeBrowse: TButton
+            Align = Right
+            Margins.Left = 8.000000000000000000
+            Position.X = 516.000000000000000000
+            Size.Width = 76.000000000000000000
+            Size.Height = 36.000000000000000000
+            Size.PlatformDefault = False
+            Text = #1042#1099#1073#1088#1072#1090#1100
+            OnClick = FrontendHomeBrowseClick
+          end
+          object FrontendHomeEdit: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Client
+            Size.Width = 508.000000000000000000
+            Size.Height = 36.000000000000000000
+            Size.PlatformDefault = False
+          end
+        end
+      end
+      object HelpLabel: TLabel
+        Align = Top
+        StyledSettings = [Family, Style]
+        Margins.Top = 16.000000000000000000
+        Position.Y = 394.000000000000000000
+        Size.Width = 592.000000000000000000
+        Size.Height = 96.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 14.000000000000000000
+        TextSettings.FontColor = xFFAAAAAA
+        TextSettings.VertAlign = Leading
+        Text = 
+          #1042#1099#1073#1077#1088#1080#1090#1077' '#1089#1080#1089#1090#1077#1084#1091' '#1080' '#1087#1072#1087#1082#1091' '#1089' '#1080#1075#1088#1072#1084#1080'. '#1044#1083#1103' '#1085#1077#1089#1082#1086#1083#1100#1082#1080#1093' '#1089#1080#1089#1090#1077#1084' '#1074#1082#1083#1102#1095#1080#1090 +
+          #1077' '#1086#1087#1088#1077#1076#1077#1083#1077#1085#1080#1077' '#1087#1086' '#1074#1083#1086#1078#1077#1085#1085#1099#1084' '#1087#1072#1087#1082#1072#1084'.'
+        TabOrder = 9
+      end
+    end
+    object WizardConnectionLayout: TLayout
+      Align = Client
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Visible = False
+      object WizardResourcesColumn: TLayout
+        Align = Right
+        Margins.Left = 16.000000000000000000
+        Position.X = -420.000000000000000000
+        Size.Width = 470.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        object WizardResourcesCard: TRectangle
+          Align = Top
+          Fill.Color = xFF292929
+          Padding.Left = 20.000000000000000000
+          Padding.Top = 20.000000000000000000
+          Padding.Right = 20.000000000000000000
+          Padding.Bottom = 20.000000000000000000
+          Size.Width = 470.000000000000000000
+          Size.Height = 476.000000000000000000
+          Size.PlatformDefault = False
+          Stroke.Color = xFF454545
+          XRadius = 6.000000000000000000
+          YRadius = 6.000000000000000000
+          object WizardResourcesTitle: TLabel
+            Align = Top
+            StyledSettings = [Family]
+            Position.X = 20.000000000000000000
+            Position.Y = 20.000000000000000000
+            Size.Width = 430.000000000000000000
+            Size.Height = 28.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 18.000000000000000000
+            TextSettings.Font.StyleExt = {00070000000000000004000000}
+            TextSettings.FontColor = xFFF3F3F3
+            TextSettings.WordWrap = False
+            Text = #1055#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077' '#1080' '#1088#1077#1089#1091#1088#1089#1099
+          end
+          object WizardConnectRow: TLayout
+            Align = Top
+            Margins.Top = 8.000000000000000000
+            Position.X = 20.000000000000000000
+            Position.Y = 56.000000000000000000
+            Size.Width = 430.000000000000000000
+            Size.Height = 60.000000000000000000
+            Size.PlatformDefault = False
+            object WizardConnectGlyphLayout: TLayout
+              Align = Left
+              Size.Width = 52.000000000000000000
+              Size.Height = 60.000000000000000000
+              Size.PlatformDefault = False
+              object WizardConnectCircle: TCircle
+                Align = Center
+                Fill.Color = xFF333333
+                Size.Width = 34.000000000000000000
+                Size.Height = 34.000000000000000000
+                Size.PlatformDefault = False
+                Stroke.Color = xFF777777
+                object WizardConnectCheck: TPath
+                  Align = Center
+                  Data.Path = {
+                    150000000000000077F89040E4834F41020000001C9987402CD44A4102000000
+                    C8CD70402CD44A4102000000130F5E40E4834F41020000005D504B409C335441
+                    020000005D504B4064CC5B4102000000130F5E401C7C6041010000008907FF40
+                    0E3E94410200000072330441EA959641020000008ECC0B41EA95964102000000
+                    3B7C10410E3E9441010000000E3EA04177F8F04002000000EA95A2411C99E740
+                    02000000EA95A241E466D840020000000E3EA0418907CF400200000032E69D41
+                    2FA8C54002000000CE199A412FA8C54002000000F2C197418907CF4001000000
+                    00000841B08387410100000077F89040E4834F410300000077F89040E4834F41}
+                  Fill.Color = xFF161616
+                  HitTest = False
+                  Size.Width = 20.000000000000000000
+                  Size.Height = 20.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Kind = None
+                  Visible = False
+                  WrapMode = Fit
+                end
+              end
+            end
+            object WizardConnectTextLayout: TLayout
+              Align = Client
+              Margins.Left = 12.000000000000000000
+              Size.Width = 366.000000000000000000
+              Size.Height = 60.000000000000000000
+              Size.PlatformDefault = False
+              object WizardConnectTitle: TLabel
+                Align = Top
+                StyledSettings = [Family]
+                Size.Width = 366.000000000000000000
+                Size.Height = 26.000000000000000000
+                Size.PlatformDefault = False
+                TextSettings.Font.Size = 16.000000000000000000
+                TextSettings.FontColor = xFFF3F3F3
+                TextSettings.WordWrap = False
+                Text = #1055#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077' '#1085#1077' '#1087#1088#1086#1074#1077#1088#1077#1085#1086
+              end
+              object WizardConnectDetail: TLabel
+                Align = Top
+                StyledSettings = [Family]
+                Position.Y = 26.000000000000000000
+                Size.Width = 366.000000000000000000
+                Size.Height = 30.000000000000000000
+                Size.PlatformDefault = False
+                TextSettings.Font.Size = 14.000000000000000000
+                TextSettings.FontColor = xFFB7BFC8
+                Text = #1042#1074#1077#1076#1080#1090#1077' '#1088#1077#1082#1074#1080#1079#1080#1090#1099' ScreenScraper.'
+              end
+            end
+          end
+          object WizardCatalogRow: TLayout
+            Align = Top
+            Margins.Top = 16.000000000000000000
+            Position.X = 20.000000000000000000
+            Position.Y = 132.000000000000000000
+            Size.Width = 430.000000000000000000
+            Size.Height = 60.000000000000000000
+            Size.PlatformDefault = False
+            object WizardCatalogGlyphLayout: TLayout
+              Align = Left
+              Size.Width = 52.000000000000000000
+              Size.Height = 60.000000000000000000
+              Size.PlatformDefault = False
+              object WizardCatalogCircle: TCircle
+                Align = Center
+                Fill.Color = xFF333333
+                Size.Width = 34.000000000000000000
+                Size.Height = 34.000000000000000000
+                Size.PlatformDefault = False
+                Stroke.Color = xFF777777
+                object WizardCatalogCheck: TPath
+                  Align = Center
+                  Data.Path = {
+                    150000000000000077F89040E4834F41020000001C9987402CD44A4102000000
+                    C8CD70402CD44A4102000000130F5E40E4834F41020000005D504B409C335441
+                    020000005D504B4064CC5B4102000000130F5E401C7C6041010000008907FF40
+                    0E3E94410200000072330441EA959641020000008ECC0B41EA95964102000000
+                    3B7C10410E3E9441010000000E3EA04177F8F04002000000EA95A2411C99E740
+                    02000000EA95A241E466D840020000000E3EA0418907CF400200000032E69D41
+                    2FA8C54002000000CE199A412FA8C54002000000F2C197418907CF4001000000
+                    00000841B08387410100000077F89040E4834F410300000077F89040E4834F41}
+                  Fill.Color = xFF161616
+                  HitTest = False
+                  Size.Width = 20.000000000000000000
+                  Size.Height = 20.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Kind = None
+                  Visible = False
+                  WrapMode = Fit
+                end
+              end
+            end
+            object WizardCatalogTextLayout: TLayout
+              Align = Client
+              Margins.Left = 12.000000000000000000
+              Size.Width = 366.000000000000000000
+              Size.Height = 60.000000000000000000
+              Size.PlatformDefault = False
+              object WizardCatalogTitle: TLabel
+                Align = Top
+                StyledSettings = [Family]
+                Size.Width = 366.000000000000000000
+                Size.Height = 26.000000000000000000
+                Size.PlatformDefault = False
+                TextSettings.Font.Size = 16.000000000000000000
+                TextSettings.FontColor = xFFF3F3F3
+                TextSettings.WordWrap = False
+                Text = #1050#1072#1090#1072#1083#1086#1075' '#1087#1083#1072#1090#1092#1086#1088#1084
+              end
+              object WizardCatalogDetail: TLabel
+                Align = Top
+                StyledSettings = [Family]
+                Position.Y = 26.000000000000000000
+                Size.Width = 366.000000000000000000
+                Size.Height = 30.000000000000000000
+                Size.PlatformDefault = False
+                TextSettings.Font.Size = 14.000000000000000000
+                TextSettings.FontColor = xFFB7BFC8
+                Text = #1050#1072#1090#1072#1083#1086#1075' '#1077#1097#1105' '#1085#1077' '#1079#1072#1075#1088#1091#1078#1077#1085'.'
+              end
+            end
+          end
+          object WizardMediaRow: TLayout
+            Align = Top
+            Margins.Top = 14.000000000000000000
+            Position.X = 20.000000000000000000
+            Position.Y = 206.000000000000000000
+            Size.Width = 430.000000000000000000
+            Size.Height = 150.000000000000000000
+            Size.PlatformDefault = False
+            object WizardMediaGlyphLayout: TLayout
+              Align = Left
+              Size.Width = 52.000000000000000000
+              Size.Height = 150.000000000000000000
+              Size.PlatformDefault = False
+              object WizardMediaGlyphTop: TLayout
+                Align = Top
+                Size.Width = 52.000000000000000000
+                Size.Height = 58.000000000000000000
+                Size.PlatformDefault = False
+                object WizardMediaCircle: TCircle
+                  Align = Center
+                  Fill.Color = xFF333333
+                  Size.Width = 34.000000000000000000
+                  Size.Height = 34.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Color = xFF777777
+                  object WizardMediaCheck: TPath
+                    Align = Center
+                    Data.Path = {
+                      150000000000000077F89040E4834F41020000001C9987402CD44A4102000000
+                      C8CD70402CD44A4102000000130F5E40E4834F41020000005D504B409C335441
+                      020000005D504B4064CC5B4102000000130F5E401C7C6041010000008907FF40
+                      0E3E94410200000072330441EA959641020000008ECC0B41EA95964102000000
+                      3B7C10410E3E9441010000000E3EA04177F8F04002000000EA95A2411C99E740
+                      02000000EA95A241E466D840020000000E3EA0418907CF400200000032E69D41
+                      2FA8C54002000000CE199A412FA8C54002000000F2C197418907CF4001000000
+                      00000841B08387410100000077F89040E4834F410300000077F89040E4834F41}
+                    Fill.Color = xFF161616
+                    HitTest = False
+                    Size.Width = 20.000000000000000000
+                    Size.Height = 20.000000000000000000
+                    Size.PlatformDefault = False
+                    Stroke.Kind = None
+                    Visible = False
+                    WrapMode = Fit
+                  end
+                  object WizardMediaSpinner: TArc
+                    Align = Contents
+                    HitTest = False
+                    Size.Width = 50.000000000000000000
+                    Size.Height = 50.000000000000000000
+                    Size.PlatformDefault = False
+                    Stroke.Color = xFF4CC9F0
+                    Stroke.Thickness = 4.000000000000000000
+                    Visible = False
+                    StartAngle = 20.000000000000000000
+                    EndAngle = 285.000000000000000000
+                    object WizardMediaSpin: TFloatAnimation
+                      Duration = 1.200000047683716000
+                      Loop = True
+                      PropertyName = 'RotationAngle'
+                      StartValue = 0.000000000000000000
+                      StopValue = 360.000000000000000000
+                    end
+                  end
+                end
+              end
+            end
+            object WizardMediaTextLayout: TLayout
+              Align = Client
+              Margins.Left = 12.000000000000000000
+              Size.Width = 366.000000000000000000
+              Size.Height = 150.000000000000000000
+              Size.PlatformDefault = False
+              object WizardMediaTitle: TLabel
+                Align = Top
+                StyledSettings = [Family]
+                Margins.Top = 8.000000000000000000
+                Position.Y = 8.000000000000000000
+                Size.Width = 366.000000000000000000
+                Size.Height = 28.000000000000000000
+                Size.PlatformDefault = False
+                TextSettings.Font.Size = 16.000000000000000000
+                TextSettings.FontColor = xFFF3F3F3
+                TextSettings.WordWrap = False
+                Text = #1047#1072#1075#1088#1091#1079#1082#1072' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1081' '#1087#1083#1072#1090#1092#1086#1088#1084
+              end
+              object WizardMediaCounterLayout: TLayout
+                Align = Top
+                Margins.Top = 18.000000000000000000
+                Position.Y = 54.000000000000000000
+                Size.Width = 366.000000000000000000
+                Size.Height = 24.000000000000000000
+                Size.PlatformDefault = False
+                object WizardMediaCount: TLabel
+                  Align = Client
+                  StyledSettings = [Family]
+                  Size.Width = 366.000000000000000000
+                  Size.Height = 24.000000000000000000
+                  Size.PlatformDefault = False
+                  TextSettings.Font.Size = 14.000000000000000000
+                  TextSettings.FontColor = xFFB7BFC8
+                  TextSettings.WordWrap = False
+                  Text = '0 / 0'
+                end
+              end
+              object WizardMediaProgressLayout: TLayout
+                Align = Top
+                Margins.Top = 5.000000000000000000
+                Position.Y = 83.000000000000000000
+                Size.Width = 366.000000000000000000
+                Size.Height = 12.000000000000000000
+                Size.PlatformDefault = False
+                OnResize = ProgressResize
+                object WizardMediaProgress: TProgressBar
+                  Align = Client
+                  HitTest = False
+                  Opacity = 0.000000000000000000
+                  Orientation = Horizontal
+                  Size.Width = 366.000000000000000000
+                  Size.Height = 12.000000000000000000
+                  Size.PlatformDefault = False
+                end
+                object WizardMediaProgressTrack: TRectangle
+                  Align = Contents
+                  Fill.Color = xFF3A3A3A
+                  HitTest = False
+                  Padding.Left = 1.000000000000000000
+                  Padding.Top = 1.000000000000000000
+                  Padding.Right = 1.000000000000000000
+                  Padding.Bottom = 1.000000000000000000
+                  Size.Width = 366.000000000000000000
+                  Size.Height = 12.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Color = xFF505050
+                  XRadius = 6.000000000000000000
+                  YRadius = 6.000000000000000000
+                  object WizardMediaProgressFill: TRectangle
+                    Align = Left
+                    Fill.Color = xFF4CC9F0
+                    HitTest = False
+                    Position.X = 1.000000000000000000
+                    Position.Y = 1.000000000000000000
+                    Size.Width = 0.000000000000000000
+                    Size.Height = 10.000000000000000000
+                    Size.PlatformDefault = False
+                    Stroke.Kind = None
+                  end
+                end
+              end
+              object WizardMediaNote: TLabel
+                Align = Top
+                StyledSettings = [Family]
+                Margins.Top = 12.000000000000000000
+                Position.Y = 107.000000000000000000
+                Size.Width = 366.000000000000000000
+                Size.Height = 36.000000000000000000
+                Size.PlatformDefault = False
+                TextSettings.Font.Size = 14.000000000000000000
+                TextSettings.FontColor = xFFB7BFC8
+                Text = #1051#1086#1075#1086#1090#1080#1087#1099', '#1092#1086#1090#1086' '#1080' '#1080#1082#1086#1085#1082#1080' '#1087#1083#1072#1090#1092#1086#1088#1084'.'
+              end
+            end
+          end
+          object WizardResourcesDivider: TRectangle
+            Align = Top
+            Fill.Color = xFF414141
+            HitTest = False
+            Margins.Top = 20.000000000000000000
+            Position.X = 20.000000000000000000
+            Position.Y = 376.000000000000000000
+            Size.Width = 430.000000000000000000
+            Size.Height = 1.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Kind = None
+          end
+          object WizardResourcesInfoRow: TLayout
+            Align = Top
+            Margins.Top = 18.000000000000000000
+            Position.X = 20.000000000000000000
+            Position.Y = 395.000000000000000000
+            Size.Width = 430.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            object WizardResourcesInfoGlyph: TLayout
+              Align = Left
+              Size.Width = 34.000000000000000000
+              Size.Height = 40.000000000000000000
+              Size.PlatformDefault = False
+              object WizardResourcesInfoIcon: TPath
+                Align = Center
+                Data.Path = {
+                  4200000000000000310840413BDFFF3F0200000033338C413BDFFF3F02000000
+                  2506B0419643CF40020000002506B04118044041020000002506B04126318C41
+                  0200000033338C411804B04102000000310840411804B04102000000C74BCF40
+                  1904B041020000000000004027318C4102000000000000401904404102000000
+                  000000409643CF4002000000C74BCF403BDFFF3F02000000310840413BDFFF3F
+                  00000000310840419EEF5F400200000076150F4111D05D40020000000040C340
+                  6386A2400200000025FE91401422F7400200000096784140E2DE254102000000
+                  8A78414027255A410200000015FE91408139824102000000E63FC3406F609741
+                  0200000066150F410848A44102000000210840411904A441020000004A4A8541
+                  9E9CA341020000005A4BA341CC47854102000000584BA3410602404102000000
+                  564BA341E8E8EA4002000000424A8541582B63400200000012084041A0EF5F40
+                  00000000000040410000284102000000BF2E434100002841020000001E3C4641
+                  A8432941020000003B7C4841C5832B410200000058BC4A41E2C32D4102000000
+                  00004C4141D130410200000000004C41000034410100000000004C4100008241
+                  0200000000004C41C3248441020000007BB64941D61F86410200000000004641
+                  37328741020000008549424198448841020000007BB63D419844884102000000
+                  00003A41373287410200000085493641D61F86410200000000003441C3248441
+                  0200000000003441000082410100000000003441000034410200000000003441
+                  41D1304102000000A8433541E1C32D4102000000C5833741C4832B4102000000
+                  E2C33941A74329410200000041D13C4100002841020000000000404100002841
+                  0000000000004041000010410200000028D64841000010410200000000005041
+                  28D608410200000000005041000000410200000000005041AF53EE4002000000
+                  28D648410000E04002000000000040410000E04002000000D82937410000E040
+                  0200000000003041AF53EE400200000000003041000000410200000000003041
+                  29D6084102000000D729374100001041020000000000404100001041}
+                Fill.Color = xFFB7BFC8
+                HitTest = False
+                Size.Width = 20.000000000000000000
+                Size.Height = 20.000000000000000000
+                Size.PlatformDefault = False
+                Stroke.Kind = None
+                WrapMode = Fit
+              end
+            end
+            object WizardAccountInfo: TLabel
+              Align = Client
+              StyledSettings = [Family, Style]
+              Margins.Left = 14.000000000000000000
+              Size.Width = 382.000000000000000000
+              Size.Height = 40.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.FontColor = xFFB7BFC8
+              Text = #1055#1086#1089#1083#1077' '#1079#1072#1075#1088#1091#1079#1082#1080' '#1084#1086#1078#1085#1086' '#1074#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1080' '#1080' '#1087#1083#1072#1090#1092#1086#1088#1084#1099'.'
+            end
+          end
+        end
+      end
+      object WizardAccountLayout: TVertScrollBox
+        Align = Client
+        Size.Width = 50.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        Visible = False
+        Viewport.Width = 50.000000000000000000
+        Viewport.Height = 50.000000000000000000
+        object WizardAccountFields: TLayout
+          Align = Top
+          Size.Width = 50.000000000000000000
+          Size.Height = 524.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          object WizardUserCard: TRectangle
+            Align = Top
+            Fill.Color = xFF292929
+            Padding.Left = 20.000000000000000000
+            Padding.Top = 20.000000000000000000
+            Padding.Right = 20.000000000000000000
+            Padding.Bottom = 16.000000000000000000
+            Size.Width = 50.000000000000000000
+            Size.Height = 260.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Color = xFF454545
+            XRadius = 6.000000000000000000
+            YRadius = 6.000000000000000000
+            object WizardUserTitle: TLabel
+              Align = Top
+              StyledSettings = [Family]
+              Position.X = 20.000000000000000000
+              Position.Y = 20.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 28.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 18.000000000000000000
+              TextSettings.Font.StyleExt = {00070000000000000004000000}
+              TextSettings.FontColor = xFFF3F3F3
+              TextSettings.WordWrap = False
+              Text = #1059#1095#1105#1090#1085#1072#1103' '#1079#1072#1087#1080#1089#1100' ScreenScraper'
+            end
+            object WizardLoginLabel: TLabel
+              Align = Top
+              StyledSettings = [Family, Style]
+              Margins.Top = 6.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 54.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 20.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 16.000000000000000000
+              TextSettings.FontColor = xFFE6E6E6
+              Text = #1051#1086#1075#1080#1085
+            end
+            object WizardLogin: TEdit
+              Touch.InteractiveGestures = [LongTap, DoubleTap]
+              Align = Top
+              TextSettings.Font.Size = 16.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 78.000000000000000000
+              Margins.Top = 4.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 40.000000000000000000
+              Size.PlatformDefault = False
+              StyledSettings = [Family, Style, FontColor]
+              OnApplyStyleLookup = WizardEditApplyStyle
+            end
+            object WizardPasswordLabel: TLabel
+              Align = Top
+              StyledSettings = [Family, Style]
+              Margins.Top = 6.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 124.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 20.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 16.000000000000000000
+              TextSettings.FontColor = xFFE6E6E6
+              Text = #1055#1072#1088#1086#1083#1100
+            end
+            object WizardPassword: TEdit
+              Touch.InteractiveGestures = [LongTap, DoubleTap]
+              Align = Top
+              Password = True
+              TextSettings.Font.Size = 16.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 148.000000000000000000
+              Margins.Top = 4.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 40.000000000000000000
+              Size.PlatformDefault = False
+              StyledSettings = [Family, Style, FontColor]
+              OnApplyStyleLookup = WizardEditApplyStyle
+              object WizardPasswordReveal: TEditButton
+                Touch.InteractiveGestures = [LongTap]
+                CanFocus = False
+                Cursor = crArrow
+                Size.Width = 36.000000000000000000
+                Size.Height = 40.000000000000000000
+                Size.PlatformDefault = False
+                StyleLookup = 'buttonstyle_subtle'
+                TabOrder = 0
+                OnClick = PasswordRevealClick
+                object WizardPasswordEyeOff: TPath
+                  Align = Center
+                  Data.Path = {
+                    5800000000000000130F0E40130F0E40020000000309FA3FA4191F4002000000
+                    07F0F63F33C439400200000044690940B48E4C4001000000130F0E40EDF05140
+                    01000000BC22C840A913EA4002000000CBA18A4042A10A41020000004C543940
+                    DFE02A4102000000DA201340C807514102000000F2B00C408E75574102000000
+                    EC511C40DBF95D41020000002D093640EA955F410200000098C04F4090316141
+                    020000004ED16940BA495D41020000005F4170408CDB5641020000001B128940
+                    190435410200000074EAB240ABA118410200000070B1EA40F44F064101000000
+                    F74C1241D04423410200000001FB064114D02E410200000000000041F9A03E41
+                    0200000000000041D71250410200000000000041BA6B7341020000005DA71C41
+                    6C09884102000000000040416C09884102000000477251416C09884102000000
+                    C4426141E18B84410200000070CE6C41D6C57D4101000000F2C1A5410E3EAE41
+                    02000000CE19A841EA95B0410200000032E6AB41EA95B041020000000E3EAE41
+                    0E3EAE4102000000705FB041E01CAC41020000000091B0417AC7A84102000000
+                    BDD2AE412F6EA641010000000E3EAE41F2C1A5410100000036AB7A4121B06941
+                    0100000021B07A41FCA9694101000000857C6741637F56410100000068913941
+                    BC962841010000009A993941759328410100000015800B41DD0CF54001000000
+                    1F850B41F4FDF4400100000069C6F240D0D0D04001000000EDF05140130F0E40
+                    0200000038323F40BAA0F63F02000000C8CD2040BAA0F63F02000000130F0E40
+                    130F0E4003000000130F0E40130F0E4000000000FE4323417D3F344101000000
+                    C3D35B4142CF6C410200000090A054414BC87341020000007DD04A41D7127841
+                    0200000000004041D712784102000000A7E82941D71278410200000000001841
+                    302A66410200000000001841D712504102000000000018415B42454102000000
+                    B64A1C4147723B4102000000FE4323417D3F344103000000FE4323417D3F3441
+                    00000000000040410000B04002000000C5FE2F410000B0400200000032772041
+                    FDBCB4400200000006C711419A99BD4001000000D19125417828E54002000000
+                    74242E412EC5E140020000007FFB36410000E04002000000000040410000E040
+                    0200000005C57E410000E04002000000AD7A9A4158E21A410200000010FAA141
+                    63EE564102000000AEC7A241295C5D41020000006C09A6413945614102000000
+                    8340A94165AA5F41020000009A77AC41280F5E4102000000226CAE41AC8B5741
+                    02000000849EAD417E1D51410200000092CBA4418B710A41020000008BEC8441
+                    0000B04002000000000040410000B04003000000000040410000B04000000000
+                    7E1D434103261041010000009EEF7F41C3F54C4102000000A54E7E41B30C2C41
+                    0200000088F46341E5B81141020000007E1D434103261041030000007E1D4341
+                    03261041}
+                  Fill.Color = xFFE6E6E6
+                  HitTest = False
+                  Size.Width = 20.000000000000000000
+                  Size.Height = 20.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Kind = None
+                  WrapMode = Fit
+                end
+                object WizardPasswordEye: TPath
+                  Align = Center
+                  Data.Path = {
+                    360000000000000097FF3F41EC1210410200000010586341EC12104102000000
+                    97FF7F415EBA2C410200000097FF7F41D71250410200000097FF7F41BA6B7341
+                    02000000105863416C0988410200000097FF3F416C09884102000000D5A61C41
+                    6C09884102000000EFFEFF40BA6B734102000000EFFEFF40D712504102000000
+                    EFFEFF405EBA2C4102000000D5A61C41EC1210410200000097FF3F41EC121041
+                    0300000097FF3F41EC1210410000000097FF3F41D7122841020000003EE82941
+                    D71228410200000078FF17417FFB39410200000078FF1741D712504102000000
+                    78FF1741302A6641020000003EE82941D71278410200000097FF3F41D7127841
+                    02000000F0165641D71278410200000097FF6741302A66410200000097FF6741
+                    D71250410200000097FF67417FFB394102000000F0165641D712284102000000
+                    97FF3F41D71228410300000097FF3F41D71228410000000097FF3F410000B040
+                    020000003EE884410000B040020000009CC4A44171660A4102000000A69BAD41
+                    C807514102000000AD69AE418E755741020000008E75AC41DBF95D4102000000
+                    AB3EA941EA955F41020000009407A6419031614102000000A2C5A241BA495D41
+                    020000009AF7A1418CDB564102000000BC749A41EDD81A41020000003CBD7E41
+                    0000E0400200000097FF3F410000E040020000009D3A01410000E04002000000
+                    3C14964058E21A4102000000BA2C704063EE5641020000006EC06940295C5D41
+                    02000000D9B14F4039456141020000009CF9354065AA5F41020000005F411C40
+                    280F5E4102000000CB9C0C40AC8B574102000000180913407E1D514102000000
+                    1FA259408B710A4102000000AD4CEC400000B0400200000097FF3F410000B040
+                    0300000097FF3F410000B040}
+                  Fill.Color = xFFE6E6E6
+                  HitTest = False
+                  Size.Width = 20.000000000000000000
+                  Size.Height = 20.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Kind = None
+                  Visible = False
+                  WrapMode = Fit
+                end
+              end
+            end
+            object WizardAnonymous: TCheckBox
+              Align = Top
+              StyledSettings = [Family, Style, FontColor]
+              Margins.Top = 8.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 196.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 28.000000000000000000
+              Size.PlatformDefault = False
+              Text = #1041#1077#1079' '#1091#1095#1105#1090#1085#1086#1081' '#1079#1072#1087#1080#1089#1080
+              TextSettings.Font.Size = 16.000000000000000000
+              OnChange = WizardOptionsChanged
+            end
+            object WizardAnonymousHint: TLabel
+              Align = Top
+              StyledSettings = [Family]
+              Margins.Left = 34.000000000000000000
+              Position.X = 54.000000000000000000
+              Position.Y = 224.000000000000000000
+              Size.Width = 0.000000000000000000
+              Size.Height = 20.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.FontColor = xFFB7BFC8
+              TextSettings.WordWrap = False
+              Text = #1040#1085#1086#1085#1080#1084#1085#1086#1077' '#1087#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077'.'
+            end
+          end
+          object WizardApplicationCard: TRectangle
+            Align = Top
+            Fill.Color = xFF292929
+            Padding.Left = 20.000000000000000000
+            Padding.Top = 20.000000000000000000
+            Padding.Right = 20.000000000000000000
+            Padding.Bottom = 14.000000000000000000
+            Margins.Top = 14.000000000000000000
+            Position.Y = 274.000000000000000000
+            Size.Width = 50.000000000000000000
+            Size.Height = 202.000000000000000000
+            Size.PlatformDefault = False
+            Stroke.Color = xFF454545
+            XRadius = 6.000000000000000000
+            YRadius = 6.000000000000000000
+            object WizardApplicationTitle: TLabel
+              Align = Top
+              StyledSettings = [Family]
+              Position.X = 20.000000000000000000
+              Position.Y = 20.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 28.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 18.000000000000000000
+              TextSettings.Font.StyleExt = {00070000000000000004000000}
+              TextSettings.FontColor = xFFF3F3F3
+              TextSettings.WordWrap = False
+              Text = #1056#1077#1082#1074#1080#1079#1080#1090#1099' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
+            end
+            object WizardDeveloperLabel: TLabel
+              Align = Top
+              StyledSettings = [Family, Style]
+              Margins.Top = 6.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 54.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 20.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 16.000000000000000000
+              TextSettings.FontColor = xFFE6E6E6
+              Text = #1048#1076#1077#1085#1090#1080#1092#1080#1082#1072#1090#1086#1088' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
+            end
+            object WizardDeveloper: TEdit
+              Touch.InteractiveGestures = [LongTap, DoubleTap]
+              Align = Top
+              TextSettings.Font.Size = 16.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 78.000000000000000000
+              Margins.Top = 4.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 40.000000000000000000
+              Size.PlatformDefault = False
+              StyledSettings = [Family, Style, FontColor]
+              OnApplyStyleLookup = WizardEditApplyStyle
+            end
+            object WizardDeveloperPasswordLabel: TLabel
+              Align = Top
+              StyledSettings = [Family, Style]
+              Margins.Top = 6.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 124.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 20.000000000000000000
+              Size.PlatformDefault = False
+              TextSettings.Font.Size = 16.000000000000000000
+              TextSettings.FontColor = xFFE6E6E6
+              Text = #1055#1072#1088#1086#1083#1100' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
+            end
+            object WizardDeveloperPassword: TEdit
+              Touch.InteractiveGestures = [LongTap, DoubleTap]
+              Align = Top
+              Password = True
+              TextSettings.Font.Size = 16.000000000000000000
+              Position.X = 20.000000000000000000
+              Position.Y = 148.000000000000000000
+              Margins.Top = 4.000000000000000000
+              Size.Width = 10.000000000000000000
+              Size.Height = 40.000000000000000000
+              Size.PlatformDefault = False
+              StyledSettings = [Family, Style, FontColor]
+              OnApplyStyleLookup = WizardEditApplyStyle
+              object WizardDeveloperPasswordReveal: TEditButton
+                Tag = 1
+                Touch.InteractiveGestures = [LongTap]
+                CanFocus = False
+                Cursor = crArrow
+                Size.Width = 36.000000000000000000
+                Size.Height = 40.000000000000000000
+                Size.PlatformDefault = False
+                StyleLookup = 'buttonstyle_subtle'
+                TabOrder = 0
+                OnClick = PasswordRevealClick
+                object WizardDeveloperPasswordEyeOff: TPath
+                  Align = Center
+                  Data.Path = {
+                    5800000000000000130F0E40130F0E40020000000309FA3FA4191F4002000000
+                    07F0F63F33C439400200000044690940B48E4C4001000000130F0E40EDF05140
+                    01000000BC22C840A913EA4002000000CBA18A4042A10A41020000004C543940
+                    DFE02A4102000000DA201340C807514102000000F2B00C408E75574102000000
+                    EC511C40DBF95D41020000002D093640EA955F410200000098C04F4090316141
+                    020000004ED16940BA495D41020000005F4170408CDB5641020000001B128940
+                    190435410200000074EAB240ABA118410200000070B1EA40F44F064101000000
+                    F74C1241D04423410200000001FB064114D02E410200000000000041F9A03E41
+                    0200000000000041D71250410200000000000041BA6B7341020000005DA71C41
+                    6C09884102000000000040416C09884102000000477251416C09884102000000
+                    C4426141E18B84410200000070CE6C41D6C57D4101000000F2C1A5410E3EAE41
+                    02000000CE19A841EA95B0410200000032E6AB41EA95B041020000000E3EAE41
+                    0E3EAE4102000000705FB041E01CAC41020000000091B0417AC7A84102000000
+                    BDD2AE412F6EA641010000000E3EAE41F2C1A5410100000036AB7A4121B06941
+                    0100000021B07A41FCA9694101000000857C6741637F56410100000068913941
+                    BC962841010000009A993941759328410100000015800B41DD0CF54001000000
+                    1F850B41F4FDF4400100000069C6F240D0D0D04001000000EDF05140130F0E40
+                    0200000038323F40BAA0F63F02000000C8CD2040BAA0F63F02000000130F0E40
+                    130F0E4003000000130F0E40130F0E4000000000FE4323417D3F344101000000
+                    C3D35B4142CF6C410200000090A054414BC87341020000007DD04A41D7127841
+                    0200000000004041D712784102000000A7E82941D71278410200000000001841
+                    302A66410200000000001841D712504102000000000018415B42454102000000
+                    B64A1C4147723B4102000000FE4323417D3F344103000000FE4323417D3F3441
+                    00000000000040410000B04002000000C5FE2F410000B0400200000032772041
+                    FDBCB4400200000006C711419A99BD4001000000D19125417828E54002000000
+                    74242E412EC5E140020000007FFB36410000E04002000000000040410000E040
+                    0200000005C57E410000E04002000000AD7A9A4158E21A410200000010FAA141
+                    63EE564102000000AEC7A241295C5D41020000006C09A6413945614102000000
+                    8340A94165AA5F41020000009A77AC41280F5E4102000000226CAE41AC8B5741
+                    02000000849EAD417E1D51410200000092CBA4418B710A41020000008BEC8441
+                    0000B04002000000000040410000B04003000000000040410000B04000000000
+                    7E1D434103261041010000009EEF7F41C3F54C4102000000A54E7E41B30C2C41
+                    0200000088F46341E5B81141020000007E1D434103261041030000007E1D4341
+                    03261041}
+                  Fill.Color = xFFE6E6E6
+                  HitTest = False
+                  Size.Width = 20.000000000000000000
+                  Size.Height = 20.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Kind = None
+                  WrapMode = Fit
+                end
+                object WizardDeveloperPasswordEye: TPath
+                  Align = Center
+                  Data.Path = {
+                    360000000000000097FF3F41EC1210410200000010586341EC12104102000000
+                    97FF7F415EBA2C410200000097FF7F41D71250410200000097FF7F41BA6B7341
+                    02000000105863416C0988410200000097FF3F416C09884102000000D5A61C41
+                    6C09884102000000EFFEFF40BA6B734102000000EFFEFF40D712504102000000
+                    EFFEFF405EBA2C4102000000D5A61C41EC1210410200000097FF3F41EC121041
+                    0300000097FF3F41EC1210410000000097FF3F41D7122841020000003EE82941
+                    D71228410200000078FF17417FFB39410200000078FF1741D712504102000000
+                    78FF1741302A6641020000003EE82941D71278410200000097FF3F41D7127841
+                    02000000F0165641D71278410200000097FF6741302A66410200000097FF6741
+                    D71250410200000097FF67417FFB394102000000F0165641D712284102000000
+                    97FF3F41D71228410300000097FF3F41D71228410000000097FF3F410000B040
+                    020000003EE884410000B040020000009CC4A44171660A4102000000A69BAD41
+                    C807514102000000AD69AE418E755741020000008E75AC41DBF95D4102000000
+                    AB3EA941EA955F41020000009407A6419031614102000000A2C5A241BA495D41
+                    020000009AF7A1418CDB564102000000BC749A41EDD81A41020000003CBD7E41
+                    0000E0400200000097FF3F410000E040020000009D3A01410000E04002000000
+                    3C14964058E21A4102000000BA2C704063EE5641020000006EC06940295C5D41
+                    02000000D9B14F4039456141020000009CF9354065AA5F41020000005F411C40
+                    280F5E4102000000CB9C0C40AC8B574102000000180913407E1D514102000000
+                    1FA259408B710A4102000000AD4CEC400000B0400200000097FF3F410000B040
+                    0300000097FF3F410000B040}
+                  Fill.Color = xFFE6E6E6
+                  HitTest = False
+                  Size.Width = 20.000000000000000000
+                  Size.Height = 20.000000000000000000
+                  Size.PlatformDefault = False
+                  Stroke.Kind = None
+                  Visible = False
+                  WrapMode = Fit
+                end
+              end
+            end
+          end
+          object WizardOffline: TCheckBox
+            Align = Top
+            StyledSettings = [Family, Style, FontColor]
+            Margins.Top = 10.000000000000000000
+            Position.Y = 486.000000000000000000
+            Size.Width = 50.000000000000000000
+            Size.Height = 36.000000000000000000
+            Size.PlatformDefault = False
+            Text = #1053#1072#1089#1090#1088#1086#1080#1090#1100' '#1073#1077#1079' '#1087#1086#1076#1082#1083#1102#1095#1077#1085#1080#1103
+            TextSettings.Font.Size = 16.000000000000000000
+            OnChange = WizardOptionsChanged
+          end
+        end
+      end
+    end
+  end
+end

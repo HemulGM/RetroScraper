@@ -1,0 +1,27 @@
+﻿<ImageComposition xsi:noNamespaceSchemaLocation="https://www.skraper.net/ImageComposition.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Information ShortName="PC 4:3" LongName="Old DOS PC" Description="Pentium-styme old PC running DOS or pre-2000 Windows versions" Author="Bkg2k &amp; Archangel54" />
+  <Viewport Color="#00FFFFFF" Width="800" Height="600" />
+  <Drawings>
+    <Item Type="LocalFile" LocalFilePath="pc.png">
+      <Display X="0" Y="0" Width="100%" Height="100%" Anchor="TopLeft" />
+      <Children Reference="Parent">
+        <Item Type="Include" LocalFilePath="ScreenShot.include.xml">
+          <Display Mode="Distord" X="17.23%" Y="8.83%" X2="57.48%" Y2="12.36%" X3="57.48%" Y3="60.15%" X4="17.49%" Y4="63.19%" />
+        </Item>
+      </Children>
+    </Item>
+    <Item Type="LocalFile" LocalFilePath="pc.png">
+      <Display X="0" Y="0" Width="100%" Height="100%" Anchor="TopLeft" />
+    </Item>
+    <Item Type="Box3D">
+      <Display X="0%" Y="100%" Width="40%" Height="60%" Anchor="BottomLeft" />
+    </Item>
+    <Item Type="Wheel">
+      <Display X="100%" Y="100%" Width="60%" Height="40%" Anchor="BottomRight" />
+      <Fallback Type="Text" Text="%name%" TextColor="#FFFFFFFF" TextAlign="VCenterHCenter" FontFamilly="Arial" FontStyle="Bold Italic" />
+    </Item>
+    <Item Type="PublisherLogo">
+      <Display X="100%" Y="0%" Width="50%" Height="20%" Anchor="TopRight" />
+    </Item>
+  </Drawings>
+</ImageComposition>
