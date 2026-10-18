@@ -1,0 +1,50 @@
+Дополнительные MIX: исправления ресурсов и предпросмотра — 2026-10-18
+
+Все пять отсутствующих ссылок устранены без внешних загрузок и библиотек:
+
+1. 8BitComputers/8BitComputers.xml: отсутствующий font.ttf заменён
+   на системный Arial. Заголовок отображает в том числе кириллицу.
+2. PC/pc.png: добавлено собственное изображение настольного компьютера.
+   Прозрачный экран соответствует координатам проекции в PC.xml.
+   Исходная поставка Skraper тоже не содержала pc.png; это новая векторная
+   иллюстрация, а не восстановленный оригинал. Воспроизводимый генератор:
+   sources/Tools/GenerateMixArtwork.dpr, использует только Delphi FMX.
+3. Sega GameGear/ScreenShot.include.xml: резервный скриншот использует
+   существующий ../8BitComputers/NoScreenshot.png.
+4. Sega GameGear/SegaGamegear.xml: отсутствующий NotForYou.png заменён
+   текстовым предупреждением о необходимости платформы SEGA Game Gear.
+5. Watara Supervision/WataraSupervision.xml: аналогичное текстовое
+   предупреждение о необходимости платформы Watara Supervision.
+
+Дополнительно исправлен SK.Mix: Fallback без собственного Display наследует
+Display исходного элемента, в том числе через несколько уровней Fallback.
+Явно заданный Display резервного элемента имеет приоритет. Это позволяет
+отрисовать предусмотренные шаблоном заглушки и текст вместо пустого места
+или ошибки No matching images in mix template.
+
+Проверки:
+- Собраны Win32 Debug/Release и Win64 Debug/Release.
+- MixPreviewProbe выполнен непосредственно из dist/Win32-Release и
+  dist/Win64-Release; подтверждено использование ресурсов поставки.
+- Через рабочий MediaPreview проверены все четыре затронутых шаблона
+  с горизонтальным и вертикальным образцами (0 и 5).
+- Через RenderMix проверены текстовый заголовок без логотипа, вложенные
+  заглушки отсутствующего скриншота, неподходящая платформа и её предки.
+- Проверены непустые изображения, размеры, различие обычной/резервной
+  ветвей, видимость текстового заголовка и точная геометрия вложенных
+  Fallback с унаследованным и явно заданным Display.
+- Визуально просмотрены результаты PC, 8BitComputers, Sega Game Gear,
+  Watara Supervision, а также текстовое предупреждение и заглушка скриншота.
+- /paritytest проверен для Win32 Release и Win64 Release.
+- Четыре ZIP пересозданы; в них включено всё дерево Mixes, включая PC/pc.png
+  и общую заглушку NoScreenshot.png. Состав и SHA256 проверены.
+- audit-assets.py не находит отсутствующих локальных зависимостей MIX.
+
+Повторная сборка проверочных программ и генерация pc.png:
+  sources\Tools\build-mix-checks.cmd
+Запуск проверки (из корня проекта):
+  sources\Tests\Output\MixPreview\Win32\MixPreviewProbe.exe sources\Tests\Output\MixPreview\Win32\Previews
+  sources\Tests\Output\MixPreview\Win64\MixPreviewProbe.exe sources\Tests\Output\MixPreview\Win64\Previews
+После генерации ассета обновить поставки через build-target.cmd/Package.ps1
+и ZIP через package-desktop.py. Генератор не нужен для запуска программы:
+готовый PC/pc.png хранится в runtime-ресурсах.

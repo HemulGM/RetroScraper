@@ -1,0 +1,70 @@
+RetroScraper: настольные платформы
+
+Сборка в RAD Studio
+  sources\Tools\build-target.cmd Win32
+  sources\Tools\build-target.cmd Win64
+  sources\Tools\build-target.cmd Linux64
+  sources\Tools\build-target.cmd OSX64
+  sources\Tools\build-target.cmd OSXARM64
+Скрипт использует BDS, если переменная задана; иначе текущую установленную
+RAD Studio 37.0. Для Linux необходим FMXLinux, подключённый в Library Path,
+и Linux SDK; для macOS — соответствующие компиляторы и macOS SDK.
+Прямой вызов dcclinux64 без путей проекта может не найти FMX.Types,
+даже если FMXLinux установлен. Используйте MSBuild/IDE.
+
+Упаковка
+  python sources/Tools/package-desktop.py Linux64
+  python sources/Tools/package-desktop.py OSX64
+  python sources/Tools/package-desktop.py OSXARM64
+Файлы появляются в dist. Упаковываются бинарник, Resources, Mixes и LICENSE.
+ZIP macOS содержит .app и Unix executable permissions. После распаковки
+на Mac при необходимости выполните локальную подпись для разработки:
+  codesign --force --deep --sign - RetroScraper.app
+Для распространения нужна собственная Developer ID подпись и notarization.
+
+Каталоги
+Windows: %LOCALAPPDATA%/RetroScraper через системный API известных папок.
+Настройки, credentials.dat, каталог, журналы и MediaIndex из прежней Data
+копируются при первом запуске без изменения исходников. Кэш требует явного
+выбора папки в настройке CacheFolder; пустое значение полностью отключает
+постоянное кэширование. CacheLimitGB ограничивает общий кэш: 10 ГиБ по
+умолчанию, 0 — без ограничений. Старые файлы удаляются фоновым потоком;
+активные операции защищают данные до завершения. Рабочие временные файлы
+удаляются при завершении приложения.
+Linux: $XDG_DATA_HOME/RetroScraper либо ~/.local/share/RetroScraper.
+macOS: ~/Library/Application Support/RetroScraper.
+Ресурсы доступны только для чтения: Resources и Mixes рядом с Linux binary,
+на macOS — в RetroScraper.app/Contents/Resources/Resources и /Mixes.
+Идентификатор keyring сохранён для совместимости с существующими учётными данными.
+Если новый каталог ещё не содержит настроек, старые SkraperFMX/RetroScraperFMX
+используются для импорта; секрет keyring считывается по старой идентичности
+и сохраняется под новой без удаления оригинала.
+Конфигурация: retroscraper.config.json; прежняя skraper.config.json подхватывается автоматически.
+В пользовательском каталоге находятся конфигурация, служебный State,
+журналы и обновлённый каталог платформ Resources/systems.json. Кэш, Sources
+и индексы кэша размещаются только в выбранной пользователем CacheFolder.
+
+Учётные данные
+Windows: DPAPI текущего пользователя.
+Linux: libsecret-1.so.0 и работающий Secret Service/keyring desktop-сессии.
+macOS: системный Keychain. Перенос Windows credentials.dat не переносит пароли.
+credentials.dat на POSIX — только маркер; секрет хранится в keyring/Keychain.
+Первый запуск создаёт пустую библиотеку; платформы и папки добавляются в UI.
+
+Системные операции
+Linux использует xdg-open; macOS — /usr/bin/open.
+SSH использует /usr/bin/ssh, ключи пользователя и known_hosts; интерактивный
+ввод пароля отключён, проверка ключа сервера включена. Остановка локальных
+процессов POSIX использует pkill/pgrep и ограничена UID текущего пользователя.
+Графическая Linux-сессия и системные зависимости FMXLinux должны быть доступны.
+
+Проверка
+Запуск с -selftest: Windows — расширенная регрессия; Linux/macOS — переносимые
+проверки и снимок главной формы. Для проверки Linux с изолированными данными:
+  RETROSCRAPER_TEST_DATA=$HOME/.local/share/RetroScraper/Tests/manual ./RetroScraper -selftest
+Тестовые данные по умолчанию находятся в пользовательской папке RetroScraper/Tests/AppData.
+Каталог приложения и его ресурсы недопустимы для записи. Результат: <тестовый каталог>/tests/portable-results.txt.
+Различия текста между GDI+ и FMX из-за шрифтов и растеризатора допустимы;
+побитовое совпадение изображений разных ОС не гарантируется.
+
+Актуальные команды проверок описаны в sources/Tests/README.md.
