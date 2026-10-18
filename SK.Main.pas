@@ -9,12 +9,23 @@ uses
   FMX.Edit, FMX.ListBox, FMX.TabControl, FMX.Memo, FMX.ScrollBox, FMX.Styles,
   FMX.Filter.Effects, SK.UI.Log, SK.UI.Scraping, SK.Folders, SK.Settings.Session,
   System.Generics.Collections, SK.Configuration, SK.Engine, FMX.Memo.Types,
-  FMX.NumberBox, FMX.EditBox;
+  FMX.NumberBox, FMX.EditBox, SK.Setup, SK.GameLibrary.Form, FMX.Menus;
 
 type
+  TSetupScreenMode = (smWizard, smAddPlatform, smCopyMedia);
+
   TFolderItemCount = SK.Folders.TFolderItemCount;
 
+  TMediaPreviewResult = record
+    FileName, Title, Error: string;
+  end;
+
   TFormMain = class(TForm)
+    LogEventMenu: TPopupMenu;
+    CopyLogEvent: TMenuItem;
+    ScreenTabControl: TTabControl;
+    TabWorkspace, TabSetup, TabPlatformLibrary, TabMediaSelection: TTabItem;
+    WorkspaceLayout, SetupHost, PlatformLibraryHost, MediaSelectionHost: TLayout;
     NavigationService: TLayout;
     InspectorFolderLine: TLayout;
     InspectorOverrideLine: TLayout;
@@ -324,7 +335,7 @@ type
     ScrapeFooter: TLayout;
     ScrapeSummary: TLabel;
     LogPage: TLayout;
-    FullLog: TMemo;
+    FullLog: TListBox;
     ExportLog: TButton;
     ExistingListLabel: TLabel;
     IconSourceFolder: FMX.Objects.TPath;
@@ -653,6 +664,10 @@ type
     procedure SettingValueChanging(Sender: TObject);
     procedure StatusTimerTimer(Sender: TObject);
   private
+    FSetupScreen: TFormSetup;
+    FLibraryScreen: TFormGameLibrary;
+    FSetupMode: TSetupScreenMode;
+    FSetupTarget, FLibrarySystemIndex: Integer;
     FCheckedSystems: TDictionary<string, Boolean>;
     FSettings: TSettingsSession;
     FScrapePresenter: TScrapePresenter;
@@ -665,10 +680,15 @@ type
     FCatalog: TJSONObject;
     FAccountTask, FCacheTask: ITask;
     FStartupWizardShown: Boolean;
-    FPreviewKey: string;
+    FPreviewKey, FPreviewActiveKey: string;
+    FPreviewFuture: IFuture<TMediaPreviewResult>;
+    FPreviewPending: Boolean;
     FFolderCountFuture: IFuture<TFolderItemCount>;
     FFolderCountRequestedPath, FFolderCountActivePath: string;
     FFolderCountPending: Boolean;
+    procedure OpenSetupScreen(Mode: TSetupScreenMode);
+    procedure SetupCompleted(Sender: TObject);
+    procedure LibraryReturned(Sender: TObject);
     function CanOpenSettings: Boolean;
     function CanExecuteAction(AllowRunningWorker: Boolean = False): Boolean;
     procedure RefreshMediaPreview;
@@ -696,6 +716,7 @@ type
     procedure FillCatalog;
     procedure EnsureGroup(const Group: string; Bit: Integer);
     procedure PreviewMedia;
+    procedure PollMediaPreview;
     procedure CleanCache(Information, Media: Boolean);
     function PrepareRequiredMedia: Integer;
   public
@@ -713,10 +734,10 @@ implementation
 
 uses
   SK.Locale, SK.Preview, SK.Cache, SK.Catalog, SK.Metadata, SK.Frontend, SK.Mix,
-  SK.Setup, SK.Storage, SK.Json, SK.Platform, FMX.DialogService.Sync,
-  FMX.DialogService, System.DateUtils, System.Math, System.Hash, System.IOUtils,
-  System.Variants, SK.UI.Settings, SK.Services.Catalog, SK.UI.Controls,
-  SK.Consts, FMX.BehaviorManager, SK.GameLibrary.Form, SK.Artwork;
+  SK.Storage, SK.Json, SK.Platform, FMX.DialogService.Sync, FMX.DialogService,
+  System.DateUtils, System.Math, System.Hash, System.IOUtils, System.Variants,
+  SK.UI.Settings, SK.Services.Catalog, SK.UI.Controls, SK.Consts,
+  FMX.BehaviorManager, SK.Artwork;
 
 {$R *.fmx}
 
@@ -846,6 +867,8 @@ end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
+  FreeAndNil(FSetupScreen);
+  FreeAndNil(FLibraryScreen);
   FLogPresenter.Free;
   FScrapePresenter.Free;
   FCheckedSystems.Free;
@@ -869,30 +892,88 @@ begin
 end;
 
 procedure TFormMain.RunWizard;
-var
-  Setup: TFormSetup;
 begin
-  Setup := TFormSetup.Create(nil);
+  OpenSetupScreen(smWizard);
+end;
+
+procedure TFormMain.OpenSetupScreen(Mode: TSetupScreenMode);
+var
+  Host: TLayout;
+begin
+  if not CanExecuteAction or (ScreenTabControl.ActiveTab <> TabWorkspace) then
+    Exit;
+  FreeAndNil(FSetupScreen);
+  FSetupMode := Mode;
+  FSetupTarget := FSelected;
+  FSetupScreen := TFormSetup.Create(Self);
   try
-    Setup.StyleBook := StyleBookWinUI3;
-    if Setup.Execute(FConfig, FCatalog, True) then
-    begin
-      FSelected := -1;
-      FMedia := 0;
-      FCatalog.Free;
-      FCatalog := ReadJSON(TPlatformPath.Combine(WritableBase, SystemsCatalogPath));
-      if FCatalog = nil then
-        FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
-      FCheckedSystems.Clear;
-      FillCatalog;
-      BuildSystems;
-      BuildMedia;
-      RefreshSettings;
-      SaveConfig;
-    end;
-  finally
-    Setup.Free
+    FSetupScreen.StyleBook := StyleBookWinUI3;
+    if Mode = smCopyMedia then
+      Host := MediaSelectionHost
+    else
+      Host := SetupHost;
+    FSetupScreen.AttachTo(Host);
+    FSetupScreen.OnCompleted := SetupCompleted;
+    if Mode = smCopyMedia then
+      FSetupScreen.ConfigureMedia(FConfig, FCatalog, FSetupTarget)
+    else
+      FSetupScreen.Configure(FConfig, FCatalog, Mode = smWizard);
+    if Mode = smCopyMedia then
+      ScreenTabControl.ActiveTab := TabMediaSelection
+    else
+      ScreenTabControl.ActiveTab := TabSetup;
+    FSetupScreen.FormResize(nil);
+  except
+    ScreenTabControl.ActiveTab := TabWorkspace;
+    FreeAndNil(FSetupScreen);
+    raise;
   end;
+end;
+
+procedure TFormMain.SetupCompleted(Sender: TObject);
+var
+  Source: TJSONObject;
+begin
+  // Keep event targets alive until FMX finishes dispatching the button click.
+  ScreenTabControl.ActiveTab := TabWorkspace;
+  if FSetupScreen.ModalResult <> mrOk then
+    Exit;
+  case FSetupMode of
+    smWizard:
+      begin
+        FSelected := -1;
+        FMedia := 0;
+        FreeAndNil(FCatalog);
+        FCatalog := ReadJSON(TPlatformPath.Combine(WritableBase, SystemsCatalogPath));
+        if FCatalog = nil then
+          FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
+        FCheckedSystems.Clear;
+        FillCatalog;
+      end;
+    smAddPlatform:
+      begin
+        FSelected := FConfig.Root.GetValue<TJSONArray>('Systems').Count - 1;
+        FillCatalog;
+      end;
+    smCopyMedia:
+      begin
+        Source := FSetupScreen.SelectedMedia;
+        if Source = nil then
+          Exit;
+        try
+          FSettings.EnsureGroup(FSetupTarget, 'Medias', 8);
+          AppendSystemMedia(FConfig.SystemAt(FSetupTarget), Source);
+        finally
+          Source.Free;
+        end;
+      end;
+  end;
+  if FSetupMode <> smCopyMedia then
+    BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+  if FSetupMode <> smCopyMedia then
+    SaveConfig;
 end;
 
 procedure TFormMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -901,6 +982,10 @@ var
   Lines: TStringList;
 begin
   CanClose := not FAccountBusy and not FCacheBusy;
+  if CanClose and ((ScreenTabControl.ActiveTab = TabSetup) or (ScreenTabControl.ActiveTab = TabMediaSelection)) then
+    FSetupScreen.FormCloseQuery(Self, CanClose);
+  if CanClose and (ScreenTabControl.ActiveTab = TabPlatformLibrary) then
+    FLibraryScreen.FormCloseQuery(Self, CanClose);
   if FWorker <> nil then
   begin
     Lines := TStringList.Create;
@@ -1290,38 +1375,47 @@ end;
 
 procedure TFormMain.OpenPlatformLibraryClick(Sender: TObject);
 var
-  Window: TFormGameLibrary;
   Config: TJSONObject;
 begin
-  if (FWorker <> nil) and not FWorker.Finished then
+  if not CanExecuteAction or (FSelected < 0) or
+    (ScreenTabControl.ActiveTab <> TabWorkspace) then
     Exit;
-  if FSelected < 0 then
-    Exit;
-  Window := nil;
+  FreeAndNil(FLibraryScreen);
   Config := FConfig.EffectiveSystem(FSelected);
   try
     try
       ResolveFrontendPaths(Config, JValue(FConfig.Root, 'FrontEnd') as TJSONObject, FCatalog);
-      Window := TFormGameLibrary.Create(Self);
-      Window.StyleBook := StyleBookWinUI3;
-      Window.OnCreateScrapeWorker :=
+      FLibrarySystemIndex := FSelected;
+      FLibraryScreen := TFormGameLibrary.Create(Self);
+      FLibraryScreen.StyleBook := StyleBookWinUI3;
+      FLibraryScreen.AttachTo(PlatformLibraryHost);
+      FLibraryScreen.OnReturn := LibraryReturned;
+      FLibraryScreen.OnCreateScrapeWorker :=
         function(Rom: string): TScrapeWorker
         begin
           SaveConfig;
-          // The index refers to the complete config, independent of checkboxes.
           Result := TScrapeWorker.Create(FConfig.Root, FConfig.Credentials,
-            WritableBase, FSelected, False, 1, Rom);
+            WritableBase, FLibrarySystemIndex, False, 1, Rom);
         end;
-      Window.LoadPlatform(Config, SystemTitle(FSelected));
-      Window.ShowModal;
+      ScreenTabControl.ActiveTab := TabPlatformLibrary;
+      FLibraryScreen.LoadPlatform(Config, SystemTitle(FSelected));
     except
       on E: Exception do
+      begin
+        ScreenTabControl.ActiveTab := TabWorkspace;
+        FreeAndNil(FLibraryScreen);
         TDialogServiceSync.ShowMessage(E.Message);
+      end;
     end;
   finally
-    Window.Free;
     Config.Free
   end;
+end;
+
+procedure TFormMain.LibraryReturned(Sender: TObject);
+begin
+  ScreenTabControl.ActiveTab := TabWorkspace;
+  UpdateInspector;
 end;
 
 procedure TFormMain.SelectSystem(Sender: TObject);
@@ -1786,24 +1880,8 @@ begin
 end;
 
 procedure TFormMain.AddSystem;
-var
-  Setup: TFormSetup;
 begin
-  Setup := TFormSetup.Create(nil);
-  try
-    Setup.StyleBook := StyleBookWinUI3;
-    if Setup.Execute(FConfig, FCatalog, False) then
-    begin
-      FSelected := FConfig.Root.GetValue<TJSONArray>('Systems').Count - 1;
-      FillCatalog;
-      BuildSystems;
-      BuildMedia;
-      RefreshSettings;
-      SaveConfig;
-    end;
-  finally
-    Setup.Free;
-  end;
+  OpenSetupScreen(smAddPlatform);
 end;
 
 procedure TFormMain.EnsureGroup(const Group: string; Bit: Integer);
@@ -1815,46 +1893,122 @@ procedure TFormMain.PreviewMedia;
 var
   Settings: TJSONObject;
   Medias: TJSONValue;
-  Media: TJSONObject;
-  FileName, Key, Title: string;
+  SettingsText, CatalogText, Cache, Key, Title: string;
+  MediaIndex, Sample: Integer;
 begin
   if FConfig = nil then
     Exit;
   Settings := FConfig.EffectiveSystem(FSelected);
   try
-    Medias := JValue(Settings, 'Medias');
-    if not (Medias is TJSONArray) or (FMedia < 0) or (FMedia >= TJSONArray(Medias).Count) then
-    begin
-      MediaPreviewImage.Bitmap.Clear(0);
-      MediaPreviewCaption.Text := SK.Locale.L('Добавьте медиа для предпросмотра');
-      Exit
-    end;
-    Media := TJSONArray(Medias).Items[FMedia] as TJSONObject;
-    Key := Settings.ToJSON + '|' + FMedia.ToString + '|' + FSample.ToString + '|' + CurrentLocale;
+    SettingsText := Settings.ToJSON;
+    Key := SettingsText + '|' + FMedia.ToString + '|' + FSample.ToString + '|' + CurrentLocale;
     if Key = FPreviewKey then
       Exit;
     FPreviewKey := Key;
+    FPreviewPending := False;
     MediaPreviewImage.Bitmap.SetSize(0, 0);
-    try
-      FileName := MediaPreview(Media, Settings, FCatalog, FSample, TPlatformPath.Combine(WritableBase, 'Cache/preview'));
-      if FileName <> '' then
-        MediaPreviewImage.Bitmap.LoadFromFile(FileName);
-      Title := MediaSelectionTitle.Text;
-      if JInt(Media, 'Type') = 1 then
-        Title := MixTitle(TPlatformPath.Combine(AppBase, 'Mixes/' +
-            BuiltInMixFiles[EnsureRange(JInt(Media, 'InternalMix'), 0, 6)]))
-      else if JInt(Media, 'Type') = 2 then
-        Title := MixTitle(JStr(Media, 'LocalMixFile'));
-      MediaSelectionTitle.Text := Title;
-      MediaPreviewCaption.Text := Title + sLineBreak + SK.Locale.L('Образец: %s', [MixSamplePrefixes[FSample mod 6]]);
-      if FileName = '' then
-        MediaPreviewCaption.Text := MediaPreviewCaption.Text + sLineBreak + SK.Locale.L('Изображение образца отсутствует');
-    except
-      on E: Exception do
-        MediaPreviewCaption.Text := SK.Locale.L('Не удалось построить предпросмотр: %s', [E.Message]);
+    Medias := JValue(Settings, 'Medias');
+    if not (Medias is TJSONArray) or (FMedia < 0) or (FMedia >= TJSONArray(Medias).Count) then
+    begin
+      MediaPreviewCaption.Text := SK.Locale.L('Добавьте медиа для предпросмотра');
+      Exit
     end;
+    MediaPreviewCaption.Text := SK.Locale.L('Медиа') + '…';
+    if FPreviewFuture <> nil then
+    begin
+      // Coalesce rapid changes: render only the latest selection after this job.
+      FPreviewPending := True;
+      Exit
+    end;
+    CatalogText := '';
+    if FCatalog <> nil then
+      CatalogText := FCatalog.ToJSON;
+    Cache := TPlatformPath.Combine(WritableBase, 'Cache/preview');
+    MediaIndex := FMedia;
+    Sample := FSample;
+    Title := MediaSelectionTitle.Text;
+    FPreviewActiveKey := Key;
+    // Capture immutable snapshots only. The worker never accesses the form or its JSON.
+    FPreviewFuture := TTask.Future<TMediaPreviewResult>(TFunc<TMediaPreviewResult>(
+      function: TMediaPreviewResult
+      var
+        Config, Catalog, Media: TJSONObject;
+      begin
+        Result := Default(TMediaPreviewResult);
+        Config := nil;
+        Catalog := nil;
+        try
+          try
+            Config := TJSONObject.ParseJSONValue(SettingsText) as TJSONObject;
+            Catalog := TJSONObject.ParseJSONValue(CatalogText) as TJSONObject;
+            Media := Config.GetValue<TJSONArray>('Medias').Items[MediaIndex] as TJSONObject;
+            Result.FileName := MediaPreview(Media, Config, Catalog, Sample, Cache);
+            Result.Title := Title;
+            if JInt(Media, 'Type') = 1 then
+              Result.Title := MixTitle(TPlatformPath.Combine(AppBase, 'Mixes/' +
+                  BuiltInMixFiles[EnsureRange(JInt(Media, 'InternalMix'), 0, 6)]))
+            else if JInt(Media, 'Type') = 2 then
+              Result.Title := MixTitle(JStr(Media, 'LocalMixFile'));
+          except
+            on E: Exception do
+              Result.Error := E.Message;
+          end;
+        finally
+          Catalog.Free;
+          Config.Free
+        end;
+      end));
   finally
     Settings.Free
+  end;
+end;
+
+procedure TFormMain.PollMediaPreview;
+var
+  Preview: TMediaPreviewResult;
+begin
+  if csDestroying in ComponentState then
+    Exit;
+  if FPreviewFuture = nil then
+  begin
+    if FPreviewPending and ((FWorker = nil) or FWorker.Finished) then
+    begin
+      FPreviewKey := '';
+      PreviewMedia;
+    end;
+    Exit;
+  end;
+  if not (FPreviewFuture.Status in [TTaskStatus.Completed, TTaskStatus.Exception, TTaskStatus.Canceled]) then
+    Exit;
+  try
+    try
+      Preview := FPreviewFuture.Value;
+      if FPreviewActiveKey = FPreviewKey then
+      begin
+        if Preview.Error <> '' then
+          MediaPreviewCaption.Text := SK.Locale.L('Не удалось построить предпросмотр: %s', [Preview.Error])
+        else
+        begin
+          if Preview.FileName <> '' then
+            MediaPreviewImage.Bitmap.LoadFromFile(Preview.FileName);
+          MediaSelectionTitle.Text := Preview.Title;
+          MediaPreviewCaption.Text := Preview.Title + sLineBreak + SK.Locale.L('Образец: %s', [MixSamplePrefixes[FSample mod 6]]);
+          if Preview.FileName = '' then
+            MediaPreviewCaption.Text := MediaPreviewCaption.Text + sLineBreak + SK.Locale.L('Изображение образца отсутствует');
+        end;
+      end;
+    except
+      on E: Exception do
+        if FPreviewActiveKey = FPreviewKey then
+          MediaPreviewCaption.Text := SK.Locale.L('Не удалось построить предпросмотр: %s', [E.Message]);
+    end;
+  finally
+    FPreviewFuture := nil
+  end;
+  if FPreviewPending and ((FWorker = nil) or FWorker.Finished) then
+  begin
+    FPreviewKey := '';
+    PreviewMedia;
   end;
 end;
 
@@ -2171,28 +2325,8 @@ begin
 end;
 
 procedure TFormMain.ButtonCopyFromMainClick(Sender: TObject);
-var
-  O: TJSONObject;
-  Setup: TFormSetup;
 begin
-  if not CanExecuteAction then
-    Exit;
-  Setup := TFormSetup.Create(nil);
-  try
-    Setup.StyleBook := StyleBookWinUI3;
-    O := Setup.ExecuteMedia(FConfig, FCatalog, FSelected);
-    if O <> nil then
-    try
-      EnsureGroup('Medias', 8);
-      AppendSystemMedia(FConfig.SystemAt(FSelected), O);
-      BuildMedia;
-      RefreshSettings;
-    finally
-      O.Free
-    end;
-  finally
-    Setup.Free
-  end;
+  OpenSetupScreen(smCopyMedia);
 end;
 
 procedure TFormMain.RaisedButtonClearAllCachesClick(Sender: TObject);
@@ -2264,6 +2398,7 @@ var
   Lines: TStringList;
 begin
   PollFolderCount;
+  PollMediaPreview;
   if FWorker = nil then
     Exit;
   Lines := TStringList.Create;
@@ -2293,6 +2428,7 @@ procedure TFormMain.ShowPage(Page: Integer);
 begin
   if (Page < 0) or (Page >= PageTabControl.TabCount) then
     raise EArgumentOutOfRangeException.Create('Page');
+  ScreenTabControl.ActiveTab := TabWorkspace;
   if PageTabControl.TabIndex = Page then
     PageTabChanged(nil)
   else

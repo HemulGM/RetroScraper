@@ -15,683 +15,702 @@
   OnCloseQuery = FormCloseQuery
   OnDestroy = FormDestroy
   DesignerMasterStyle = 0
+  object LibraryLoadTimer: TTimer
+    Enabled = False
+    Interval = 16
+    OnTimer = LibraryLoadTimerTimer
+  end
   object ScrapeTimer: TTimer
     Enabled = False
     Interval = 100
     OnTimer = ScrapeTimerTimer
   end
-  object Surface: TRectangle
-    Align = Contents
-    Fill.Color = xFF202426
-    HitTest = False
-    Size.Width = 1280.000000000000000000
-    Size.Height = 850.000000000000000000
-    Size.PlatformDefault = False
-    Stroke.Kind = None
+  object MediaDialog: TOpenDialog
   end
-  object RootLayout: TLayout
+  object LibraryRoot: TLayout
     Align = Client
-    Padding.Left = 24.000000000000000000
-    Padding.Top = 16.000000000000000000
-    Padding.Right = 24.000000000000000000
-    Padding.Bottom = 16.000000000000000000
     Size.Width = 1280.000000000000000000
     Size.Height = 850.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 1
-    object Header: TLayout
-      Align = Top
-      Margins.Bottom = 16.000000000000000000
-      Position.X = 24.000000000000000000
-      Position.Y = 16.000000000000000000
-      Size.Width = 1232.000000000000000000
-      Size.Height = 44.000000000000000000
-      Size.PlatformDefault = False
-      object HeaderIcon: TPath
-        Align = Left
-        Data.Path = {
-          7800000000000000CFF76F410000A040020000005D8C9641B1F09F4002000000
-          A87AAF41CAF5004102000000CF00B04168143E4102000000F686B04106337B41
-          020000006A7398415EEF964102000000D9CE7341CFF7974101000000CFF76F41
-          00009841010000003108104100009841020000008DCEA540D403984102000000
-          BF2A0440350A7F410200000010F3FF3F97EB414102000000A290F73FF9CC0441
-          0200000059329E408642A4400200000027310C41C420A0400100000019041041
-          0000A04003000000CFF76F410000A04000000000CFF76F410000D04001000000
-          310810410000D040020000008F18C04029CCCF400200000021506340D4410E41
-          02000000D6745F404A3B3E41020000008B995B40C0346E4102000000F817B940
-          FC0D8B4102000000057F0C41CFF78B41010000003C08104100008C4101000000
-          DAF76F4100008C4102000000E2F98F41F60C8C41020000000196A3412CBE7141
-          020000006B11A441B6C4414102000000D58CA44140CB11410200000008BA9141
-          10C8D3400200000007817341C320D04003000000CFF76F410000D04000000000
-          000000410000104102000000BF2E034100001041020000001E3C0641A8431141
-          020000003B7C0841C58313410200000058BC0A41E2C315410200000000000C41
-          41D118410200000000000C4100001C410100000000000C41CFF7334101000000
-          00002441CFF733410200000085492841CFF7334102000000AB3F2C4154413641
-          020000006E642E41CFF7394102000000318930414AAE3D410200000031893041
-          54414241020000006E642E41CFF7454102000000AB3F2C414AAE494102000000
-          85492841CFF74B410200000000002441CFF74B410100000000000C41CFF74B41
-          0100000000000C41000064410200000000000C4185496841020000007BB60941
-          AB3F6C4102000000000006416E646E4102000000854902413189704102000000
-          F66CFB4031897041020000000000F4406E646E41020000000A93EC40AB3F6C41
-          020000000000E84085496841020000000000E84000006441010000000000E840
-          CFF74B41010000000000B840CFF74B4102000000F66CAF40CFF74B4102000000
-          A980A7404AAE4941020000002437A340CFF74541020000009FED9E4054414241
-          020000009FED9E404AAE3D41020000002437A340CFF7394102000000A980A740
-          5441364102000000F66CAF40CFF73341020000000000B840CFF7334101000000
-          0000E840CFF73341010000000000E84000001C41020000000000E84041D11841
-          020000005087EA40E1C31541020000008907EF40C483134102000000C287F340
-          A74311410200000083A2F9400000104102000000000000410000104100000000
-          00006C41000048410200000033257341000048410200000073BF7941DECF4B41
-          020000000D527D41000052410200000053728041223058410200000053728041
-          DECF5F41020000000D527D41000066410200000073BF794122306C4102000000
-          33257341000070410200000000006C410000704102000000CDDA644100007041
-          020000008D405E4122306C4102000000F3AD5A410000664102000000591B5741
-          DECF5F4102000000591B57412230584102000000F3AD5A410000524102000000
-          8D405E41DECF4B4102000000CDDA6441000048410200000000006C4100004841
-          000000000000864100001041020000009A9289410000104102000000B9DF8C41
-          DECF13410200000006A98E4100001A4102000000537290412230204102000000
-          53729041DECF27410200000006A98E4100002E4102000000B9DF8C4122303441
-          020000009A9289410000384102000000000086410000384102000000666D8241
-          00003841020000008D407E412230344102000000F3AD7A4100002E4102000000
-          591B7741DECF274102000000591B77412230204102000000F3AD7A4100001A41
-          020000008D407E41DECF134102000000666D8241000010410200000000008641
-          00001041}
-        Fill.Color = xFF60CDFF
-        HitTest = False
-        Margins.Right = 12.000000000000000000
-        Size.Width = 24.000000000000000000
-        Size.Height = 44.000000000000000000
-        Size.PlatformDefault = False
-        Stroke.Kind = None
-        WrapMode = Fit
-      end
-      object TitleLabel: TLabel
-        Align = Client
-        StyledSettings = [Family, Style, FontColor]
-        Size.Width = 1196.000000000000000000
-        Size.Height = 44.000000000000000000
-        Size.PlatformDefault = False
-        TextSettings.Font.Size = 22.000000000000000000
-        TextSettings.WordWrap = False
-        Text = #1041#1080#1073#1083#1080#1086#1090#1077#1082#1072' '#1080#1075#1088
-      end
-    end
-    object Commands: TLayout
-      Align = Bottom
-      Padding.Top = 16.000000000000000000
-      Position.X = 24.000000000000000000
-      Position.Y = 770.000000000000000000
-      Size.Width = 1232.000000000000000000
-      Size.Height = 64.000000000000000000
-      Size.PlatformDefault = False
-      object CommandButtons: TGridPanelLayout
-        Align = Right
-        Padding.Bottom = 8.000000000000000000
-        Position.X = 732.000000000000000000
-        Position.Y = 16.000000000000000000
-        Size.Width = 500.000000000000000000
-        Size.Height = 48.000000000000000000
-        Size.PlatformDefault = False
-        ColumnCollection = <
-          item
-            SizeStyle = Absolute
-            Value = 174.000000000000000000
-          end
-          item
-            SizeStyle = Absolute
-            Value = 216.000000000000000000
-          end
-          item
-            SizeStyle = Absolute
-            Value = 110.000000000000000000
-          end>
-        ControlCollection = <
-          item
-            Column = 0
-            Control = SaveButton
-            Row = 0
-          end
-          item
-            Column = 1
-            Control = ScrapeButton
-            Row = 0
-          end
-          item
-            Column = 2
-            Control = CloseButton
-            Row = 0
-          end>
-        RowCollection = <
-          item
-            Value = 100.000000000000000000
-          end>
-        object SaveButton: TButton
-          Align = Client
-          Margins.Right = 10.000000000000000000
-          Size.Width = 164.000000000000000000
-          Size.Height = 40.000000000000000000
-          Size.PlatformDefault = False
-          Text = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1080#1075#1088#1091
-          OnClick = SaveClick
-        end
-        object ScrapeButton: TButton
-          Align = Client
-          Margins.Right = 10.000000000000000000
-          Size.Width = 206.000000000000000000
-          Size.Height = 40.000000000000000000
-          Size.PlatformDefault = False
-          Text = #1057#1082#1088#1072#1087#1087#1080#1085#1075' '#1101#1090#1086#1081' '#1080#1075#1088#1099
-          OnClick = ScrapeClick
-        end
-        object CloseButton: TButton
-          Align = Client
-          Size.Width = 110.000000000000000000
-          Size.Height = 40.000000000000000000
-          Size.PlatformDefault = False
-          Text = #1047#1072#1082#1088#1099#1090#1100
-          OnClick = CloseClick
-        end
-      end
-      object StatusLabel: TLabel
-        Align = Client
-        Margins.Right = 16.000000000000000000
-        Size.Width = 716.000000000000000000
-        Size.Height = 48.000000000000000000
-        Size.PlatformDefault = False
-        TextSettings.WordWrap = False
-        Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091' '#1074' '#1089#1087#1080#1089#1082#1077' '#1089#1083#1077#1074#1072
-      end
-    end
-    object ScrapeProgressLayout: TLayout
-      Align = Bottom
-      Margins.Top = 8.000000000000000000
-      Size.Width = 1232.000000000000000000
-      Size.Height = 24.000000000000000000
-      Size.PlatformDefault = False
-      Visible = False
-      object ScrapeActivity: TAniIndicator
-        Align = Left
-        Margins.Right = 12.000000000000000000
-        Size.Width = 24.000000000000000000
-        Size.Height = 24.000000000000000000
-        Size.PlatformDefault = False
-      end
-      object ScrapeProgress: TProgressBar
-        Align = Client
-        Margins.Top = 8.000000000000000000
-        Margins.Bottom = 8.000000000000000000
-        Size.Width = 1196.000000000000000000
-        Size.Height = 8.000000000000000000
-        Size.PlatformDefault = False
-        Max = 1.000000000000000000
-      end
-    end
-    object FooterDivider: TRectangle
-      Align = Bottom
-      Fill.Color = xFF3D4245
+    object Surface: TRectangle
+      Align = Contents
+      Fill.Color = xFF202426
       HitTest = False
-      Margins.Top = 16.000000000000000000
-      Position.X = 24.000000000000000000
-      Position.Y = 769.000000000000000000
-      Size.Width = 1232.000000000000000000
-      Size.Height = 1.000000000000000000
+      Size.Width = 1280.000000000000000000
+      Size.Height = 850.000000000000000000
       Size.PlatformDefault = False
       Stroke.Kind = None
     end
-    object Body: TLayout
+    object RootLayout: TLayout
       Align = Client
-      Size.Width = 1232.000000000000000000
-      Size.Height = 677.000000000000000000
+      Padding.Left = 24.000000000000000000
+      Padding.Top = 16.000000000000000000
+      Padding.Right = 24.000000000000000000
+      Padding.Bottom = 16.000000000000000000
+      Size.Width = 1280.000000000000000000
+      Size.Height = 850.000000000000000000
       Size.PlatformDefault = False
-      object GamesPanel: TLayout
-        Align = Left
-        Margins.Right = 20.000000000000000000
-        Size.Width = 290.000000000000000000
-        Size.Height = 677.000000000000000000
+      TabOrder = 1
+      object Header: TLayout
+        Align = Top
+        Margins.Bottom = 16.000000000000000000
+        Position.X = 24.000000000000000000
+        Position.Y = 16.000000000000000000
+        Size.Width = 1232.000000000000000000
+        Size.Height = 44.000000000000000000
         Size.PlatformDefault = False
-        object PlatformLabel: TLabel
-          Align = Top
-          StyledSettings = [Family, Style, FontColor]
-          Size.Width = 290.000000000000000000
-          Size.Height = 34.000000000000000000
+        object HeaderIcon: TPath
+          Margins.Top = 10.000000000000000000
+          Margins.Bottom = 10.000000000000000000
+          Align = Left
+          Data.Path = {
+            7800000000000000CFF76F410000A040020000005D8C9641B1F09F4002000000
+            A87AAF41CAF5004102000000CF00B04168143E4102000000F686B04106337B41
+            020000006A7398415EEF964102000000D9CE7341CFF7974101000000CFF76F41
+            00009841010000003108104100009841020000008DCEA540D403984102000000
+            BF2A0440350A7F410200000010F3FF3F97EB414102000000A290F73FF9CC0441
+            0200000059329E408642A4400200000027310C41C420A0400100000019041041
+            0000A04003000000CFF76F410000A04000000000CFF76F410000D04001000000
+            310810410000D040020000008F18C04029CCCF400200000021506340D4410E41
+            02000000D6745F404A3B3E41020000008B995B40C0346E4102000000F817B940
+            FC0D8B4102000000057F0C41CFF78B41010000003C08104100008C4101000000
+            DAF76F4100008C4102000000E2F98F41F60C8C41020000000196A3412CBE7141
+            020000006B11A441B6C4414102000000D58CA44140CB11410200000008BA9141
+            10C8D3400200000007817341C320D04003000000CFF76F410000D04000000000
+            000000410000104102000000BF2E034100001041020000001E3C0641A8431141
+            020000003B7C0841C58313410200000058BC0A41E2C315410200000000000C41
+            41D118410200000000000C4100001C410100000000000C41CFF7334101000000
+            00002441CFF733410200000085492841CFF7334102000000AB3F2C4154413641
+            020000006E642E41CFF7394102000000318930414AAE3D410200000031893041
+            54414241020000006E642E41CFF7454102000000AB3F2C414AAE494102000000
+            85492841CFF74B410200000000002441CFF74B410100000000000C41CFF74B41
+            0100000000000C41000064410200000000000C4185496841020000007BB60941
+            AB3F6C4102000000000006416E646E4102000000854902413189704102000000
+            F66CFB4031897041020000000000F4406E646E41020000000A93EC40AB3F6C41
+            020000000000E84085496841020000000000E84000006441010000000000E840
+            CFF74B41010000000000B840CFF74B4102000000F66CAF40CFF74B4102000000
+            A980A7404AAE4941020000002437A340CFF74541020000009FED9E4054414241
+            020000009FED9E404AAE3D41020000002437A340CFF7394102000000A980A740
+            5441364102000000F66CAF40CFF73341020000000000B840CFF7334101000000
+            0000E840CFF73341010000000000E84000001C41020000000000E84041D11841
+            020000005087EA40E1C31541020000008907EF40C483134102000000C287F340
+            A74311410200000083A2F9400000104102000000000000410000104100000000
+            00006C41000048410200000033257341000048410200000073BF7941DECF4B41
+            020000000D527D41000052410200000053728041223058410200000053728041
+            DECF5F41020000000D527D41000066410200000073BF794122306C4102000000
+            33257341000070410200000000006C410000704102000000CDDA644100007041
+            020000008D405E4122306C4102000000F3AD5A410000664102000000591B5741
+            DECF5F4102000000591B57412230584102000000F3AD5A410000524102000000
+            8D405E41DECF4B4102000000CDDA6441000048410200000000006C4100004841
+            000000000000864100001041020000009A9289410000104102000000B9DF8C41
+            DECF13410200000006A98E4100001A4102000000537290412230204102000000
+            53729041DECF27410200000006A98E4100002E4102000000B9DF8C4122303441
+            020000009A9289410000384102000000000086410000384102000000666D8241
+            00003841020000008D407E412230344102000000F3AD7A4100002E4102000000
+            591B7741DECF274102000000591B77412230204102000000F3AD7A4100001A41
+            020000008D407E41DECF134102000000666D8241000010410200000000008641
+            00001041}
+          Fill.Color = xFF60CDFF
+          HitTest = False
+          Margins.Right = 12.000000000000000000
+          Size.Width = 24.000000000000000000
+          Size.Height = 24.000000000000000000
           Size.PlatformDefault = False
-          TextSettings.Font.Size = 18.000000000000000000
-          TextSettings.WordWrap = False
-          Text = #1055#1083#1072#1090#1092#1086#1088#1084#1072
+          Stroke.Kind = None
+          WrapMode = Fit
         end
-        object CountLabel: TLabel
-          Align = Top
-          Opacity = 0.699999988079071000
-          Margins.Bottom = 14.000000000000000000
-          Position.Y = 34.000000000000000000
-          Size.Width = 290.000000000000000000
-          Size.Height = 26.000000000000000000
-          Size.PlatformDefault = False
-          TextSettings.WordWrap = False
-          Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091
-        end
-        object SearchEdit: TEdit
-          Touch.InteractiveGestures = [LongTap, DoubleTap]
-          Align = Top
-          Position.Y = 74.000000000000000000
-          Margins.Bottom = 12.000000000000000000
-          Size.Width = 290.000000000000000000
-          Size.Height = 32.000000000000000000
-          Size.PlatformDefault = False
-          TextPrompt = #1055#1086#1080#1089#1082' '#1080#1075#1088#1099' '#1080#1083#1080' ROM'
-          OnChangeTracking = SearchChanged
-        end
-        object GameList: TListBox
-          ScrollAnimation = True
+        object TitleLabel: TLabel
+          TextSettings.Trimming = Character
           Align = Client
-          Size.Width = 290.000000000000000000
-          Size.Height = 559.000000000000000000
-          Size.PlatformDefault = False
-          DisableFocusEffect = True
-          DefaultItemStyles.ItemStyle = ''
-          DefaultItemStyles.GroupHeaderStyle = ''
-          DefaultItemStyles.GroupFooterStyle = ''
-          OnChange = GameChanged
-          OnViewportPositionChange = GameListViewportChanged
-          OnResize = GameListResized
-          Viewport.Width = 290.000000000000000000
-          Viewport.Height = 559.000000000000000000
-        end
-      end
-      object LibraryDivider: TRectangle
-        Align = Left
-        Fill.Color = xFF3D4245
-        HitTest = False
-        Margins.Right = 24.000000000000000000
-        Position.X = 310.000000000000000000
-        Size.Width = 1.000000000000000000
-        Size.Height = 677.000000000000000000
-        Size.PlatformDefault = False
-        Stroke.Kind = None
-      end
-      object EditorPanel: TLayout
-        Align = Client
-        Size.Width = 897.000000000000000000
-        Size.Height = 677.000000000000000000
-        Size.PlatformDefault = False
-        object GameTitleLabel: TLabel
-          Align = Top
           StyledSettings = [Family, Style, FontColor]
-          Size.Width = 897.000000000000000000
-          Size.Height = 34.000000000000000000
+          Size.Width = 1204.000000000000000000
+          Size.Height = 44.000000000000000000
           Size.PlatformDefault = False
           TextSettings.Font.Size = 22.000000000000000000
           TextSettings.WordWrap = False
-          Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091
+          Text = #1041#1080#1073#1083#1080#1086#1090#1077#1082#1072' '#1080#1075#1088
         end
-        object GamePlatformLabel: TLabel
-          Align = Top
-          Opacity = 0.699999988079071000
-          Margins.Bottom = 12.000000000000000000
-          Position.Y = 34.000000000000000000
-          Size.Width = 897.000000000000000000
-          Size.Height = 26.000000000000000000
+      end
+      object Commands: TLayout
+        Align = Bottom
+        Padding.Top = 16.000000000000000000
+        Position.X = 24.000000000000000000
+        Position.Y = 770.000000000000000000
+        Size.Width = 1232.000000000000000000
+        Size.Height = 64.000000000000000000
+        Size.PlatformDefault = False
+        object CommandButtons: TGridPanelLayout
+          Align = Right
+          Padding.Bottom = 8.000000000000000000
+          Position.X = 732.000000000000000000
+          Position.Y = 16.000000000000000000
+          Size.Width = 500.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          ColumnCollection = <
+            item
+              SizeStyle = Absolute
+              Value = 174.000000000000000000
+            end
+            item
+              SizeStyle = Absolute
+              Value = 216.000000000000000000
+            end
+            item
+              SizeStyle = Absolute
+              Value = 110.000000000000000000
+            end>
+          ControlCollection = <
+            item
+              Column = 0
+              Control = SaveButton
+              Row = 0
+            end
+            item
+              Column = 1
+              Control = ScrapeButton
+              Row = 0
+            end
+            item
+              Column = 2
+              Control = CloseButton
+              Row = 0
+            end>
+          RowCollection = <
+            item
+              Value = 100.000000000000000000
+            end>
+          object SaveButton: TButton
+            Align = Client
+            Margins.Right = 10.000000000000000000
+            Size.Width = 164.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Text = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1080#1075#1088#1091
+            OnClick = SaveClick
+          end
+          object ScrapeButton: TButton
+            Align = Client
+            Margins.Right = 10.000000000000000000
+            Size.Width = 206.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Text = #1057#1082#1088#1072#1087#1087#1080#1085#1075' '#1101#1090#1086#1081' '#1080#1075#1088#1099
+            OnClick = ScrapeClick
+          end
+          object CloseButton: TButton
+            Align = Client
+            Size.Width = 110.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Text = #1047#1072#1082#1088#1099#1090#1100
+            OnClick = CloseClick
+          end
+        end
+        object StatusLabel: TLabel
+          TextSettings.Trimming = Character
+          Align = Client
+          Margins.Right = 16.000000000000000000
+          Size.Width = 716.000000000000000000
+          Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           TextSettings.WordWrap = False
+          Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091' '#1074' '#1089#1087#1080#1089#1082#1077' '#1089#1083#1077#1074#1072
         end
-        object TabActions: TLayout
-          Align = Top
-          Position.Y = 72.000000000000000000
-          Size.Width = 897.000000000000000000
-          Size.Height = 42.000000000000000000
+      end
+      object ScrapeProgressLayout: TLayout
+        Align = Bottom
+        Margins.Top = 8.000000000000000000
+        Size.Width = 1232.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        Visible = False
+        object ScrapeActivity: TAniIndicator
+          Align = Left
+          Margins.Top = 4.000000000000000000
+          Margins.Right = 12.000000000000000000
+          Margins.Bottom = 4.000000000000000000
+          Size.Width = 16.000000000000000000
+          Size.Height = 16.000000000000000000
           Size.PlatformDefault = False
-          object FieldsTabButton: TButton
-            StaysPressed = True
-            Align = Left
-            Size.Width = 112.000000000000000000
-            Size.Height = 42.000000000000000000
+          StyleLookup = 'aniindicatorstyle_circular_small'
+        end
+        object ScrapeProgress: TProgressBar
+          Align = Client
+          Margins.Top = 8.000000000000000000
+          Margins.Bottom = 8.000000000000000000
+          Size.Width = 1204.000000000000000000
+          Size.Height = 8.000000000000000000
+          Size.PlatformDefault = False
+          Max = 1.000000000000000000
+        end
+      end
+      object FooterDivider: TRectangle
+        Align = Bottom
+        Fill.Color = xFF3D4245
+        HitTest = False
+        Margins.Top = 16.000000000000000000
+        Position.X = 24.000000000000000000
+        Position.Y = 769.000000000000000000
+        Size.Width = 1232.000000000000000000
+        Size.Height = 1.000000000000000000
+        Size.PlatformDefault = False
+        Stroke.Kind = None
+      end
+      object Body: TLayout
+        Align = Client
+        Size.Width = 1232.000000000000000000
+        Size.Height = 677.000000000000000000
+        Size.PlatformDefault = False
+        object GamesPanel: TLayout
+          Align = Left
+          Margins.Right = 20.000000000000000000
+          Size.Width = 290.000000000000000000
+          Size.Height = 677.000000000000000000
+          Size.PlatformDefault = False
+          object PlatformLabel: TLabel
+            TextSettings.Trimming = Character
+            Align = Top
+            StyledSettings = [Family, Style, FontColor]
+            Size.Width = 290.000000000000000000
+            Size.Height = 34.000000000000000000
             Size.PlatformDefault = False
-            StyleLookup = 'buttonstyle_subtle'
-            Text = #1055#1086#1083#1103' '#1080#1075#1088#1099
-            OnClick = FieldsTabClick
-            object FieldsTabLine: TRectangle
-              Align = Bottom
-              Fill.Color = xFF60CDFF
-              HitTest = False
-              Margins.Left = 10.000000000000000000
-              Margins.Right = 10.000000000000000000
-              Position.X = 10.000000000000000000
-              Position.Y = 39.000000000000000000
-              Size.Width = 92.000000000000000000
-              Size.Height = 3.000000000000000000
-              Size.PlatformDefault = False
-              Stroke.Kind = None
-            end
+            TextSettings.Font.Size = 18.000000000000000000
+            TextSettings.WordWrap = False
+            Text = #1055#1083#1072#1090#1092#1086#1088#1084#1072
           end
-          object XMLTabButton: TButton
-            StaysPressed = True
-            Align = Left
-            Position.X = 112.000000000000000000
-            Size.Width = 140.000000000000000000
-            Size.Height = 42.000000000000000000
+          object CountLabel: TLabel
+            Align = Top
+            Opacity = 0.699999988079071000
+            Margins.Bottom = 14.000000000000000000
+            Position.Y = 34.000000000000000000
+            Size.Width = 290.000000000000000000
+            Size.Height = 26.000000000000000000
             Size.PlatformDefault = False
-            StyleLookup = 'buttonstyle_subtle'
-            Text = #1042#1089#1077' '#1087#1086#1083#1103' (XML)'
-            OnClick = XMLTabClick
-            object XMLTabLine: TRectangle
-              Align = Bottom
-              Fill.Color = xFF60CDFF
-              HitTest = False
-              Margins.Left = 10.000000000000000000
-              Margins.Right = 10.000000000000000000
-              Size.Width = 50.000000000000000000
-              Size.Height = 3.000000000000000000
-              Size.PlatformDefault = False
-              Stroke.Kind = None
-              Visible = False
-            end
+            TextSettings.WordWrap = False
+            Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091
+          end
+          object SearchEdit: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Top
+            Position.Y = 74.000000000000000000
+            Margins.Bottom = 12.000000000000000000
+            Size.Width = 290.000000000000000000
+            Size.Height = 32.000000000000000000
+            Size.PlatformDefault = False
+            TextPrompt = #1055#1086#1080#1089#1082' '#1080#1075#1088#1099' '#1080#1083#1080' ROM'
+            OnChangeTracking = SearchChanged
+          end
+          object GameList: TListBox
+            ScrollAnimation = True
+            Align = Client
+            Size.Width = 290.000000000000000000
+            Size.Height = 559.000000000000000000
+            Size.PlatformDefault = False
+            DisableFocusEffect = True
+            DefaultItemStyles.ItemStyle = ''
+            DefaultItemStyles.GroupHeaderStyle = ''
+            DefaultItemStyles.GroupFooterStyle = ''
+            OnChange = GameChanged
+            OnViewportPositionChange = GameListViewportChanged
+            OnResize = GameListResized
+            Viewport.Width = 290.000000000000000000
+            Viewport.Height = 559.000000000000000000
           end
         end
-        object EditorTabs: TTabControl
+        object LibraryDivider: TRectangle
+          Align = Left
+          Fill.Color = xFF3D4245
+          HitTest = False
+          Margins.Right = 24.000000000000000000
+          Position.X = 310.000000000000000000
+          Size.Width = 1.000000000000000000
+          Size.Height = 677.000000000000000000
+          Size.PlatformDefault = False
+          Stroke.Kind = None
+        end
+        object EditorPanel: TLayout
           Align = Client
           Size.Width = 897.000000000000000000
-          Size.Height = 563.000000000000000000
+          Size.Height = 677.000000000000000000
           Size.PlatformDefault = False
-          TabHeight = 48.000000000000000000
-          TabIndex = 0
-          TabPosition = None
-          OnChange = TabChanged
-          Sizes = (
-            897s
-            563s
-            897s
-            563s)
-          object FieldsTab: TTabItem
-            CustomIcon = <
-              item
-              end>
-            IsSelected = True
-            Size.Width = 16.000000000000000000
-            Size.Height = 16.000000000000000000
+          object GameTitleLabel: TLabel
+            TextSettings.Trimming = Character
+            Align = Top
+            StyledSettings = [Family, Style, FontColor]
+            Size.Width = 897.000000000000000000
+            Size.Height = 34.000000000000000000
             Size.PlatformDefault = False
-            StyleLookup = ''
-            TabOrder = 0
-            Text = #1055#1086#1083#1103' '#1080#1075#1088#1099
-            ExplicitSize.cx = 50.000000000000000000
-            ExplicitSize.cy = 50.000000000000000000
-            object FieldsScroll: TVertScrollBox
-              Align = Client
-              Margins.Top = 16.000000000000000000
-              Size.Width = 897.000000000000000000
-              Size.Height = 547.000000000000000000
+            TextSettings.Font.Size = 22.000000000000000000
+            TextSettings.WordWrap = False
+            Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091
+          end
+          object GamePlatformLabel: TLabel
+            TextSettings.Trimming = Character
+            Align = Top
+            Opacity = 0.699999988079071000
+            Margins.Bottom = 12.000000000000000000
+            Position.Y = 34.000000000000000000
+            Size.Width = 897.000000000000000000
+            Size.Height = 26.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.WordWrap = False
+          end
+          object TabActions: TLayout
+            Align = Top
+            Position.Y = 72.000000000000000000
+            Size.Width = 897.000000000000000000
+            Size.Height = 42.000000000000000000
+            Size.PlatformDefault = False
+            object FieldsTabButton: TButton
+              StaysPressed = True
+              Align = Left
+              Size.Width = 112.000000000000000000
+              Size.Height = 42.000000000000000000
               Size.PlatformDefault = False
-              TabOrder = 0
-              ScrollAnimation = True
-              Viewport.Width = 897.000000000000000000
-              Viewport.Height = 547.000000000000000000
-              object FieldsContent: TLayout
-                Align = Top
-                Padding.Right = 12.000000000000000000
-                Size.Width = 897.000000000000000000
-                Size.Height = 0.000000000000000000
+              StyleLookup = 'buttonstyle_subtle'
+              Text = #1055#1086#1083#1103' '#1080#1075#1088#1099
+              OnClick = FieldsTabClick
+              object FieldsTabLine: TRectangle
+                Align = Bottom
+                Fill.Color = xFF60CDFF
+                HitTest = False
+                Margins.Left = 10.000000000000000000
+                Margins.Right = 10.000000000000000000
+                Position.X = 10.000000000000000000
+                Position.Y = 39.000000000000000000
+                Size.Width = 92.000000000000000000
+                Size.Height = 3.000000000000000000
                 Size.PlatformDefault = False
-                TabOrder = 0
+                Stroke.Kind = None
+              end
+            end
+            object XMLTabButton: TButton
+              StaysPressed = True
+              Align = Left
+              Position.X = 112.000000000000000000
+              Size.Width = 140.000000000000000000
+              Size.Height = 42.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = 'buttonstyle_subtle'
+              Text = #1042#1089#1077' '#1087#1086#1083#1103' (XML)'
+              OnClick = XMLTabClick
+              object XMLTabLine: TRectangle
+                Align = Bottom
+                Fill.Color = xFF60CDFF
+                HitTest = False
+                Margins.Left = 10.000000000000000000
+                Margins.Right = 10.000000000000000000
+                Size.Width = 50.000000000000000000
+                Size.Height = 3.000000000000000000
+                Size.PlatformDefault = False
+                Stroke.Kind = None
+                Visible = False
               end
             end
           end
-          object XMLTab: TTabItem
-            CustomIcon = <
-              item
-              end>
-            IsSelected = False
-            Size.Width = 16.000000000000000000
-            Size.Height = 16.000000000000000000
+          object EditorTabs: TTabControl
+            Align = Client
+            Size.Width = 897.000000000000000000
+            Size.Height = 563.000000000000000000
             Size.PlatformDefault = False
-            StyleLookup = ''
-            TabOrder = 0
-            Text = #1042#1089#1077' '#1087#1086#1083#1103' (XML)'
-            ExplicitSize.cx = 50.000000000000000000
-            ExplicitSize.cy = 50.000000000000000000
-            object XMLMemo: TMemo
-              Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
-              DataDetectorTypes = []
-              OnChangeTracking = XMLChanged
-              Align = Client
-              Size.Width = 897.000000000000000000
-              Size.Height = 563.000000000000000000
+            TabHeight = 48.000000000000000000
+            TabIndex = 0
+            TabPosition = None
+            OnChange = TabChanged
+            Sizes = (
+              897s
+              563s
+              897s
+              563s)
+            object FieldsTab: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = True
+              Size.Width = 16.000000000000000000
+              Size.Height = 16.000000000000000000
               Size.PlatformDefault = False
+              StyleLookup = ''
               TabOrder = 0
-              Viewport.Width = 897.000000000000000000
-              Viewport.Height = 563.000000000000000000
+              Text = #1055#1086#1083#1103' '#1080#1075#1088#1099
+              ExplicitSize.cx = 50.000000000000000000
+              ExplicitSize.cy = 50.000000000000000000
+              object FieldsScroll: TVertScrollBox
+                Align = Client
+                Margins.Top = 16.000000000000000000
+                Size.Width = 897.000000000000000000
+                Size.Height = 547.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 0
+                ScrollAnimation = True
+                Viewport.Width = 897.000000000000000000
+                Viewport.Height = 547.000000000000000000
+                object FieldsContent: TLayout
+                  Align = Top
+                  Padding.Right = 12.000000000000000000
+                  Size.Width = 897.000000000000000000
+                  Size.Height = 0.000000000000000000
+                  Size.PlatformDefault = False
+                  TabOrder = 0
+                end
+              end
+            end
+            object XMLTab: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = False
+              Size.Width = 16.000000000000000000
+              Size.Height = 16.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = ''
+              TabOrder = 0
+              Text = #1042#1089#1077' '#1087#1086#1083#1103' (XML)'
+              ExplicitSize.cx = 50.000000000000000000
+              ExplicitSize.cy = 50.000000000000000000
+              object XMLMemo: TMemo
+                Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+                DataDetectorTypes = []
+                OnChangeTracking = XMLChanged
+                Align = Client
+                Size.Width = 897.000000000000000000
+                Size.Height = 563.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 0
+                Viewport.Width = 897.000000000000000000
+                Viewport.Height = 563.000000000000000000
+              end
             end
           end
         end
       end
     end
-  end
-  object MediaDialog: TOpenDialog
-  end
-  object FieldRowTemplate: TLayout
-    Align = Top
-    Margins.Bottom = 18.000000000000000000
-    Size.Width = 850.000000000000000000
-    Size.Height = 40.000000000000000000
-    Size.PlatformDefault = False
-    Visible = False
-    TabOrder = 2
-    object TemplateHeader: TLayout
-      StyleName = 'fieldheader'
-      Align = Left
-      Margins.Right = 18.000000000000000000
-      Size.Width = 170.000000000000000000
+    object FieldRowTemplate: TLayout
+      Align = Top
+      Margins.Bottom = 18.000000000000000000
+      Size.Width = 850.000000000000000000
       Size.Height = 40.000000000000000000
       Size.PlatformDefault = False
-      object TemplateCaptionBand: TLayout
-        Align = Top
+      Visible = False
+      TabOrder = 2
+      object TemplateHeader: TLayout
+        StyleName = 'fieldheader'
+        Align = Left
+        Margins.Right = 18.000000000000000000
         Size.Width = 170.000000000000000000
         Size.Height = 40.000000000000000000
         Size.PlatformDefault = False
-        object TemplateInfo: TButton
-          StyleName = 'fieldinfo'
-          Align = Right
-          Position.X = 138.000000000000000000
-          Size.Width = 32.000000000000000000
+        object TemplateCaptionBand: TLayout
+          Align = Top
+          Size.Width = 170.000000000000000000
           Size.Height = 40.000000000000000000
           Size.PlatformDefault = False
-          StyleLookup = 'buttonstyle_subtle'
-          ParentShowHint = False
-          ShowHint = True
-          object TemplateInfoIcon: TPath
-            StyleName = 'fieldinfoicon'
-            Align = Client
-            Data.Path = {
-              4200000000000000310840413BDFFF3F0200000033338C413BDFFF3F02000000
-              2506B0419643CF40020000002506B04118044041020000002506B04126318C41
-              0200000033338C411804B04102000000310840411804B04102000000C74BCF40
-              1904B041020000000000004027318C4102000000000000401904404102000000
-              000000409643CF4002000000C74BCF403BDFFF3F02000000310840413BDFFF3F
-              00000000310840419EEF5F400200000076150F4111D05D40020000000040C340
-              6386A2400200000025FE91401422F7400200000096784140E2DE254102000000
-              8A78414027255A410200000015FE91408139824102000000E63FC3406F609741
-              0200000066150F410848A44102000000210840411904A441020000004A4A8541
-              9E9CA341020000005A4BA341CC47854102000000584BA3410602404102000000
-              564BA341E8E8EA4002000000424A8541582B63400200000012084041A0EF5F40
-              00000000000040410000284102000000BF2E434100002841020000001E3C4641
-              A8432941020000003B7C4841C5832B410200000058BC4A41E2C32D4102000000
-              00004C4141D130410200000000004C41000034410100000000004C4100008241
-              0200000000004C41C3248441020000007BB64941D61F86410200000000004641
-              37328741020000008549424198448841020000007BB63D419844884102000000
-              00003A41373287410200000085493641D61F86410200000000003441C3248441
-              0200000000003441000082410100000000003441000034410200000000003441
-              41D1304102000000A8433541E1C32D4102000000C5833741C4832B4102000000
-              E2C33941A74329410200000041D13C4100002841020000000000404100002841
-              0000000000004041000010410200000028D64841000010410200000000005041
-              28D608410200000000005041000000410200000000005041AF53EE4002000000
-              28D648410000E04002000000000040410000E04002000000D82937410000E040
-              0200000000003041AF53EE400200000000003041000000410200000000003041
-              29D6084102000000D729374100001041020000000000404100001041}
-            Fill.Color = xFF60CDFF
-            HitTest = False
-            Margins.Left = 6.000000000000000000
-            Margins.Top = 6.000000000000000000
-            Margins.Right = 6.000000000000000000
-            Margins.Bottom = 6.000000000000000000
-            Size.Width = 20.000000000000000000
-            Size.Height = 28.000000000000000000
+          object TemplateInfo: TButton
+            StyleName = 'fieldinfo'
+            Align = Right
+            Position.X = 138.000000000000000000
+            Size.Width = 32.000000000000000000
+            Size.Height = 40.000000000000000000
             Size.PlatformDefault = False
-            Stroke.Kind = None
-            WrapMode = Fit
+            StyleLookup = 'buttonstyle_subtle'
+            ParentShowHint = False
+            ShowHint = True
+            object TemplateInfoIcon: TPath
+              StyleName = 'fieldinfoicon'
+              Align = Center
+              Data.Path = {
+                4200000000000000310840413BDFFF3F0200000033338C413BDFFF3F02000000
+                2506B0419643CF40020000002506B04118044041020000002506B04126318C41
+                0200000033338C411804B04102000000310840411804B04102000000C74BCF40
+                1904B041020000000000004027318C4102000000000000401904404102000000
+                000000409643CF4002000000C74BCF403BDFFF3F02000000310840413BDFFF3F
+                00000000310840419EEF5F400200000076150F4111D05D40020000000040C340
+                6386A2400200000025FE91401422F7400200000096784140E2DE254102000000
+                8A78414027255A410200000015FE91408139824102000000E63FC3406F609741
+                0200000066150F410848A44102000000210840411904A441020000004A4A8541
+                9E9CA341020000005A4BA341CC47854102000000584BA3410602404102000000
+                564BA341E8E8EA4002000000424A8541582B63400200000012084041A0EF5F40
+                00000000000040410000284102000000BF2E434100002841020000001E3C4641
+                A8432941020000003B7C4841C5832B410200000058BC4A41E2C32D4102000000
+                00004C4141D130410200000000004C41000034410100000000004C4100008241
+                0200000000004C41C3248441020000007BB64941D61F86410200000000004641
+                37328741020000008549424198448841020000007BB63D419844884102000000
+                00003A41373287410200000085493641D61F86410200000000003441C3248441
+                0200000000003441000082410100000000003441000034410200000000003441
+                41D1304102000000A8433541E1C32D4102000000C5833741C4832B4102000000
+                E2C33941A74329410200000041D13C4100002841020000000000404100002841
+                0000000000004041000010410200000028D64841000010410200000000005041
+                28D608410200000000005041000000410200000000005041AF53EE4002000000
+                28D648410000E04002000000000040410000E04002000000D82937410000E040
+                0200000000003041AF53EE400200000000003041000000410200000000003041
+                29D6084102000000D729374100001041020000000000404100001041}
+              Fill.Color = xFF60CDFF
+              HitTest = False
+              Size.Width = 20.000000000000000000
+              Size.Height = 20.000000000000000000
+              Size.PlatformDefault = False
+              Stroke.Kind = None
+              WrapMode = Fit
+            end
+          end
+          object TemplateCaption: TLabel
+            TextSettings.Trimming = Character
+            StyleName = 'fieldcaption'
+            Align = Client
+            Padding.Top = 10.000000000000000000
+            Size.Width = 138.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.VertAlign = Leading
+            TextSettings.WordWrap = False
           end
         end
-        object TemplateCaption: TLabel
-          StyleName = 'fieldcaption'
-          Align = Client
-          Padding.Top = 10.000000000000000000
-          Size.Width = 138.000000000000000000
-          Size.Height = 40.000000000000000000
-          Size.PlatformDefault = False
-          TextSettings.VertAlign = Leading
-          TextSettings.WordWrap = False
-        end
       end
-    end
-    object TemplateMediaImage: TImage
-      StyleName = 'fieldmediaimage'
-      MultiResBitmap = <
-        item
-        end>
-      Align = Left
-      HitTest = False
-      Margins.Right = 16.000000000000000000
-      Size.Width = 104.000000000000000000
-      Size.Height = 50.000000000000000000
-      Size.PlatformDefault = False
-      Visible = False
-    end
-    object TemplateValueColumn: TLayout
-      StyleName = 'fieldvaluecolumn'
-      Align = Client
-      Size.Width = 662.000000000000000000
-      Size.Height = 40.000000000000000000
-      Size.PlatformDefault = False
-      object TemplateInputFrame: TLayout
-        StyleName = 'fieldinputframe'
-        Align = Top
+      object TemplateMediaImage: TImage
+        StyleName = 'fieldmediaimage'
+        MultiResBitmap = <
+          item
+          end>
+        Align = Left
+        HitTest = False
+        Margins.Right = 16.000000000000000000
+        Size.Width = 104.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        Visible = False
+      end
+      object TemplateValueColumn: TLayout
+        StyleName = 'fieldvaluecolumn'
+        Align = Client
         Size.Width = 662.000000000000000000
         Size.Height = 40.000000000000000000
         Size.PlatformDefault = False
-        object TemplateEditorArea: TLayout
-          StyleName = 'fieldeditorarea'
-          Align = Client
+        object TemplateInputFrame: TLayout
+          StyleName = 'fieldinputframe'
+          Align = Top
           Size.Width = 662.000000000000000000
           Size.Height = 40.000000000000000000
           Size.PlatformDefault = False
-          object TemplateInputControls: TLayout
-            StyleName = 'fieldinputcontrols'
-            Align = Top
+          object TemplateEditorArea: TLayout
+            StyleName = 'fieldeditorarea'
+            Align = Client
             Size.Width = 662.000000000000000000
             Size.Height = 40.000000000000000000
             Size.PlatformDefault = False
-            object TemplateEdit: TEdit
-              StyleName = 'fieldedit'
-              Touch.InteractiveGestures = [LongTap, DoubleTap]
-              Align = Client
+            object TemplateInputControls: TLayout
+              StyleName = 'fieldinputcontrols'
+              Align = Top
               Size.Width = 662.000000000000000000
               Size.Height = 40.000000000000000000
               Size.PlatformDefault = False
+              object TemplateEdit: TEdit
+                StyleName = 'fieldedit'
+                Touch.InteractiveGestures = [LongTap, DoubleTap]
+                Align = Client
+                Size.Width = 662.000000000000000000
+                Size.Height = 40.000000000000000000
+                Size.PlatformDefault = False
+              end
+              object TemplateMemo: TMemo
+                StyleName = 'fieldmemo'
+                Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+                DataDetectorTypes = []
+                TextSettings.WordWrap = True
+                Align = Client
+                Size.Width = 50.000000000000000000
+                Size.Height = 104.000000000000000000
+                Size.PlatformDefault = False
+                Visible = False
+                Viewport.Width = 50.000000000000000000
+                Viewport.Height = 104.000000000000000000
+              end
+              object TemplateErrorFrame: TRectangle
+                StyleName = 'fielderrorframe'
+                Align = Contents
+                Fill.Kind = None
+                HitTest = False
+                Size.Width = 50.000000000000000000
+                Size.Height = 50.000000000000000000
+                Size.PlatformDefault = False
+                Stroke.Color = xFFFF8E8E
+                Stroke.Thickness = 1.500000000000000000
+                Visible = False
+                XRadius = 4.000000000000000000
+                YRadius = 4.000000000000000000
+              end
             end
-            object TemplateMemo: TMemo
-              StyleName = 'fieldmemo'
-              Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
-              DataDetectorTypes = []
-              TextSettings.WordWrap = True
-              Align = Client
-              Size.Width = 50.000000000000000000
-              Size.Height = 104.000000000000000000
+            object TemplateError: TLabel
+              StyleName = 'fielderror'
+              Align = Top
+              StyledSettings = [Family, Size, Style]
+              Position.Y = 40.000000000000000000
+              Size.Width = 120.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
+              TextSettings.FontColor = xFFFF8E8E
               Visible = False
-              Viewport.Width = 50.000000000000000000
-              Viewport.Height = 104.000000000000000000
             end
-            object TemplateErrorFrame: TRectangle
-              StyleName = 'fielderrorframe'
-              Align = Contents
-              Fill.Kind = None
+            object TemplateHelp: TLabel
+              StyleName = 'fieldhelp'
+              Align = Top
+              AutoSize = True
               HitTest = False
-              Size.Width = 50.000000000000000000
-              Size.Height = 50.000000000000000000
+              Margins.Top = 8.000000000000000000
+              Position.Y = 84.000000000000000000
+              Size.Width = 662.000000000000000000
+              Size.Height = 40.000000000000000000
               Size.PlatformDefault = False
-              Stroke.Color = xFFFF8E8E
-              Stroke.Thickness = 1.500000000000000000
+              StyledSettings = [Family, Size, Style]
+              TextSettings.FontColor = xFF9DA7AD
+              TextSettings.VertAlign = Leading
+              TextSettings.WordWrap = True
               Visible = False
-              XRadius = 4.000000000000000000
-              YRadius = 4.000000000000000000
             end
           end
-          object TemplateError: TLabel
-            StyleName = 'fielderror'
-            Align = Top
-            StyledSettings = [Family, Size, Style]
-            Position.Y = 40.000000000000000000
-            Size.Width = 120.000000000000000000
-            Size.Height = 44.000000000000000000
-            Size.PlatformDefault = False
-            TextSettings.FontColor = xFFFF8E8E
-            Visible = False
-          end
-          object TemplateHelp: TLabel
-            StyleName = 'fieldhelp'
-            Align = Top
-            AutoSize = True
-            HitTest = False
-            Margins.Top = 8.000000000000000000
-            Position.Y = 84.000000000000000000
-            Size.Width = 662.000000000000000000
+        end
+        object TemplateMediaCommands: TLayout
+          StyleName = 'fieldmediacommands'
+          Align = Top
+          Padding.Top = 8.000000000000000000
+          Position.Y = 40.000000000000000000
+          Size.Width = 50.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          Visible = False
+          object TemplateReplace: TButton
+            StyleName = 'fieldreplace'
+            Align = Left
+            Margins.Right = 8.000000000000000000
+            Position.Y = 8.000000000000000000
+            Size.Width = 158.000000000000000000
             Size.Height = 40.000000000000000000
             Size.PlatformDefault = False
-            StyledSettings = [Family, Size, Style]
-            TextSettings.FontColor = xFF9DA7AD
-            TextSettings.VertAlign = Leading
-            TextSettings.WordWrap = True
-            Visible = False
+            Text = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083#8230
+          end
+          object TemplateClear: TButton
+            StyleName = 'fieldclear'
+            Align = Left
+            Position.X = 166.000000000000000000
+            Position.Y = 8.000000000000000000
+            Size.Width = 104.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Text = #1054#1095#1080#1089#1090#1080#1090#1100
           end
         end
-      end
-      object TemplateMediaCommands: TLayout
-        StyleName = 'fieldmediacommands'
-        Align = Top
-        Padding.Top = 8.000000000000000000
-        Position.Y = 40.000000000000000000
-        Size.Width = 50.000000000000000000
-        Size.Height = 48.000000000000000000
-        Size.PlatformDefault = False
-        Visible = False
-        object TemplateReplace: TButton
-          StyleName = 'fieldreplace'
-          Align = Left
-          Margins.Right = 8.000000000000000000
-          Position.Y = 8.000000000000000000
-          Size.Width = 158.000000000000000000
-          Size.Height = 40.000000000000000000
+        object TemplateMediaNote: TLabel
+          TextSettings.Trimming = Character
+          StyleName = 'fieldmedianote'
+          Align = Top
+          Opacity = 0.699999988079071000
+          Position.Y = 88.000000000000000000
+          Size.Width = 120.000000000000000000
+          Size.Height = 28.000000000000000000
           Size.PlatformDefault = False
-          Text = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083#8230
+          TextSettings.WordWrap = False
+          Visible = False
         end
-        object TemplateClear: TButton
-          StyleName = 'fieldclear'
-          Align = Left
-          Position.X = 166.000000000000000000
-          Position.Y = 8.000000000000000000
-          Size.Width = 104.000000000000000000
-          Size.Height = 40.000000000000000000
-          Size.PlatformDefault = False
-          Text = #1054#1095#1080#1089#1090#1080#1090#1100
-        end
-      end
-      object TemplateMediaNote: TLabel
-        StyleName = 'fieldmedianote'
-        Align = Top
-        Opacity = 0.699999988079071000
-        Position.Y = 88.000000000000000000
-        Size.Width = 120.000000000000000000
-        Size.Height = 28.000000000000000000
-        Size.PlatformDefault = False
-        TextSettings.WordWrap = False
-        Visible = False
       end
     end
   end

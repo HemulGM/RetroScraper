@@ -36,17 +36,18 @@ type
       FCacheExpire: Double;
       FNextRequestId: Int64;
   private
-    class function UrlToCacheName(const Url: string): string;
+    class function UrlToCacheName(const Url: string): string; static;
     class procedure AddCallback(Callback: TCallbackObject);
     class function IsPending(RequestId: Int64): Boolean; static;
-    class procedure Ready(RequestId: Int64; Surface: TBitmapSurface);
+    // Queued delivery must not retrieve a class through a destroyed bitmap instance.
+    class procedure Ready(RequestId: Int64; Surface: TBitmapSurface); static;
     class function Get(const URL: string): TMemoryStream; static;
     class function GetBitmap(const URL: string): TBitmapSurface; static;
     class function GetClient: THTTPClient; static;
     class procedure SetCachePath(const Value: string); static;
     class function FindCached(const Url: string; out Bitmap: TBitmapSurface): Boolean; static;
-    class procedure AddCache(const Url: string; Bitmap: TBitmapSurface);
-    class procedure AddCacheFileName(const FileName: string; Bitmap: TBitmapSurface);
+    class procedure AddCache(const Url: string; Bitmap: TBitmapSurface); static;
+    class procedure AddCacheFileName(const FileName: string; Bitmap: TBitmapSurface); static;
     class function FindCachedFileName(const FileName: string; out Bitmap: TBitmapSurface): Boolean; static;
     class procedure SetCacheExpire(const Value: Double); static;
     class function GetBitmapFromFile(const FileName: string; const AFitWidth, AFitHeight: Single): TBitmapSurface; static;

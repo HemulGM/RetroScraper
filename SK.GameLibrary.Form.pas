@@ -13,6 +13,7 @@ type
   TGameFieldEditor = SK.UI.FieldEditor.TGameFieldEditor;
 
   TFormGameLibrary = class(TForm)
+    LibraryRoot: TLayout;
     Surface: TRectangle;
     RootLayout: TLayout;
     Header: TLayout;
@@ -39,8 +40,10 @@ type
     ScrapeProgress: TProgressBar;
     ScrapeActivity: TAniIndicator;
     ScrapeTimer: TTimer;
+    LibraryLoadTimer: TTimer;
     XMLMemo: TMemo;
     MediaDialog: TOpenDialog;
+    procedure LibraryLoadTimerTimer(Sender: TObject);
     procedure GameListViewportChanged(Sender: TObject; const OldViewportPosition,
       NewViewportPosition: TPointF; const ContentSizeChanged: Boolean);
     procedure GameListResized(Sender: TObject);
@@ -62,7 +65,11 @@ type
     procedure InfoClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
   private
+    FOnReturn: TNotifyEvent;
     FLibrary: TGameLibrary;
+    FLibraryLoad: IGameLibraryLoad;
+    FLibraryLoading: Boolean;
+    FBuildIndex: Integer;
     FDraft: IXMLDocument;
     FFields: TObjectList<TLibraryField>;
     FEditors: TList<TGameFieldEditor>;
@@ -71,11 +78,14 @@ type
     FUpdatingFieldsHeight: Boolean;
     FRequestedRom, FPlatformTitle: string;
     FGameItems: TDictionary<Integer, TListBoxItem>;
+    FVisibleGameItems: TList<TListBoxItem>;
+    FSearchFilter: string;
     FFirstCover, FLastCover: Integer;
     FScrapeWorker: TScrapeWorker;
     FOnCreateScrapeWorker: TFunc<string, TScrapeWorker>;
     procedure ReloadScrapedGame;
     procedure BuildGames;
+    procedure FilterGames;
     procedure UpdateGameCard(Index: Integer);
     procedure UpdateVisibleCovers;
     procedure RequestGameCover(Item: TListBoxItem);
@@ -92,10 +102,13 @@ type
     function ResolveUnsaved: Boolean;
     procedure ReportError(E: Exception);
   public
+    procedure AttachTo(Host: TControl);
+    property OnReturn: TNotifyEvent read FOnReturn write FOnReturn;
     procedure LoadPlatform(Config: TJSONObject; const PlatformTitle: string);
     function FieldEditor(const FieldName: string): TGameFieldEditor;
     function FieldCount: Integer;
     function ValidateDraft: Boolean;
+    property LibraryLoading: Boolean read FLibraryLoading;
     property RequestedRom: string read FRequestedRom;
     property OnCreateScrapeWorker: TFunc<string, TScrapeWorker>
       read FOnCreateScrapeWorker write FOnCreateScrapeWorker;
@@ -121,6 +134,7 @@ begin
   FSelected := -1;
   FLastCover := -1;
   FGameItems := TDictionary<Integer, TListBoxItem>.Create;
+  FVisibleGameItems := TList<TListBoxItem>.Create;
   FEditors := TList<TGameFieldEditor>.Create;
   FFields := TObjectList<TLibraryField>.Create(True);
   ApplyLocale(Self);
@@ -129,11 +143,17 @@ end;
 
 procedure TFormGameLibrary.FormDestroy(Sender: TObject);
 begin
+  FOnReturn := nil;
+  LibraryLoadTimer.Enabled := False;
+  if FLibraryLoad <> nil then
+    FLibraryLoad.Cancel;
+  FLibraryLoad := nil;
   ScrapeTimer.Enabled := False;
   FScrapeWorker.Free;
   FOnCreateScrapeWorker := nil;
-  FGameItems.Free;
   FLoading := True;
+  FVisibleGameItems.Free;
+  FGameItems.Free;
   FieldsContent.DeleteChildren;
   GameList.Clear;
   FEditors.Free;
@@ -144,21 +164,100 @@ end;
 
 procedure TFormGameLibrary.LoadPlatform(Config: TJSONObject; const PlatformTitle: string);
 begin
-  FLibrary := TGameLibrary.Create(Config);
-  Caption := L('Библиотека игр') + ' · ' + PlatformTitle;
-  FPlatformTitle := PlatformTitle;
-  PlatformLabel.Text := PlatformTitle;
-  GamePlatformLabel.Text := PlatformTitle;
-  StatusLabel.Text := FLibrary.FileName;
-  BuildGames;
-  if GameList.Count > 0 then
-    GameList.ItemIndex := 0;
+  if FLibraryLoad <> nil then
+    FLibraryLoad.Cancel;
+  FLibraryLoad := nil;
+  LibraryLoadTimer.Enabled := False;
+  FLoading := True;
+  try
+    try
+      FSelected := -1;
+      FDirty := False;
+      FXMLDirty := False;
+      FDraft := nil;
+      FieldsContent.DeleteChildren;
+      FEditors.Clear;
+      FFields.Clear;
+      FGameItems.Clear;
+      FVisibleGameItems.Clear;
+      GameList.Clear;
+      FreeAndNil(FLibrary);
+      FBuildIndex := 0;
+      FFirstCover := 0;
+      FLastCover := -1;
+      FSearchFilter := #0;
+      Caption := L('Библиотека игр') + ' · ' + PlatformTitle;
+      FPlatformTitle := PlatformTitle;
+      PlatformLabel.Text := PlatformTitle;
+      GamePlatformLabel.Text := PlatformTitle;
+      GameTitleLabel.Text := '';
+      CountLabel.Text := L('Загрузка…');
+      FLibraryLoading := True;
+      UpdateButtons;
+      ScrapeProgress.Value := 0;
+      ScrapeProgress.Max := 1;
+      StatusLabel.Text := L('Загрузка библиотеки…');
+      FLibraryLoad := LoadGameLibraryAsync(Config);
+      LibraryLoadTimer.Enabled := True;
+    except
+      FLibraryLoading := False;
+      UpdateButtons;
+      raise;
+    end;
+  finally
+    FLoading := False;
+  end;
+end;
+
+procedure TFormGameLibrary.LibraryLoadTimerTimer(Sender: TObject);
+var
+  Data: TGameLibrary;
+  Error: string;
+begin
+  if not FLibraryLoading then
+    Exit;
+  try
+    if FLibraryLoad <> nil then
+    begin
+      if not FLibraryLoad.Poll(Data, Error) then
+        Exit;
+      FLibraryLoad := nil;
+      if Error <> '' then
+        raise Exception.Create(Error);
+      if Data = nil then
+        raise EAbort.Create('');
+      FLibrary := Data;
+      ScrapeProgress.Max := Max(1, FLibrary.Games.Count);
+    end;
+    BuildGames;
+    CountLabel.Text := L('%d / %d', [FBuildIndex, FLibrary.Games.Count]);
+    ScrapeProgress.Value := FBuildIndex;
+    if FBuildIndex < FLibrary.Games.Count then
+      Exit;
+    LibraryLoadTimer.Enabled := False;
+    FLibraryLoading := False;
+    FilterGames;
+    UpdateButtons;
+    StatusLabel.Text := FLibrary.FileName;
+    if FVisibleGameItems.Count > 0 then
+      GameList.ItemIndex := FVisibleGameItems[0].Index;
+  except
+    on E: Exception do
+    begin
+      LibraryLoadTimer.Enabled := False;
+      FLibraryLoading := False;
+      UpdateButtons;
+      CountLabel.Text := L('Не удалось загрузить библиотеку');
+      StatusLabel.Text := E.Message;
+    end;
+  end;
 end;
 
 procedure TFormGameLibrary.BuildGames;
 var
-  I, SelectedItem: Integer;
-  Filter, Text: string;
+  I, BatchCount: Integer;
+  Started: UInt64;
+  Text: string;
   Item: TListBoxItem;
   Picture: TImage;
   Labels: TLayout;
@@ -167,21 +266,16 @@ begin
   FLoading := True;
   GameList.BeginUpdate;
   try
-    FGameItems.Clear;
-    GameList.Clear;
-    FFirstCover := 0;
-    FLastCover := -1;
-    SelectedItem := -1;
-    Filter := SearchEdit.Text.Trim.ToLower;
-    for I := 0 to FLibrary.Games.Count - 1 do
+    Started := TThread.GetTickCount64;
+    BatchCount := 0;
+    while FBuildIndex < FLibrary.Games.Count do
     begin
+      I := FBuildIndex;
       Text := FLibrary.Title(I);
-      if (Filter <> '') and not (Text.ToLower.Contains(Filter) or
-        FLibrary.Games[I].RomPath.ToLower.Contains(Filter)) then
-        Continue;
       Item := TListBoxItem.Create(GameList);
       Item.Parent := GameList;
       Item.Tag := I;
+      Item.TagString := Text.ToLower + #10 + FLibrary.Games[I].RomPath.ToLower;
       FGameItems.Add(I, Item);
       Item.Height := 86;
       Item.Text := '';
@@ -219,14 +313,55 @@ begin
       LabelText.HitTest := False;
       LabelText.TextSettings.WordWrap := False;
       LabelText.TextSettings.Trimming := TTextTrimming.Character;
-      if I = FSelected then
-        SelectedItem := GameList.Count - 1;
+      Inc(FBuildIndex);
+      Inc(BatchCount);
+      // Bound both work and time per tick so paint, input and close events can run.
+      if (BatchCount >= 64) or (TThread.GetTickCount64 - Started >= 8) then
+        Break;
     end;
-    GameList.ItemIndex := SelectedItem;
-    CountLabel.Text := L('%d игр · показано %d', [FLibrary.Games.Count, GameList.Count]);
   finally
     GameList.EndUpdate;
     FLoading := False
+  end;
+end;
+
+procedure TFormGameLibrary.FilterGames;
+var
+  Filter: string;
+  Item, SelectedItem: TListBoxItem;
+  I: Integer;
+  Matches: Boolean;
+begin
+  Filter := SearchEdit.Text.Trim.ToLower;
+  if Filter = FSearchFilter then
+    Exit;
+  FLoading := True;
+  GameList.BeginUpdate;
+  try
+    FVisibleGameItems.Clear;
+    // Keep existing preview requests and decoded bitmaps when changing the filter.
+    FFirstCover := 0;
+    FLastCover := -1;
+    for I := 0 to GameList.Count - 1 do
+    begin
+      Item := GameList.ListItems[I];
+      Matches := (Filter = '') or Item.TagString.Contains(Filter);
+      if Item.Visible <> Matches then
+        Item.Visible := Matches;
+      if Matches then
+        FVisibleGameItems.Add(Item);
+    end;
+    if FGameItems.TryGetValue(FSelected, SelectedItem) and SelectedItem.Visible then
+      GameList.ItemIndex := SelectedItem.Index
+    else
+      GameList.ItemIndex := -1;
+    CountLabel.Text := L('%d игр · показано %d',
+      [FLibrary.Games.Count, FVisibleGameItems.Count]);
+    FSearchFilter := Filter;
+  finally
+    GameList.EndUpdate;
+    GameList.ViewportPosition := PointF(0, 0);
+    FLoading := False;
   end;
   UpdateVisibleCovers;
 end;
@@ -239,6 +374,9 @@ begin
   if not FGameItems.TryGetValue(Index, Item) then
     Exit;
   TLabel(Item.FindComponent('GameName')).Text := FLibrary.Title(Index);
+  Item.TagString := FLibrary.Title(Index).ToLower + #10 +
+    FLibrary.Games[Index].RomPath.ToLower;
+  FSearchFilter := #0;
   TLabel(Item.FindComponent('GameRom')).Text := TPath.GetFileName(FLibrary.Games[Index].RomPath);
   Picture := TImage(Item.FindComponent('GameCover'));
   Picture.Bitmap.RemoveCallback(Picture);
@@ -281,16 +419,16 @@ var
   First, Last, I: Integer;
   Picture: TImage;
 begin
-  if FLoading or (FLibrary = nil) or (GameList.Count = 0) then
+  if FLoading or FLibraryLoading or (FLibrary = nil) or (FVisibleGameItems.Count = 0) then
     Exit;
   // All rows have the same height. Include one neighboring row on either side.
   First := Max(0, Floor(GameList.ViewportPosition.Y / 86) - 1);
-  Last := Min(GameList.Count - 1,
+  Last := Min(FVisibleGameItems.Count - 1,
     Ceil((GameList.ViewportPosition.Y + GameList.Height) / 86));
   for I := FFirstCover to FLastCover do
-    if (I < GameList.Count) and ((I < First) or (I > Last)) then
+    if (I < FVisibleGameItems.Count) and ((I < First) or (I > Last)) then
     begin
-      Picture := TImage(GameList.ListItems[I].FindComponent('GameCover'));
+      Picture := TImage(FVisibleGameItems[I].FindComponent('GameCover'));
       if Picture.Tag = 1 then
       begin
         Picture.Bitmap.RemoveCallback(Picture);
@@ -300,7 +438,7 @@ begin
   FFirstCover := First;
   FLastCover := Last;
   for I := First to Last do
-    RequestGameCover(GameList.ListItems[I]);
+    RequestGameCover(FVisibleGameItems[I]);
 end;
 
 procedure TFormGameLibrary.GameListViewportChanged(Sender: TObject;
@@ -321,7 +459,7 @@ begin
     Picture.Tag := 2;
     Exit;
   end;
-  // Picture owns the request lifetime, including when search rebuilds the list.
+  // Picture owns the request lifetime; filtering preserves it and its bitmap.
   Picture.Bitmap.LoadFromFileAsync(Picture, Paths[Index], 48, 70,
     procedure(Success: Boolean)
     begin
@@ -337,9 +475,9 @@ end;
 
 procedure TFormGameLibrary.SearchChanged(Sender: TObject);
 begin
-  if FLoading or (FLibrary = nil) then
+  if FLoading or FLibraryLoading or (FLibrary = nil) then
     Exit;
-  BuildGames;
+  FilterGames;
 end;
 
 procedure TFormGameLibrary.LoadGame(Index: Integer);
@@ -366,7 +504,7 @@ var
   Index: Integer;
   Item: TListBoxItem;
 begin
-  if FLoading or (GameList.Selected = nil) then
+  if FLoading or FLibraryLoading or (GameList.Selected = nil) then
     Exit;
   Index := GameList.Selected.Tag;
   if Index = FSelected then
@@ -657,18 +795,21 @@ end;
 
 procedure TFormGameLibrary.UpdateButtons;
 var
-  HasGame, Scraping: Boolean;
+  HasGame, Scraping, Busy: Boolean;
   Errors: Integer;
   Editor: TGameFieldEditor;
 begin
   Scraping := FScrapeWorker <> nil;
+  Busy := Scraping or FLibraryLoading;
   CloseButton.Enabled := True;
-  HasGame := (FSelected >= 0) and not Scraping;
-  GamesPanel.Enabled := not Scraping;
-  ScrapeProgressLayout.Visible := Scraping;
-  ScrapeActivity.Enabled := Scraping;
+  HasGame := (FSelected >= 0) and not Busy;
+  GamesPanel.Enabled := not Busy;
+  ScrapeProgressLayout.Visible := Busy;
+  ScrapeActivity.Enabled := Busy;
   if Scraping then
     CloseButton.Text := L('Отменить')
+  else if Assigned(FOnReturn) then
+    CloseButton.Text := L('Назад')
   else
     CloseButton.Text := L('Закрыть');
   Errors := 0;
@@ -944,11 +1085,33 @@ begin
     FScrapeWorker.Terminate;
     CloseButton.Enabled := False;
   end;
+  if CanClose then
+  begin
+    LibraryLoadTimer.Enabled := False;
+    if FLibraryLoad <> nil then
+      FLibraryLoad.Cancel;
+    FLibraryLoad := nil;
+    FLibraryLoading := False;
+    ScrapeActivity.Enabled := False;
+    ScrapeProgressLayout.Visible := False;
+  end;
 end;
 
 procedure TFormGameLibrary.CloseClick(Sender: TObject);
+var
+  CanReturn: Boolean;
 begin
-  Close
+  if not Assigned(FOnReturn) then
+    Exit;
+  FormCloseQuery(Self, CanReturn);
+  if CanReturn then
+    FOnReturn(Self);
+end;
+
+procedure TFormGameLibrary.AttachTo(Host: TControl);
+begin
+  LibraryRoot.Parent := Host;
+  CloseButton.Text := L('Назад');
 end;
 
 end.

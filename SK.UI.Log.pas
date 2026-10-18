@@ -5,12 +5,12 @@ interface
 uses
   System.SysUtils, System.Classes, System.Types, System.UITypes,
   System.Generics.Collections, FMX.Graphics, FMX.Types, FMX.Controls,
-  FMX.Layouts, FMX.Objects, FMX.StdCtrls, FMX.Memo, FMX.ListBox, SK.Scrape.Types;
+  FMX.Layouts, FMX.Objects, FMX.StdCtrls, FMX.Memo, FMX.ListBox, FMX.Menus, SK.Scrape.Types;
 
 type
   TLogControls = record
     ScrapeEventList: TListBox;
-    FullLog: TMemo;
+    FullLog: TListBox;
     FastColoredTextBoxLogging: TMemo;
   end;
 
@@ -21,6 +21,16 @@ type
     FDisplayedLogCount, FFullLogCount: Integer;
     FDisplayedLogTail, FFullLogTail: string;
     FFullLogReset, FEventsReset: Boolean;
+    FEventMenu: TPopupMenu;
+    FCopyEvent: TMenuItem;
+    FMenuList: TListBox;
+    function CopySelectedEvent(List: TListBox): Boolean;
+    procedure EventKeyDown(Sender: TObject; var Key: Word; var KeyChar: WideChar; Shift: TShiftState);
+    procedure EventMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
+    procedure EventMenuPopup(Sender: TObject);
+    procedure CopyEventClick(Sender: TObject);
+    procedure SyncEvents(List: TListBox; var DisplayedCount: Integer;
+      var DisplayedTail: string; var NeedsReset: Boolean; Limit: Integer);
   public
     constructor Create(View: TComponent);
     destructor Destroy; override;
@@ -33,7 +43,7 @@ implementation
 
 uses
   System.Math, System.DateUtils, System.IOUtils, SK.Locale, SK.Consts,
-  SK.Platform, SK.Storage, SK.UI.Controls;
+  SK.Platform, SK.Storage, SK.UI.Controls, FMX.Platform;
 
 function LoadLogPath(const RelativePath: string): TPathData; forward;
 
@@ -41,8 +51,16 @@ constructor TLogPresenter.Create(View: TComponent);
 begin
   inherited Create;
   FView.ScrapeEventList := RequireComponent(View, 'ScrapeEventList') as TListBox;
-  FView.FullLog := RequireComponent(View, 'FullLog') as TMemo;
+  FView.FullLog := RequireComponent(View, 'FullLog') as TListBox;
   FView.FastColoredTextBoxLogging := RequireComponent(View, 'FastColoredTextBoxLogging') as TMemo;
+  FEventMenu := RequireComponent(View, 'LogEventMenu') as TPopupMenu;
+  FCopyEvent := RequireComponent(View, 'CopyLogEvent') as TMenuItem;
+  FEventMenu.OnPopup := EventMenuPopup;
+  FCopyEvent.OnClick := CopyEventClick;
+  FView.ScrapeEventList.OnKeyDown := EventKeyDown;
+  FView.FullLog.OnKeyDown := EventKeyDown;
+  FView.ScrapeEventList.OnMouseDown := EventMouseDown;
+  FView.FullLog.OnMouseDown := EventMouseDown;
   FFullLogReset := True;
   FEventsReset := True;
   FLogInfoData := LoadLogPath(LogInfoIconPath);
@@ -52,10 +70,74 @@ end;
 
 destructor TLogPresenter.Destroy;
 begin
+  FEventMenu.OnPopup := nil;
+  FCopyEvent.OnClick := nil;
+  FView.ScrapeEventList.OnKeyDown := nil;
+  FView.FullLog.OnKeyDown := nil;
+  FView.ScrapeEventList.OnMouseDown := nil;
+  FView.FullLog.OnMouseDown := nil;
   FLogInfoData.Free;
   FLogSuccessData.Free;
   FLogErrorData.Free;
   inherited;
+end;
+
+function TLogPresenter.CopySelectedEvent(List: TListBox): Boolean;
+var
+  Clipboard: IFMXClipboardService;
+begin
+  Result := (List <> nil) and (List.Selected <> nil) and
+    TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, Clipboard);
+  if Result then
+    Clipboard.SetClipboard(List.Selected.Hint);
+end;
+
+procedure TLogPresenter.EventKeyDown(Sender: TObject; var Key: Word; var KeyChar: WideChar; Shift: TShiftState);
+begin
+  if (Shift = [ssCtrl]) and ((Key = vkC) or (KeyChar = 'c') or (KeyChar = 'C')) and
+    CopySelectedEvent(Sender as TListBox) then
+  begin
+    Key := 0;
+    KeyChar := #0;
+  end;
+end;
+
+procedure TLogPresenter.EventMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
+var
+  List: TListBox;
+  Item: TListBoxItem;
+begin
+  if Button <> TMouseButton.mbRight then
+    Exit;
+  List := Sender as TListBox;
+  Item := List.ItemByPoint(X, Y);
+  if Item <> nil then
+    List.ItemIndex := Item.Index;
+  List.SetFocus;
+end;
+
+procedure TLogPresenter.EventMenuPopup(Sender: TObject);
+var
+  Target: TFmxObject;
+  Clipboard: IFMXClipboardService;
+begin
+  FMenuList := nil;
+  if FEventMenu.PopupComponent is TFmxObject then
+  begin
+    Target := TFmxObject(FEventMenu.PopupComponent);
+    while (Target <> nil) and not (Target is TListBox) do
+      Target := Target.Parent;
+    if (Target = FView.FullLog) or (Target = FView.ScrapeEventList) then
+      FMenuList := TListBox(Target);
+  end;
+  FCopyEvent.Text := SK.Locale.L('Копировать');
+  FCopyEvent.Enabled := (FMenuList <> nil) and (FMenuList.Selected <> nil) and
+    TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, Clipboard);
+end;
+
+procedure TLogPresenter.CopyEventClick(Sender: TObject);
+begin
+  CopySelectedEvent(FMenuList);
 end;
 
 function LoadLogPath(const RelativePath: string): TPathData;
@@ -92,67 +174,23 @@ begin
 end;
 
 procedure TLogPresenter.SyncFullLog;
-var
-  Source: TStrings;
-  Count, First, I, SelectionStart, SelectionLength: Integer;
-  OldViewport: TPointF;
-  Reset, FollowTail: Boolean;
 begin
-  Source := FView.FastColoredTextBoxLogging.Lines;
-  Count := Source.Count;
-  Reset := FFullLogReset or (Count < FFullLogCount);
-  if not Reset and (FFullLogCount > 0) then
-    Reset := Source[FFullLogCount - 1] <> FFullLogTail;
-  // Never touch the memo for a status tick that contains no new lines.
-  // This also leaves its active wheel animation and selection undisturbed.
-  if not Reset and (Count = FFullLogCount) then
-    Exit;
-  OldViewport := FView.FullLog.ViewportPosition;
-  FollowTail := Reset or (OldViewport.Y + FView.FullLog.ViewportSize.Height >= FView.FullLog.ContentSize.Height - 2);
-  SelectionStart := FView.FullLog.SelStart;
-  SelectionLength := FView.FullLog.SelLength;
-  First := FFullLogCount;
-  if Reset then
-  begin
-    First := 0;
-    SelectionStart := 0;
-    SelectionLength := 0;
-  end;
-  FView.FullLog.BeginUpdate;
-  try
-    FView.FullLog.Lines.BeginUpdate;
-    try
-      if Reset then
-        FView.FullLog.Lines.Clear;
-      for I := First to Count - 1 do
-        FView.FullLog.Lines.Add(Source[I]);
-    finally
-      FView.FullLog.Lines.EndUpdate;
-    end;
-  finally
-    FView.FullLog.EndUpdate;
-  end;
-  FView.FullLog.SelStart := SelectionStart;
-  FView.FullLog.SelLength := SelectionLength;
-  // Memo layout may reveal its caret while processing LinesChanged. Restore the
-  // reader's viewport after layout, and follow new output only from the bottom.
-  if FollowTail then
-    FView.FullLog.ViewportPosition := PointF(OldViewport.X,
-      Max(0, FView.FullLog.ContentSize.Height - FView.FullLog.ViewportSize.Height))
-  else
-    FView.FullLog.ViewportPosition := OldViewport;
-  FFullLogCount := Count;
-  FFullLogTail := '';
-  if Count > 0 then
-    FFullLogTail := Source[Count - 1];
-  FFullLogReset := False;
+  SyncEvents(FView.FullLog, FFullLogCount, FFullLogTail, FFullLogReset, 0);
 end;
 
 procedure TLogPresenter.RefreshEvents;
+begin
+  SyncEvents(FView.ScrapeEventList, FDisplayedLogCount, FDisplayedLogTail,
+    FEventsReset, MaxVisibleLogEntries);
+end;
+
+procedure TLogPresenter.SyncEvents(List: TListBox; var DisplayedCount: Integer;
+  var DisplayedTail: string; var NeedsReset: Boolean; Limit: Integer);
 var
   i, Count, First: Integer;
   Source: TStrings;
-  Reset: Boolean;
+  Reset, FollowTail: Boolean;
+  OldViewport: TPointF;
   Item: TListBoxItem;
   Caption: TLabel;
   Icon: FMX.Objects.TPath;
@@ -161,26 +199,31 @@ var
   Template: TPathData;
   Color: TAlphaColor;
 begin
-  if (csDestroying in FView.ScrapeEventList.ComponentState) then
+  if (csDestroying in List.ComponentState) then
     Exit;
   Source := FView.FastColoredTextBoxLogging.Lines;
   Count := Source.Count;
-  Reset := FEventsReset or (Count < FDisplayedLogCount);
-  if not Reset and (FDisplayedLogCount > 0) then
-    Reset := Source[FDisplayedLogCount - 1] <> FDisplayedLogTail;
-  if not Reset and (FDisplayedLogCount = Count) then
+  Reset := NeedsReset or (Count < DisplayedCount);
+  if not Reset and (DisplayedCount > 0) then
+    Reset := Source[DisplayedCount - 1] <> DisplayedTail;
+  if not Reset and (DisplayedCount = Count) then
     Exit;
-  First := FDisplayedLogCount;
+  First := DisplayedCount;
   if Reset then
     First := 0;
-  First := Max(First, Count - MaxVisibleLogEntries);
-  FView.ScrapeEventList.BeginUpdate;
+  if Limit > 0 then
+    First := Max(First, Count - Limit);
+  List.ApplyStyleLookup;
+  OldViewport := List.ViewportPosition;
+  FollowTail := (Limit > 0) or Reset or
+    (OldViewport.Y + List.Height >= List.ContentBounds.Height - 2);
+  List.BeginUpdate;
   try
     if Reset then
-      FView.ScrapeEventList.Clear;
+      List.Clear;
     // Keep existing controls on append; discard only entries outside the visible tail.
-    while FView.ScrapeEventList.Count > Max(0, MaxVisibleLogEntries - (Count - First)) do
-      FView.ScrapeEventList.ListItems[0].Free;
+    while (Limit > 0) and (List.Count > Max(0, Limit - (Count - First))) do
+      List.ListItems[0].Free;
     for i := First to Count - 1 do
     begin
       MessageText := Source[i];
@@ -204,8 +247,8 @@ begin
         Color := $FF6CCB5F
       end;
 
-      Item := TListBoxItem.Create(FView.ScrapeEventList);
-      Item.Parent := FView.ScrapeEventList;
+      Item := TListBoxItem.Create(List);
+      Item.Parent := List;
       Item.Height := 36;
       Item.Text := '';
 
@@ -236,7 +279,7 @@ begin
       Caption.TextSettings.WordWrap := False;
       Caption.TextSettings.Trimming := TTextTrimming.Character;
       Caption.HitTest := False;
-      Item.Hint := MessageText;
+      Item.Hint := Source[i];
       Item.ShowHint := True;
 
       Rule := TRectangle.Create(Item);
@@ -248,15 +291,18 @@ begin
       Rule.HitTest := False;
     end;
   finally
-    FView.ScrapeEventList.EndUpdate
+    List.EndUpdate
   end;
-  FDisplayedLogCount := Count;
-  FDisplayedLogTail := '';
+  List.RealignContent;
+  DisplayedCount := Count;
+  DisplayedTail := '';
   if Count > 0 then
-    FDisplayedLogTail := Source[Count - 1];
-  FEventsReset := False;
-  if FView.ScrapeEventList.Count > 0 then
-    FView.ScrapeEventList.ScrollToItem(FView.ScrapeEventList.ListItems[FView.ScrapeEventList.Count - 1]);
+    DisplayedTail := Source[Count - 1];
+  NeedsReset := False;
+  if FollowTail then
+    List.ViewportPosition := PointF(OldViewport.X, Max(0, List.ContentBounds.Height - List.Height))
+  else
+    List.ViewportPosition := OldViewport;
 end;
 
 procedure TLogPresenter.Reset;

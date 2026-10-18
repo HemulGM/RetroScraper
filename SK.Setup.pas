@@ -13,6 +13,7 @@ type
   TWizardResourceStage = (wrIdle, wrConnecting, wrCatalog, wrArtwork, wrReady, wrOffline, wrFailed);
 
   TFormSetup = class(TForm)
+    SetupRoot: TLayout;
     SetupActionLayout: TLayout;
     SetupCommandsLayout: TLayout;
     SetupBodyLayout: TLayout;
@@ -109,6 +110,7 @@ type
     FrontendHomeRow: TLayout;
     FrontendHomeEdit: TEdit;
     FrontendHomeBrowse: TButton;
+    FrontendHomeBrowseIcon: FMX.Objects.TPath;
     HelpLabel: TLabel;
     ApplyButton: TButton;
     CancelButton: TButton;
@@ -145,6 +147,8 @@ type
     procedure BrowseButtonClick(Sender: TObject);
     procedure ApplyButtonClick(Sender: TObject);
   private
+    FOnCompleted: TNotifyEvent;
+    FEmbedded, FCompleted: Boolean;
     FFiltering: Boolean;
     FConfig: TRetroScraperConfig;
     FCatalog: TJSONObject;
@@ -160,6 +164,7 @@ type
     FResourceDone, FResourceTotal: Integer;
     FResourceStage, FResourcePlatforms, FResourceFailureStage: Integer;
     FWizardFound: TArray<TDetectedPlatform>;
+    procedure Complete(Result: TModalResult);
     procedure StartWizardResources;
     procedure FinishWizardResources;
     procedure UpdateWizardProgress;
@@ -176,13 +181,15 @@ type
     procedure StartDetection;
   public
     destructor Destroy; override;
+    procedure AttachTo(Host: TControl);
+    procedure ConfigureMedia(Config: TRetroScraperConfig; Catalog: TJSONObject; TargetIndex: Integer);
+    function SelectedMedia: TJSONObject;
+    property OnCompleted: TNotifyEvent read FOnCompleted write FOnCompleted;
     procedure Configure(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean);
     procedure ShowWizardPage(Page: Integer);
     procedure ShowResourceStatus(Stage: TWizardResourceStage; Platforms, Done, Total: Integer);
     property Scanning: Boolean read FScanning;
     procedure LoadCatalog(Catalog: TJSONObject);
-    function ExecuteMedia(Config: TRetroScraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
-    function Execute(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean): Boolean;
   end;
 
 implementation
@@ -219,7 +226,7 @@ begin
     WizardResourcesColumn.Width := Round(WizardConnectionLayout.Width * 0.418);
   if WizardStep1 <> nil then
   begin
-    if ClientWidth >= 1120 then
+    if SetupRoot.Width >= 1120 then
     begin
       WizardStep1.Padding.Left := 90;
       WizardStep2.Padding.Left := 24;
@@ -327,6 +334,7 @@ end;
 
 destructor TFormSetup.Destroy;
 begin
+  FOnCompleted := nil;
   TInterlocked.Exchange(FScanCancelled, 1);
   if FScanTask <> nil then
     FScanTask.Wait;
@@ -334,6 +342,8 @@ begin
   TThread.RemoveQueuedEvents(nil, FinishWizardResources);
   TThread.RemoveQueuedEvents(nil, UpdateWizardProgress);
   SaveCategories;
+  SystemList.Clear;
+  FMediaSources.Free;
   FPendingCatalog.Free;
   FOwnedCatalog.Free;
   FWorkingConfig.Free;
@@ -342,6 +352,8 @@ end;
 
 procedure TFormSetup.Configure(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean);
 begin
+  FCompleted := False;
+  ModalResult := mrNone;
   FreeAndNil(FWorkingConfig);
   FreeAndNil(FOwnedCatalog);
   FOriginalConfig := Config;
@@ -474,8 +486,11 @@ begin
   WizardSubtitle.Visible := FWizard;
   if FWizard then
   begin
-    ClientWidth := 1200;
-    ClientHeight := 760;
+    if not FEmbedded then
+    begin
+      ClientWidth := 1200;
+      ClientHeight := 760;
+    end;
     Caption := AppBrand + ' · ' + SK.Locale.L('Настройка библиотеки');
     WizardHeaderLayout.Height := 156;
     WizardHeaderLayout.Padding.Rect := RectF(40, 20, 36, 0);
@@ -499,8 +514,11 @@ begin
   end
   else
   begin
-    ClientWidth := 940;
-    ClientHeight := 720;
+    if not FEmbedded then
+    begin
+      ClientWidth := 940;
+      ClientHeight := 720;
+    end;
     Caption := SK.Locale.L('Добавление систем');
     WizardHeaderLayout.Height := 88;
     WizardHeaderLayout.Padding.Rect := RectF(24, 18, 24, 0);
@@ -749,7 +767,7 @@ begin
   FScanning := False;
   if TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0 then
   begin
-    ModalResult := mrCancel;
+    Complete(mrCancel);
     Exit
   end;
   if FScanError <> '' then
@@ -767,10 +785,21 @@ begin
   ShowWizardPage(1);
 end;
 
-function TFormSetup.Execute(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean): Boolean;
+procedure TFormSetup.AttachTo(Host: TControl);
 begin
-  Configure(Config, Catalog, Wizard);
-  Result := ShowModal = mrOk;
+  FEmbedded := True;
+  SetupRoot.Parent := Host;
+  FormResize(nil);
+end;
+
+procedure TFormSetup.Complete(Result: TModalResult);
+begin
+  if FCompleted then
+    Exit;
+  FCompleted := True;
+  ModalResult := Result;
+  if Assigned(FOnCompleted) then
+    FOnCompleted(Self);
 end;
 
 procedure TFormSetup.LoadCatalog(Catalog: TJSONObject);
@@ -1026,51 +1055,51 @@ begin
   end;
 end;
 
-function TFormSetup.ExecuteMedia(Config: TRetroScraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
+procedure TFormSetup.ConfigureMedia(Config: TRetroScraperConfig; Catalog: TJSONObject; TargetIndex: Integer);
 var
   I: Integer;
   Source: TJSONObject;
 begin
-  Result := nil;
+  Configure(Config, Catalog, False);
   FConfig := Config;
   FCatalog := Catalog;
   FCopyMode := True;
+  FreeAndNil(FMediaSources);
   FMediaSources := TObjectList<TJSONObject>.Create(True);
-  try
-    for I := -1 to Config.Root.GetValue<TJSONArray>('Systems').Count - 1 do
+  for I := -1 to Config.Root.GetValue<TJSONArray>('Systems').Count - 1 do
+  begin
+    if I = TargetIndex then
+      Continue;
+    Source := Config.EffectiveSystem(I);
+    if not (JValue(Source, 'Medias') is TJSONArray) or
+      (TJSONArray(JValue(Source, 'Medias')).Count = 0) then
     begin
-      if I = TargetIndex then
-        Continue;
-      Source := Config.EffectiveSystem(I);
-      if not (JValue(Source, 'Medias') is TJSONArray) or
-        (TJSONArray(JValue(Source, 'Medias')).Count = 0) then
-      begin
-        Source.Free;
-        Continue
-      end;
-      if I < 0 then
-        JSet(Source, '_name', TJSONString.Create(SK.Locale.L('Все системы')))
-      else
-        JSet(Source, '_name', TJSONString.Create(PlatformName(Catalog, Source, JInt(Source, 'SystemId')) +
-            ' · ' + JStr(Source, 'GamesAndRoms.Path')));
-      FMediaSources.Add(Source);
+      Source.Free;
+      Continue
     end;
-    SetupSourceLayout.Visible := False;
-    PlatformPanel.Align := TAlignLayout.Client;
-    PlatformPanel.Margins.Left := 0;
-    TitleLabel.Text := SK.Locale.L('Копирование медиа из системы');
-    SystemLabel.Text := SK.Locale.L('Система-источник');
-    ApplyButton.Text := SK.Locale.L('Копировать');
-    DetectCheck.IsChecked := False;
-    PlatformSearch.Text := '';
-    SearchChanged(nil);
-    if (ShowModal = mrOk) and (SelectedSystem <> nil) then
-      Result := SelectedSystem.Clone as TJSONObject;
-  finally
-    SystemList.Clear;
-    FMediaSources.Free;
-    FMediaSources := nil;
+    if I < 0 then
+      JSet(Source, '_name', TJSONString.Create(SK.Locale.L('Все системы')))
+    else
+      JSet(Source, '_name', TJSONString.Create(PlatformName(Catalog, Source, JInt(Source, 'SystemId')) +
+          ' · ' + JStr(Source, 'GamesAndRoms.Path')));
+    FMediaSources.Add(Source);
   end;
+  SetupSourceLayout.Visible := False;
+  PlatformPanel.Align := TAlignLayout.Client;
+  PlatformPanel.Margins.Left := 0;
+  TitleLabel.Text := SK.Locale.L('Копирование медиа из системы');
+  SystemLabel.Text := SK.Locale.L('Система-источник');
+  ApplyButton.Text := SK.Locale.L('Копировать');
+  DetectCheck.IsChecked := False;
+  PlatformSearch.Text := '';
+  SearchChanged(nil);
+end;
+
+function TFormSetup.SelectedMedia: TJSONObject;
+begin
+  Result := nil;
+  if FCopyMode and (ModalResult = mrOk) and (SelectedSystem <> nil) then
+    Result := SelectedSystem.Clone as TJSONObject;
 end;
 
 procedure TFormSetup.AddSystem(const IDs: TArray<Integer>; const Folder: string);
@@ -1086,7 +1115,7 @@ begin
     PlatformCount.Text := SK.Locale.L('Остановка…');
   end
   else
-    ModalResult := mrCancel;
+    Complete(mrCancel);
 end;
 
 procedure TFormSetup.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -1124,7 +1153,7 @@ begin
       WriteJSON(TPlatformPath.Combine(FConfig.Base, SystemsCatalogPath), FOwnedCatalog);
     FOriginalConfig.ReplaceWith(FConfig);
   end;
-  ModalResult := mrOk;
+  Complete(mrOk);
 end;
 
 procedure TFormSetup.FinishDetection;
@@ -1133,7 +1162,7 @@ begin
   UpdateSelection;
   if TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0 then
   begin
-    ModalResult := mrCancel;
+    Complete(mrCancel);
     Exit
   end;
   if FScanError <> '' then
@@ -1212,7 +1241,7 @@ var
 begin
   if FCopyMode then
   begin
-    ModalResult := mrOk;
+    Complete(mrOk);
     Exit
   end;
   if FWizard then

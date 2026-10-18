@@ -2,18 +2,22 @@
 
 interface
 
+uses
+  System.Classes, SK.Main;
+
 procedure RunSelfTests;
+procedure RunSingleWindowRegressions(Main: TFormMain; Report: TStrings);
 
 implementation
 
 uses
-  SK.Platform.Tests, System.SysUtils, System.Math, System.Classes, System.JSON,
+  SK.Platform.Tests, System.SysUtils, System.Math, System.JSON,
   System.IOUtils, System.Hash, System.Generics.Collections, System.Zip,
   Xml.XMLDoc, Xml.XMLIntf, FMX.Forms, System.Types, FMX.Types, FMX.Graphics,
   FMX.Controls, FMX.ListBox, FMX.Layouts, FMX.StdCtrls, FMX.TabControl, SK.Json,
   SK.Configuration, SK.ScreenScraper, SK.Storage, SK.GameList, SK.Metadata,
-  SK.Engine, SK.Mix, SK.Main, SK.Setup, SK.Frontend, SK.Input, SK.Features.Tests,
-  SK.Catalog, SK.Platform, SK.Consts, System.SyncObjs;
+  SK.Engine, SK.Mix, SK.Setup, SK.Frontend, SK.Input, SK.Features.Tests,
+  SK.Catalog, SK.Platform, SK.Consts, System.SyncObjs, SK.GameLibrary.Form;
 
 type
   TComboWheelAccess = class(TComboBox);
@@ -33,6 +37,90 @@ begin
   inherited;
   if Operation = opRemove then
     Inc(Removed);
+end;
+
+procedure RunSingleWindowRegressions(Main: TFormMain; Report: TStrings);
+var
+  Setup: TFormSetup;
+  LibraryScreen: TFormGameLibrary;
+  OriginalWidth, OriginalHeight: Integer;
+  OriginalPage, I, VisibleWindows: Integer;
+  Before, After: TJSONObject;
+
+  procedure Check(Condition: Boolean; const Description: string);
+  begin
+    if not Condition then
+      raise Exception.Create('FAIL: ' + Description);
+    Report.Add('PASS: ' + Description);
+  end;
+
+begin
+  OriginalWidth := Main.ClientWidth;
+  OriginalHeight := Main.ClientHeight;
+  OriginalPage := Main.PageTabControl.TabIndex;
+  Before := Main.CreateRunConfig;
+  try
+    Check((Main.ScreenTabControl.TabPosition = TTabPosition.None) and
+      (Main.ScreenTabControl.ActiveTab = Main.TabWorkspace) and
+      (Main.PageHost.Parent = Main.WorkspaceLayout), 'Workspace is hosted by the single-window screen TabControl');
+    Main.ButtonRunWizardClick(nil);
+    Setup := Main.FindComponent('FormSetup') as TFormSetup;
+    Check((Setup <> nil) and (Main.ScreenTabControl.ActiveTab = Main.TabSetup) and
+      (Setup.SetupRoot.Parent = Main.SetupHost) and not Setup.Visible,
+      'Wizard opens inside the setup tab without showing another form');
+    Setup.ShowWizardPage(1);
+    Main.ClientWidth := OriginalWidth + 160;
+    Main.ClientHeight := OriginalHeight + 80;
+    Application.ProcessMessages;
+    Check(SameValue(Setup.SetupRoot.Width, Main.SetupHost.Width, 1) and
+      SameValue(Setup.SetupRoot.Height, Main.SetupHost.Height, 1),
+      'Embedded wizard fills the host after resizing the main window');
+    Setup.ShowWizardPage(0);
+    Check(SameValue(Main.ClientWidth, OriginalWidth + 160, 1),
+      'Wizard steps preserve the main window size');
+    Setup.CancelButtonClick(nil);
+    Check((Main.ScreenTabControl.ActiveTab = Main.TabWorkspace) and
+      (Main.PageTabControl.TabIndex = OriginalPage), 'Cancelling the wizard restores the previous workspace page');
+    After := Main.CreateRunConfig;
+    try
+      Check(Before.ToJSON = After.ToJSON, 'Cancelling embedded setup preserves the working configuration');
+    finally
+      After.Free;
+    end;
+    Main.ButtonAddSystemClick(nil);
+    Setup := Main.FindComponent('FormSetup') as TFormSetup;
+    Check((Main.ScreenTabControl.ActiveTab = Main.TabSetup) and not Setup.WizardSteps.Visible,
+      'Manual platform addition uses the setup tab');
+    Setup.CancelButtonClick(nil);
+    Main.ButtonCopyFromMainClick(nil);
+    Setup := Main.FindComponent('FormSetup') as TFormSetup;
+    Check((Main.ScreenTabControl.ActiveTab = Main.TabMediaSelection) and
+      (Setup.SetupRoot.Parent = Main.MediaSelectionHost), 'Media source selection opens in its own screen tab');
+    Setup.CancelButtonClick(nil);
+    Main.OpenPlatformLibraryClick(nil);
+    LibraryScreen := Main.FindComponent('FormGameLibrary') as TFormGameLibrary;
+    Check((LibraryScreen <> nil) and (Main.ScreenTabControl.ActiveTab = Main.TabPlatformLibrary) and
+      (LibraryScreen.LibraryRoot.Parent = Main.PlatformLibraryHost) and not LibraryScreen.Visible,
+      'Platform library editor opens inside the main window');
+    VisibleWindows := 0;
+    for I := 0 to Screen.FormCount - 1 do
+      if Screen.Forms[I].Visible then
+        Inc(VisibleWindows);
+    Check(VisibleWindows = 1, 'Only the main application window is visible while editing a platform');
+    LibraryScreen.CloseClick(nil);
+    Check((Main.ScreenTabControl.ActiveTab = Main.TabWorkspace) and
+      not LibraryScreen.LibraryLoadTimer.Enabled,
+      'Returning from the library restores the workspace and cancels pending loading');
+    Main.ButtonRunWizardClick(nil);
+    Setup := Main.FindComponent('FormSetup') as TFormSetup;
+    Setup.CancelButtonClick(nil);
+    Check(Main.ScreenTabControl.ActiveTab = Main.TabWorkspace,
+      'Screens can be reopened after returning from the library');
+  finally
+    Main.ClientWidth := OriginalWidth;
+    Main.ClientHeight := OriginalHeight;
+    Before.Free;
+  end;
 end;
 
 procedure RunQuotaStopRegressions(Report: TStrings);
@@ -1471,6 +1559,26 @@ begin
       FormMain.Show;
       Sleep(250);
       Application.ProcessMessages;
+      // Multiple selections must return before rendering and keep only the latest result.
+      FormMain.SettingsScope.ItemIndex := 1;
+      FormMain.SettingsScope.ItemIndex := 2;
+      Check((FormMain.MediaPreviewImage.Bitmap.Width = 0) and
+        FormMain.MediaPreviewCaption.Text.Contains('…'),
+        'Platform switching queues preview work without rendering in the input handler');
+      Started := TThread.GetTickCount64;
+      while (FormMain.MediaPreviewImage.Bitmap.Width = 0) and
+        (TThread.GetTickCount64 - Started < 15000) do
+      begin
+        FormMain.StatusTimerTimer(nil);
+        CheckSynchronize;
+        Sleep(5);
+      end;
+      Check(FormMain.MediaPreviewImage.Bitmap.Width > 0,
+        'Latest platform preview completes after rapid selection changes');
+      Check(FormMain.SettingsScope.ItemIndex = 2,
+        'Background preview completion preserves the latest platform selection');
+      FormMain.SettingsScope.ItemIndex := 1;
+      RunSingleWindowRegressions(FormMain, Report);
       RunLayoutFlowRegressions(FormMain, Report);
       Check((FormMain.PageTabControl.ActiveTab = FormMain.TabLibraryPage) and
         (FormMain.PageTabControl.TabPosition = TTabPosition.None) and
@@ -1552,7 +1660,6 @@ begin
       finally
         RowProbe.Free
       end;
-      FormMain.SettingsScope.ItemIndex := 1;
       FormMain.PanelSystemListOuter.ViewportPosition := PointF(0, 0);
       FormMain.SystemSearch.Text := 'no-system-matches-this-filter';
       Check(FormMain.PanelSystemListInner.ChildrenCount = 0, 'System search filters rows');
@@ -1786,7 +1893,7 @@ begin
       FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:10  Media error: Не удалось загрузить изображение');
       FormMain.NavLogClick(FormMain.NavLog);
       Check(FormMain.ScrapeEventList.ListItems[0] = EventRow, 'New log lines preserve existing event controls');
-      Check((FormMain.PageTabControl.ActiveTab = FormMain.TabLogPage) and FormMain.FullLog.Lines.Text.Contains('Метаданные получены'), 'Full journal reflects the run log');
+      Check((FormMain.PageTabControl.ActiveTab = FormMain.TabLogPage) and FormMain.FullLog.ListItems[FormMain.FullLog.Count - 3].Hint.Contains('Метаданные получены'), 'Full journal reflects the run log');
       Lines := TStringList.Create;
       try
         Lines.Assign(FormMain.FastColoredTextBoxLogging.Lines);
@@ -1795,20 +1902,18 @@ begin
         FormMain.ApplyScrapeStatus(Status);
         Application.ProcessMessages;
         Check(FormMain.FullLog.ViewportPosition.Y > 0, 'Journal follows new lines from the bottom');
-        FormMain.FullLog.SelStart := 15;
-        FormMain.FullLog.SelLength := 8;
+        FormMain.FullLog.ItemIndex := 15;
         FormMain.FullLog.ViewportPosition := PointF(0, 200);
         ScrollBefore := FormMain.FullLog.ViewportPosition;
         for I := 1 to 5 do
           FormMain.ApplyScrapeStatus(Status);
         Application.ProcessMessages;
-        Check((FormMain.FullLog.ViewportPosition = ScrollBefore) and (FormMain.FullLog.SelLength = 8),
-          'Unchanged status ticks preserve journal viewport and text selection');
+        Check((FormMain.FullLog.ViewportPosition = ScrollBefore) and (FormMain.FullLog.ItemIndex = 15),
+          'Unchanged status ticks preserve journal viewport and event selection');
         FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:12  Appended while reading older lines');
         FormMain.ApplyScrapeStatus(Status);
         Application.ProcessMessages;
-        Check((FormMain.FullLog.ViewportPosition = ScrollBefore) and (FormMain.FullLog.SelStart = 15) and
-          (FormMain.FullLog.SelLength = 8) and FormMain.FullLog.Lines.Text.Contains('Appended while reading'),
+        Check((FormMain.FullLog.ViewportPosition = ScrollBefore) and (FormMain.FullLog.ItemIndex = 15) and FormMain.FullLog.ListItems[FormMain.FullLog.Count - 1].Hint.Contains('Appended while reading'),
           'Appending journal lines preserves manual scroll and selection');
         Status.Running := False;
         Status.Finished := True;
@@ -1822,7 +1927,7 @@ begin
         Check(FormMain.FullLog.ViewportPosition = ScrollBefore,
           'Returning to the journal preserves its reading position');
         FormMain.FullLog.ViewportPosition := PointF(0,
-          Max(0, FormMain.FullLog.ContentSize.Height - FormMain.FullLog.ViewportSize.Height));
+          Max(0, FormMain.FullLog.ContentBounds.Height - FormMain.FullLog.Height));
         ScrollBefore := FormMain.FullLog.ViewportPosition;
         FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:13  Following the last line');
         FormMain.ApplyScrapeStatus(Status);
@@ -1830,7 +1935,7 @@ begin
           'Journal resumes following when reader scrolls to the bottom');
         FormMain.FastColoredTextBoxLogging.Lines.Clear;
         FormMain.ApplyScrapeStatus(Status);
-        Check(FormMain.FullLog.Lines.Count = 0, 'Resetting source clears the full journal once');
+        Check(FormMain.FullLog.Count = 0, 'Resetting source clears the full journal once');
         FormMain.BeginScrapeDisplay;
         FormMain.FastColoredTextBoxLogging.Lines.AddStrings(Lines);
         Status.Running := True;

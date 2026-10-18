@@ -40,7 +40,7 @@ type
     function Revision: string;
     function NodePath(Node: IXMLNode): string;
   public
-    constructor Create(Config: TJSONObject);
+    constructor Create(Config: TJSONObject; Cancel: TFunc<Boolean> = nil);
     destructor Destroy; override;
     function Title(Index: Integer): string;
     function Draft(Index: Integer): IXMLDocument;
@@ -55,6 +55,15 @@ type
     property Kind: Integer read FKind;
   end;
 
+type
+  IGameLibraryLoad = interface
+    ['{D527FB88-0AF5-4E60-B5E2-0AE77ADAD129}']
+    procedure Cancel;
+    function Poll(out Data: TGameLibrary; out Error: string): Boolean;
+  end;
+
+function LoadGameLibraryAsync(Config: TJSONObject): IGameLibraryLoad;
+
 function ParseGameXML(const XML: string; Kind: Integer): IXMLDocument;
 
 procedure LibraryFields(const Node: IXMLNode; Fields: TObjectList<TLibraryField>);
@@ -64,7 +73,107 @@ implementation
 uses
   SK.Xml, System.IOUtils, System.Hash, System.Variants, System.StrUtils,
   Xml.XMLDoc, SK.Json, SK.Platform, SK.Locale, System.RegularExpressions,
-  System.DateUtils, System.Math;
+  System.DateUtils, System.Math, System.SyncObjs;
+
+type
+  TGameLibraryLoad = class(TInterfacedObject, IGameLibraryLoad)
+  private
+    FCancelled, FFinished: Integer;
+    FData: TGameLibrary;
+    FError: string;
+    function IsCancelled: Boolean;
+  public
+    destructor Destroy; override;
+    procedure Execute(Config: TJSONObject);
+    procedure Cancel;
+    function Poll(out Data: TGameLibrary; out Error: string): Boolean;
+  end;
+
+destructor TGameLibraryLoad.Destroy;
+begin
+  FData.Free;
+  inherited;
+end;
+
+function TGameLibraryLoad.IsCancelled: Boolean;
+begin
+  Result := TInterlocked.CompareExchange(FCancelled, 0, 0) <> 0;
+end;
+
+procedure TGameLibraryLoad.Cancel;
+begin
+  TInterlocked.Exchange(FCancelled, 1);
+end;
+
+procedure TGameLibraryLoad.Execute(Config: TJSONObject);
+begin
+  try
+    try
+      BeginWorkerPlatform;
+      try
+        if IsCancelled then
+          Exit;
+        FData := TGameLibrary.Create(Config,
+          function: Boolean
+          begin
+            Result := IsCancelled;
+          end);
+      finally
+        EndWorkerPlatform;
+      end;
+    except
+      on E: EAbort do
+        ;
+      on E: Exception do
+        FError := E.Message;
+    end;
+  finally
+    TInterlocked.Exchange(FFinished, 1);
+  end;
+end;
+
+function TGameLibraryLoad.Poll(out Data: TGameLibrary; out Error: string): Boolean;
+begin
+  Data := nil;
+  Error := '';
+  Result := TInterlocked.CompareExchange(FFinished, 0, 0) <> 0;
+  if Result then
+  begin
+    Data := FData;
+    FData := nil;
+    Error := FError;
+  end;
+end;
+
+function LoadGameLibraryAsync(Config: TJSONObject): IGameLibraryLoad;
+var
+  Loader: TGameLibraryLoad;
+  Lease: IGameLibraryLoad;
+  WorkConfig: TJSONObject;
+  Worker: TThread;
+begin
+  Loader := TGameLibraryLoad.Create;
+  Result := Loader;
+  Lease := Result;
+  WorkConfig := Config.Clone as TJSONObject;
+  try
+    Worker := TThread.CreateAnonymousThread(
+      procedure
+      begin
+        try
+          // The lease owns the result even if its window closes while reading files.
+          if Lease <> nil then
+            Loader.Execute(WorkConfig);
+        finally
+          WorkConfig.Free;
+        end;
+      end);
+  except
+    WorkConfig.Free;
+    raise;
+  end;
+  Worker.Start;
+end;
 
 function ParseGameXML(const XML: string; Kind: Integer): IXMLDocument;
 var
@@ -501,7 +610,7 @@ begin
   Result := MediaPath(Result);
 end;
 
-constructor TGameLibrary.Create(Config: TJSONObject);
+constructor TGameLibrary.Create(Config: TJSONObject; Cancel: TFunc<Boolean>);
 var
   N, RootNode: IXMLNode;
   G: TLibraryGame;
@@ -534,6 +643,8 @@ begin
   try
     for I := 0 to RootNode.ChildNodes.Count - 1 do
     begin
+      if Assigned(Cancel) and Cancel() then
+        raise EAbort.Create('Library loading cancelled');
       N := RootNode.ChildNodes[I];
       if not (((FKind = 2) and (N.NodeName = 'Game')) or
         ((FKind <> 2) and (N.NodeName = 'game'))) then
@@ -547,8 +658,10 @@ begin
       FGames.Add(G);
       Index.AddOrSetValue(PathKey(Path), True);
     end;
-    for Path in ScanInputs(FConfig) do
+    for Path in ScanInputs(FConfig, Cancel) do
     begin
+      if Assigned(Cancel) and Cancel() then
+        raise EAbort.Create('Library loading cancelled');
       Key := PathKey(Path);
       if Index.ContainsKey(Key) then
         Continue;

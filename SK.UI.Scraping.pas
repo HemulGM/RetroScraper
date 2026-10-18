@@ -183,7 +183,7 @@ begin
     Result := SK.Locale.L('Загрузка медиа')
   else if Stage = 'Preparing media' then
     Result := SK.Locale.L('Подготовка медиа')
-  else if Stage = 'Hashing ROM' then
+  else if (Stage = 'Hashing ROM') or (Stage = 'Computing ROM hashes') then
     Result := SK.Locale.L('Расчёт хеша ROM')
   else if Stage = 'Composing mix' then
     Result := SK.Locale.L('Создание Mix')
@@ -197,6 +197,8 @@ begin
     Result := SK.Locale.L('Поиск файлов ROM')
   else if Stage = 'Cancelled' then
     Result := SK.Locale.L('Отменено')
+  else if Stage = 'Failed' then
+    Result := SK.Locale.L('Не удалось выполнить скраппинг')
   else if Stage = 'Stopped' then
     Result := SK.Locale.L('Остановлено')
   else if Stage = 'Completed' then

@@ -23,7 +23,7 @@ uses
   FMX.Edit.Style.New, FMX.Controls, FMX.StdCtrls, System.Math, SK.Platform,
   SK.Json, SK.Configuration, SK.ScreenScraper, SK.Storage, SK.Consts,
   SK.Metadata, SK.Catalog, SK.Artwork, SK.Engine, SK.Setup, SK.Main, SK.Locale,
-  SK.Preview, SK.Mix;
+  SK.Preview, SK.Mix, SK.UI.Scraping;
 
 procedure RunConnectionCultureMixTests(Report: TStrings);
 var
@@ -776,6 +776,18 @@ begin
         Culture := UILocaleCode(I);
         SetLocale(Culture);
         ApplyLocale(Setup);
+        Check(Setup.WizardHelpText.Text = SK.Locale.L('Помощь'),
+          'Wizard help caption uses the selected language: ' + Culture);
+        if Culture <> 'ru' then
+          Check((Setup.WizardHelpText.Text <> 'Помощь') and
+            (SK.Locale.L('Загрузка…') <> 'Загрузка…') and
+            (SK.Locale.L('Загрузка библиотеки…') <> 'Загрузка библиотеки…') and
+            (SK.Locale.L('Не удалось загрузить библиотеку') <> 'Не удалось загрузить библиотеку') and
+            (SK.Locale.L('Отменить') <> 'Отменить') and
+            (SK.Locale.L('Игра не найдена') <> 'Игра не найдена') and
+            (StageText('Failed') <> 'Failed') and
+            (StageText('Computing ROM hashes') <> 'Computing ROM hashes'),
+            'Help, library states and all scrape phases are translated: ' + Culture);
         Setup.ShowWizardPage(0);
         Setup.ShowResourceStatus(wrArtwork, 243, 88, 972);
         Capture('02-downloading-' + Culture);

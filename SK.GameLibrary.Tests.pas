@@ -18,6 +18,20 @@ uses
   SK.Platform, SK.GameLibrary, SK.GameLibrary.Form, SK.Engine, SK.Main,
   HGM.FMX.Image, FMX.Objects, FMX.ListBox, FMX.StdCtrls;
 
+type
+  TLibraryTestExceptionSink = class
+    Report: TStrings;
+    Error: string;
+    procedure Handle(Sender: TObject; E: Exception);
+  end;
+
+procedure TLibraryTestExceptionSink.Handle(Sender: TObject; E: Exception);
+begin
+  Error := E.ClassName + ': ' + E.Message;
+  Report.Add('Unexpected UI exception: ' + Error);
+  Report.SaveToFile(TPlatformPath.Combine(WritableBase, 'tests/library-results.txt'), TEncoding.UTF8);
+end;
+
 procedure RunGameLibraryTests(Report: TStrings);
 var
   Base, Roms, ListFile, Before, Other, Path: string;
@@ -30,7 +44,7 @@ var
   Worker: TScrapeWorker;
   Status: TScrapeStatus;
   Lines: TStringList;
-  Window, LazyWindow: TFormGameLibrary;
+  Window, LazyWindow, ClosingWindow: TFormGameLibrary;
   SelectedCard, OtherCard: TListBoxItem;
   LazyConfig: TJSONObject;
   ScrollBefore: TPointF;
@@ -39,7 +53,7 @@ var
   Zip: TZipFile;
   Bytes: TBytes;
   I, N: Integer;
-  Raised, Found: Boolean;
+  Raised, Found, SawPartial, UIResponded: Boolean;
   Started: UInt64;
 
   procedure Check(Condition: Boolean; const Name: string);
@@ -61,6 +75,16 @@ var
       CheckSynchronize(10);
     end;
     Check(Ready(), Name);
+  end;
+
+  procedure WaitLibrary(Form: TFormGameLibrary; const Name: string);
+  begin
+    WaitUntil(
+      function: Boolean
+      begin
+        Form.LibraryLoadTimerTimer(nil);
+        Result := not Form.LibraryLoading;
+      end, Name);
   end;
 
   procedure WaitPreview(Editor: TGameFieldEditor);
@@ -410,11 +434,16 @@ begin
       Window.StyleBook := Main.StyleBookWinUI3;
       Window.FieldsScroll.ScrollAnimation := TBehaviorBoolean.False;
       Window.LoadPlatform(Sys, 'Test platform');
+      Check(Window.LibraryLoading and (Window.GameList.Count = 0) and
+        Window.ScrapeActivity.Enabled and Window.CloseButton.Enabled and
+        not Window.GamesPanel.Enabled and not Window.ScrapeButton.Enabled,
+        'Opening a platform returns immediately with loading state and close available');
+      WaitLibrary(Window, 'Platform library loads asynchronously');
       // Rebuild lists and field owners repeatedly before delivering queued previews.
       for I := 1 to 5 do
       begin
         Window.SearchEdit.Text := 'B.rom';
-        Window.GameList.ItemIndex := 0;
+        Window.GameList.ItemIndex := 1;
         Window.SearchEdit.Text := '';
         Window.GameList.ItemIndex := 0;
       end;
@@ -486,8 +515,10 @@ begin
       Check((Window.GameList.Count = 3) and (Window.FieldCount > 20), 'Game library form streams and exposes all fields from FMX');
       Window.SearchEdit.Text := 'B.rom';
       Window.SearchChanged(nil);
-      Check(Window.GameList.Count = 1, 'Game library search finds a ROM filename');
-      Window.GameList.ItemIndex := 0;
+      Check((Window.GameList.Count = 3) and not Window.GameList.ListItems[0].Visible and
+        Window.GameList.ListItems[1].Visible and not Window.GameList.ListItems[2].Visible,
+        'Game library search filters existing cards by ROM filename');
+      Window.GameList.ItemIndex := 1;
       Window.GameChanged(nil);
       Check(Window.XMLMemo.Text.Contains('Beta'), 'Game selection loads its own editable XML');
       Window.SearchEdit.Text := '';
@@ -710,7 +741,32 @@ begin
         LazyWindow.GameList.ScrollAnimation := TBehaviorBoolean.False;
         Started := TThread.GetTickCount64;
         LazyWindow.LoadPlatform(LazyConfig, 'Lazy previews');
-        Report.Add(Format('200-game library load: %d ms', [TThread.GetTickCount64 - Started]));
+        Report.Add(Format('Async library open returned after %d ms', [TThread.GetTickCount64 - Started]));
+        Check(LazyWindow.LibraryLoading and (LazyWindow.GameList.Count = 0),
+          'A large library is not read or built synchronously by LoadPlatform');
+        UIResponded := False;
+        SawPartial := False;
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            UIResponded := True;
+          end);
+        WaitUntil(
+          function: Boolean
+          begin
+            LazyWindow.LibraryLoadTimerTimer(nil);
+            if LazyWindow.LibraryLoading and (LazyWindow.GameList.Count > 0) then
+              SawPartial := True;
+            Result := not LazyWindow.LibraryLoading and UIResponded;
+          end, 'Large library finishes its asynchronous load');
+        Check(UIResponded, 'UI callbacks execute while the platform library is loading');
+        Report.Add(Format('Async result: partial=%s, count=%d, activity=%s, enabled=%s',
+          [BoolToStr(SawPartial, True), LazyWindow.GameList.Count,
+           BoolToStr(LazyWindow.ScrapeActivity.Enabled, True), BoolToStr(LazyWindow.GamesPanel.Enabled, True)]));
+        Check(SawPartial and (LazyWindow.GameList.Count = 203) and
+          not LazyWindow.ScrapeActivity.Enabled and LazyWindow.GamesPanel.Enabled,
+          'Large library cards are built across multiple UI ticks and controls are restored');
+        Report.Add(Format('Complete 200-game library load: %d ms', [TThread.GetTickCount64 - Started]));
         N := 0;
         for I := 0 to LazyWindow.GameList.Count - 1 do
           if TImage(LazyWindow.GameList.ListItems[I].FindComponent('GameCover')).Tag <> 0 then
@@ -746,6 +802,93 @@ begin
           begin
             Result := not TImage(LazyWindow.GameList.ListItems[0].FindComponent('GameCover')).Bitmap.IsEmpty;
           end, 'Returning to the start retains or reloads its previews');
+        SelectedCard := LazyWindow.GameList.ListItems[0];
+        OtherCard := LazyWindow.GameList.ListItems[100];
+        LazyWindow.SearchEdit.Text := 'LAZY GAME 4';
+        N := 0;
+        for I := 0 to LazyWindow.GameList.Count - 1 do
+          if LazyWindow.GameList.ListItems[I].Visible then
+            Inc(N);
+        Check((N = 10) and (LazyWindow.GameList.Count = 203) and
+          (LazyWindow.GameList.ListItems[0] = SelectedCard) and
+          (LazyWindow.GameList.ListItems[100] = OtherCard) and
+          not SelectedCard.Visible and LazyWindow.GameList.ListItems[41].Visible,
+          'Case-insensitive title filtering preserves all existing card objects');
+        Check((TImage(SelectedCard.FindComponent('GameCover')).Tag = 2) and
+          not TImage(SelectedCard.FindComponent('GameCover')).Bitmap.IsEmpty,
+          'Filtering retains decoded previews of hidden games');
+        WaitUntil(
+          function: Boolean
+          begin
+            Result := not TImage(LazyWindow.GameList.ListItems[4].FindComponent('GameCover')).Bitmap.IsEmpty;
+          end, 'Filtered visible rows load their own previews');
+        LazyWindow.SearchEdit.Text := 'lazy-150.rom';
+        Check(LazyWindow.GameList.ListItems[150].Visible and
+          not LazyWindow.GameList.ListItems[40].Visible,
+          'ROM filename filtering updates visibility without moving cards');
+        WaitUntil(
+          function: Boolean
+          begin
+            Result := not TImage(LazyWindow.GameList.ListItems[150].FindComponent('GameCover')).Bitmap.IsEmpty;
+          end, 'Filtering loads a newly visible distant game preview');
+        LazyWindow.FieldEditor('developer').Text := 'Draft kept during search';
+        LazyWindow.SearchEdit.Text := 'no matching game';
+        N := 0;
+        for I := 0 to LazyWindow.GameList.Count - 1 do
+          if LazyWindow.GameList.ListItems[I].Visible then
+            Inc(N);
+        Check((N = 0) and (LazyWindow.GameList.ItemIndex = -1) and
+          (LazyWindow.FieldEditor('developer').Text = 'Draft kept during search') and
+          LazyWindow.SaveButton.Enabled,
+          'An empty search result preserves the selected game draft');
+        LazyWindow.SearchEdit.Text := '';
+        Check((LazyWindow.GameList.ListItems[0] = SelectedCard) and SelectedCard.Visible and
+          (LazyWindow.GameList.ListItems[100] = OtherCard) and OtherCard.Visible and
+          (TImage(SelectedCard.FindComponent('GameCover')).Tag = 2) and
+          not TImage(SelectedCard.FindComponent('GameCover')).Bitmap.IsEmpty and
+          (TImage(LazyWindow.GameList.ListItems[150].FindComponent('GameCover')).Tag = 2) and
+          (LazyWindow.GameList.Selected.Tag = 40),
+          'Clearing search restores cards and selection without reloading decoded previews');
+        Check(TImage(OtherCard.FindComponent('GameCover')).Tag = 0,
+          'Search does not request previews for games that never enter the viewport');
+        ClosingWindow := TFormGameLibrary.Create(nil);
+        try
+          ClosingWindow.StyleBook := Main.StyleBookWinUI3;
+          ClosingWindow.LoadPlatform(LazyConfig, 'Cancel load');
+          Found := False;
+          Started := TThread.GetTickCount64;
+          ClosingWindow.FormCloseQuery(nil, Found);
+          Check(Found and not ClosingWindow.LibraryLoading and
+            not ClosingWindow.LibraryLoadTimer.Enabled and
+            (TThread.GetTickCount64 - Started < 1000),
+            'Closing during library loading cancels background work without waiting');
+        finally
+          ClosingWindow.Free;
+        end;
+        ClosingWindow := TFormGameLibrary.Create(nil);
+        try
+          ClosingWindow.StyleBook := Main.StyleBookWinUI3;
+          JSet(LazyConfig, 'GamesAndRoms.Path', TJSONString.Create(TPlatformPath.Combine(Roms, 'missing-library-folder')));
+          ClosingWindow.LoadPlatform(LazyConfig, 'Load error');
+          WaitLibrary(ClosingWindow, 'Background loading errors reach the UI');
+          Check((ClosingWindow.GameList.Count = 0) and
+            (ClosingWindow.StatusLabel.Text <> '') and ClosingWindow.CloseButton.Enabled and
+            not ClosingWindow.ScrapeActivity.Enabled and not ClosingWindow.SaveButton.Enabled,
+            'Loading failure restores controls and displays an error');
+          JSet(LazyConfig, 'GamesAndRoms.Path', TJSONString.Create(Roms));
+          ClosingWindow.LoadPlatform(LazyConfig, 'Retry load');
+          WaitLibrary(ClosingWindow, 'A failed library load can be retried');
+          Check((ClosingWindow.GameList.Count = 203) and ClosingWindow.GamesPanel.Enabled,
+            'Retrying a failed load displays the complete library');
+          ClosingWindow.LoadPlatform(LazyConfig, 'Superseded load');
+          ClosingWindow.LoadPlatform(Sys, 'Latest platform');
+          WaitLibrary(ClosingWindow, 'A replacement platform load completes');
+          Check((ClosingWindow.GameList.Count = 3) and
+            (ClosingWindow.PlatformLabel.Text = 'Latest platform'),
+            'An obsolete load cannot replace a newer platform');
+        finally
+          ClosingWindow.Free;
+        end;
       finally
         LazyWindow.Free;
         LazyConfig.Free;
@@ -832,11 +975,19 @@ end;
 procedure RunGameLibrarySelfTests;
 var
   Report: TStringList;
+  Sink: TLibraryTestExceptionSink;
+  PreviousHandler: TExceptionEvent;
 begin
   Report := TStringList.Create;
+  Sink := TLibraryTestExceptionSink.Create;
+  Sink.Report := Report;
+  PreviousHandler := Application.OnException;
+  Application.OnException := Sink.Handle;
   try
     try
       RunGameLibraryTests(Report);
+      if Sink.Error <> '' then
+        raise Exception.Create(Sink.Error);
       Report.Add('ALL LIBRARY TESTS PASSED');
     except
       on E: Exception do
@@ -847,6 +998,8 @@ begin
     end;
     Report.SaveToFile(TPlatformPath.Combine(WritableBase, 'tests/library-results.txt'), TEncoding.UTF8);
   finally
+    Application.OnException := PreviousHandler;
+    Sink.Free;
     Report.Free
   end;
 end;
