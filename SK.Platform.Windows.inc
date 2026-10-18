@@ -38,7 +38,7 @@ begin
   B := TEncoding.UTF8.GetBytes(Value);
   if Length(B)=0 then raise Exception.Create('Empty credentials');
   Input.cbData := Length(B); Input.pbData := @B[0];
-  if not CryptProtectData(Input,'SkraperFMX',nil,nil,nil,1,Output) then RaiseLastOSError;
+  if not CryptProtectData(Input,PChar(AppBrand),nil,nil,nil,1,Output) then RaiseLastOSError;
   Temporary := Identity + '.' + TGUID.NewGuid.ToString + '.tmp';
   try
     SetLength(B,Output.cbData);

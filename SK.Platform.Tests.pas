@@ -17,8 +17,8 @@ uses
   System.SysUtils, System.IOUtils, System.JSON, System.Threading, System.Hash,
   System.Types, System.UITypes, System.Math, Xml.XMLDoc, Xml.XMLIntf,
   SK.Platform.Graphics, FMX.FontManager, System.Generics.Collections,
-  FMX.Graphics, FMX.Types, SK.Mix, SK.Platform, SK.Core, SK.Input, SK.Main,
-  SK.Engine, SK.Features.Tests;
+  FMX.Graphics, FMX.Types, SK.Mix, SK.Platform, SK.Json, SK.ScreenScraper,
+  SK.Storage, SK.Input, SK.Main, SK.Engine, SK.Features.Tests;
 
 type
   TFailingWorker = class(TScrapeWorker)

@@ -14,9 +14,10 @@ implementation
 uses {$IFDEF MSWINDOWS}
   Winapi.Windows, {$ENDIF}
   System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types,
-  System.Generics.Collections, FMX.Graphics, FMX.Forms, FMX.Types, SK.Core,
-  SK.Catalog, SK.Frontend, SK.Cache, SK.Locale, SK.Preview, SK.Platform,
-  SK.Consts, SK.Engine, SK.Main, SK.Setup, SK.GameLibrary.Tests, SK.Parity.Tests;
+  System.Generics.Collections, FMX.Graphics, FMX.Forms, FMX.Types, SK.Json,
+  SK.Configuration, SK.ScreenScraper, SK.Storage, SK.Settings.Tests, SK.Catalog,
+  SK.Frontend, SK.Cache, SK.Locale, SK.Preview, SK.Platform, SK.Consts,
+  SK.Engine, SK.Main, SK.Setup, SK.GameLibrary.Tests, SK.Parity.Tests;
 
 procedure RunDirectoryDetectionRegressions(Report: TStrings);
 var
@@ -26,7 +27,7 @@ var
   Root, LinkFixture: string;
   Frontend: Integer;
   Cancelled: Boolean;
-  Settings: TSkraperConfig;
+  Settings: TRetroScraperConfig;
   Setup: TFormSetup;
 
   procedure Check(Condition: Boolean; const Name: string);
@@ -100,7 +101,7 @@ begin
         Cancelled := True
     end;
     Check(Cancelled, 'Both scanning passes respect cancellation');
-    Settings := TSkraperConfig.Create(TPlatformPath.Combine(Root, 'settings'));
+    Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Root, 'settings'));
     try
       JSet(Settings.Root, 'FrontEnd.Type', TJSONNumber.Create(1));
       Setup := TFormSetup.Create(nil);
@@ -123,7 +124,9 @@ begin
     finally
       Settings.Free
     end;
-    LinkFixture := GetEnvironmentVariable('SKRAPERFMX_DIRECTORY_LINK_FIXTURE');
+    LinkFixture := GetEnvironmentVariable('RETROSCRAPER_DIRECTORY_LINK_FIXTURE');
+    if LinkFixture = '' then
+      LinkFixture := GetEnvironmentVariable('SKRAPERFMX_DIRECTORY_LINK_FIXTURE');
     if LinkFixture <> '' then
     begin
       Check(IsPathWithin(LinkFixture, TPlatformPath.Combine(WritableBase, 'tests')),
@@ -175,7 +178,7 @@ var
   Folder, Cache, Path, Expected, Epoch, Before: string;
   I, Count: Integer;
   Cancelled: Boolean;
-  Settings: TSkraperConfig;
+  Settings: TRetroScraperConfig;
   Worker: TScrapeWorker;
   Status: TScrapeStatus;
   Lines: TStringList;
@@ -199,6 +202,7 @@ var
   end;
 
 begin
+  RunSettingsSessionTests(Report);
   RunDirectoryDetectionRegressions(Report);
   RunGameLibraryTests(Report);
   RunSelectedParityTests(Report);
@@ -246,7 +250,7 @@ begin
     end;
     Check(Cancelled, 'Platform detection has a cancellation boundary');
 
-    Settings := TSkraperConfig.Create(TPlatformPath.Combine(Folder, 'wizard'));
+    Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Folder, 'wizard'));
     try
       JSet(Settings.Root, 'Systems', TJSONArray.Create);
       JSet(Settings.Root, 'FrontEnd.Type', TJSONNumber.Create(1));
@@ -508,7 +512,7 @@ begin
       Media.Free
     end;
 
-    Settings := TSkraperConfig.Create(TPlatformPath.Combine(Folder, 'preferences'));
+    Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Folder, 'preferences'));
     try
       Settings.RememberFolder('GameAndRomFolder', Folder);
       Settings.RememberFolder('GamelistFolder', Cache);

@@ -1,7 +1,7 @@
 ﻿unit HGM.FMX.Image;
 
 // Source: RetroMul/fmx/HGM.FMX.Image.pas (2026-10-13).
-// Storage access adapted to Delphi RTL for SkraperFMX; no emulator dependencies.
+// Storage access adapted to Delphi RTL for RetroScraper; no emulator dependencies.
 
 interface
 

@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections,
-  Xml.XMLIntf, SK.Data;
+  Xml.XMLIntf, SK.GameList, SK.Output, SK.Input;
 
 type
   TLibraryRule = (lrText, lrBoolean, lrRating, lrStars, lrDate, lrISODate,
@@ -45,6 +45,7 @@ type
     function Title(Index: Integer): string;
     function Draft(Index: Integer): IXMLDocument;
     procedure Save(Index: Integer; const Doc: IXMLDocument);
+    procedure ReloadGame(Index: Integer);
     function ValidateField(Field: TLibraryField; out Error: string): Boolean;
     function Validate(const Doc: IXMLDocument; Errors: TStrings): Boolean;
     function MediaPath(const Value: string): string;
@@ -61,19 +62,9 @@ procedure LibraryFields(const Node: IXMLNode; Fields: TObjectList<TLibraryField>
 implementation
 
 uses
-  System.IOUtils, System.Hash, System.Variants, System.StrUtils, Xml.XMLDoc,
-  SK.Core, SK.Platform, SK.Locale, System.RegularExpressions, System.DateUtils,
-  System.Math;
-
-function ChildText(Node: IXMLNode; const Name: string): string;
-var
-  C: IXMLNode;
-begin
-  Result := '';
-  C := Node.ChildNodes.FindNode(Name);
-  if C <> nil then
-    Result := C.Text;
-end;
+  SK.Xml, System.IOUtils, System.Hash, System.Variants, System.StrUtils,
+  Xml.XMLDoc, SK.Json, SK.Platform, SK.Locale, System.RegularExpressions,
+  System.DateUtils, System.Math;
 
 function ParseGameXML(const XML: string; Kind: Integer): IXMLDocument;
 var
@@ -495,7 +486,7 @@ var
 begin
   case FKind of
     2:
-      Result := ChildText(Node, 'ApplicationPath');
+      Result := XmlChildText(Node, 'ApplicationPath');
     3:
       begin
         C := Node.ChildNodes.FindNode('rom');
@@ -505,7 +496,7 @@ begin
           Result := '';
       end;
   else
-    Result := ChildText(Node, 'path');
+    Result := XmlChildText(Node, 'path');
   end;
   Result := MediaPath(Result);
 end;
@@ -556,7 +547,7 @@ begin
       FGames.Add(G);
       Index.AddOrSetValue(PathKey(Path), True);
     end;
-    for Path in CollectRoms(FConfig) do
+    for Path in ScanInputs(FConfig) do
     begin
       Key := PathKey(Path);
       if Index.ContainsKey(Key) then
@@ -606,11 +597,11 @@ function TGameLibrary.Title(Index: Integer): string;
 begin
   case FKind of
     2:
-      Result := ChildText(FGames[Index].Node, 'Title');
+      Result := XmlChildText(FGames[Index].Node, 'Title');
     3:
       Result := VarToStr(FGames[Index].Node.Attributes['name']);
   else
-    Result := ChildText(FGames[Index].Node, 'name');
+    Result := XmlChildText(FGames[Index].Node, 'name');
   end;
   if Result = '' then
     Result := TPath.GetFileNameWithoutExtension(FGames[Index].RomPath);
@@ -659,6 +650,49 @@ begin
     Target.ChildNodes.Add(C);
     if A.NodeType = ntElement then
       CopyLibraryContents(A, C);
+  end;
+end;
+
+procedure TGameLibrary.ReloadGame(Index: Integer);
+var
+  Writer: TGameListWriter;
+  Nodes: TArray<IXMLNode>;
+  Known: TDictionary<string, Integer>;
+  Root, Node: IXMLNode;
+  I, GameIndex: Integer;
+  NewRevision: string;
+begin
+  if (Index < 0) or (Index >= FGames.Count) then
+    raise EArgumentOutOfRangeException.Create('Game index');
+  // Refresh the XML snapshot without rescanning ROMs or recreating game objects.
+  NewRevision := Revision;
+  Writer := TGameListWriter.Create(FConfig);
+  Known := TDictionary<string, Integer>.Create;
+  try
+    SetLength(Nodes, FGames.Count);
+    for I := 0 to FGames.Count - 1 do
+      Known.AddOrSetValue(PathKey(FGames[I].RomPath), I);
+    Root := Writer.Document.DocumentElement;
+    for I := 0 to Root.ChildNodes.Count - 1 do
+    begin
+      Node := Root.ChildNodes[I];
+      if not (((FKind = 2) and (Node.NodeName = 'Game')) or
+        ((FKind <> 2) and (Node.NodeName = 'game'))) then
+        Continue;
+      if Known.TryGetValue(PathKey(NodePath(Node)), GameIndex) then
+        Nodes[GameIndex] := Node;
+    end;
+    // Undocumented ROMs keep their in-memory node until first successful scrape/save.
+    for I := 0 to FGames.Count - 1 do
+      if Nodes[I] <> nil then
+        FGames[I].Node := Nodes[I];
+    FWriter.Free;
+    FWriter := Writer;
+    Writer := nil;
+    FRevision := NewRevision;
+  finally
+    Known.Free;
+    Writer.Free;
   end;
 end;
 
@@ -712,4 +746,3 @@ begin
 end;
 
 end.
-

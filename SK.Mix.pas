@@ -21,6 +21,165 @@ uses
   System.RegularExpressions, Xml.XMLDoc, Xml.XMLIntf, System.Variants,
   SK.Platform.Graphics, SK.Platform;
 
+type
+  TMixFiltering = (mfNone, mfMedium, mfHigh);
+  TFilterTap = record
+    Index: Integer;
+    Weight: Single;
+  end;
+  TPixelSum = record
+    R, G, B, A: Single;
+  end;
+  TFilterAxis = TArray<TArray<TFilterTap>>;
+
+function MixFiltering(const Name: string): TMixFiltering;
+begin
+  if SameText(Name, 'None') then Exit(mfNone);
+  if SameText(Name, 'Medium') then Exit(mfMedium);
+  if SameText(Name, 'High') then Exit(mfHigh);
+  raise Exception.Create('Unsupported MIX antialiasing: ' + Name);
+end;
+
+function CubicWeight(X: Single): Single;
+begin
+  X := Abs(X);
+  if X < 1 then
+    Result := (1.5 * X - 2.5) * X * X + 1
+  else if X < 2 then
+    Result := ((-0.5 * X + 2.5) * X - 4) * X + 2
+  else
+    Result := 0;
+end;
+
+function FilterAxis(SourceSize, TargetSize: Integer; Filtering: TMixFiltering): TFilterAxis;
+var
+  X, I, First, Last, K: Integer;
+  Center, Scale, Radius, Weight, Total: Single;
+begin
+  SetLength(Result, TargetSize);
+  Scale := 1;
+  Radius := 1;
+  if Filtering = mfHigh then
+  begin
+    Scale := Max(1, SourceSize / TargetSize);
+    Radius := 2 * Scale;
+  end;
+  for X := 0 to TargetSize - 1 do
+  begin
+    Center := (X + 0.5) * SourceSize / TargetSize - 0.5;
+    First := Ceil(Center - Radius);
+    Last := Floor(Center + Radius);
+    SetLength(Result[X], Last - First + 1);
+    Total := 0;
+    K := 0;
+    for I := First to Last do
+    begin
+      if Filtering = mfHigh then
+        Weight := CubicWeight((Center - I) / Scale)
+      else
+        Weight := Max(0, 1 - Abs(Center - I));
+      Result[X][K].Index := EnsureRange(I, 0, SourceSize - 1);
+      Result[X][K].Weight := Weight;
+      Total := Total + Weight;
+      Inc(K);
+    end;
+    if Abs(Total) > 0.000001 then
+      for K := 0 to High(Result[X]) do
+        Result[X][K].Weight := Result[X][K].Weight / Total;
+  end;
+end;
+
+function ResampleBitmap(Input: TBitmap; Width, Height: Integer; Filtering: TMixFiltering): TBitmap;
+var
+  Src, Dst: TBitmapData;
+  Horizontal: TArray<TArray<TPixelSum>>;
+  AxisX, AxisY: TFilterAxis;
+  X, Y, I, SX, SY, AlphaByte: Integer;
+  Color: TAlphaColor;
+  Sum, Pixel: TPixelSum;
+  Weight: Single;
+begin
+  Result := TBitmap.Create;
+  try
+    if (Width = Input.Width) and (Height = Input.Height) then
+    begin
+      Result.Assign(Input);
+      Exit;
+    end;
+    Result.SetSize(Width, Height);
+    if not Input.Map(TMapAccess.Read, Src) then
+      raise Exception.Create('Cannot read MIX bitmap');
+    try
+      if not Result.Map(TMapAccess.Write, Dst) then
+        raise Exception.Create('Cannot write MIX bitmap');
+      try
+        if Filtering = mfNone then
+        begin
+          for Y := 0 to Height - 1 do
+          begin
+            SY := Min(Input.Height - 1, Floor((Y + 0.5) * Input.Height / Height));
+            for X := 0 to Width - 1 do
+            begin
+              SX := Min(Input.Width - 1, Floor((X + 0.5) * Input.Width / Width));
+              Dst.SetPixel(X, Y, Src.GetPixel(SX, SY));
+            end;
+          end;
+          Exit;
+        end;
+        AxisX := FilterAxis(Input.Width, Width, Filtering);
+        AxisY := FilterAxis(Input.Height, Height, Filtering);
+        SetLength(Horizontal, Input.Height);
+        for Y := 0 to Input.Height - 1 do
+        begin
+          SetLength(Horizontal[Y], Width);
+          for X := 0 to Width - 1 do
+          begin
+            Sum := Default(TPixelSum);
+            for I := 0 to High(AxisX[X]) do
+            begin
+              Color := Src.GetPixel(AxisX[X][I].Index, Y);
+              Weight := AxisX[X][I].Weight;
+              // FMX mapped pixels already contain premultiplied colour channels.
+              Sum.A := Sum.A + (Color shr 24) * Weight;
+              Sum.R := Sum.R + ((Color shr 16) and $FF) * Weight;
+              Sum.G := Sum.G + ((Color shr 8) and $FF) * Weight;
+              Sum.B := Sum.B + (Color and $FF) * Weight;
+            end;
+            Horizontal[Y][X] := Sum;
+          end;
+        end;
+        for Y := 0 to Height - 1 do
+          for X := 0 to Width - 1 do
+          begin
+            Sum := Default(TPixelSum);
+            for I := 0 to High(AxisY[Y]) do
+            begin
+              Pixel := Horizontal[AxisY[Y][I].Index][X];
+              Weight := AxisY[Y][I].Weight;
+              Sum.A := Sum.A + Pixel.A * Weight;
+              Sum.R := Sum.R + Pixel.R * Weight;
+              Sum.G := Sum.G + Pixel.G * Weight;
+              Sum.B := Sum.B + Pixel.B * Weight;
+            end;
+            AlphaByte := EnsureRange(Round(Sum.A), 0, 255);
+            Color := Cardinal(AlphaByte) shl 24 or
+              Cardinal(EnsureRange(Round(Sum.R), 0, AlphaByte)) shl 16 or
+              Cardinal(EnsureRange(Round(Sum.G), 0, AlphaByte)) shl 8 or
+              Cardinal(EnsureRange(Round(Sum.B), 0, AlphaByte));
+            Dst.SetPixel(X, Y, Color);
+          end;
+      finally
+        Result.Unmap(Dst);
+      end;
+    finally
+      Input.Unmap(Src);
+    end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
 procedure ResizeImage(const Source, Destination: string; Width, Height: Integer; KeepRatio: Boolean);
 var
   Input, Output: TBitmap;
@@ -47,14 +206,9 @@ begin
       Width := Max(1, Round(Input.Width * Scale));
       Height := Max(1, Round(Input.Height * Scale));
     end;
-    Output.SetSize(Width, Height);
-    Output.Clear(0);
-    if Output.Canvas.BeginScene then
-    try
-      Output.Canvas.DrawBitmap(Input, Input.BoundsF, Output.BoundsF, 1, True);
-    finally
-      Output.Canvas.EndScene;
-    end;
+    Output.Free;
+    Output := nil;
+    Output := ResampleBitmap(Input, Width, Height, mfHigh);
     Output.SaveToFile(Destination);
   finally
     Output.Free;
@@ -368,19 +522,21 @@ begin
   end;
 end;
 
-function BarrelImage(Input: TBitmap; Level: Double): TBitmap;
+function BarrelImage(Input: TBitmap; Level: Double; Samples: Integer): TBitmap;
 var
   Src, Dst: FMX.Graphics.TBitmapData;
   X, Y, SX, SY: Integer;
   CX, CY, Radius, DX, DY, R, Q, A, B, D: Double;
 begin
+  Level := EnsureRange(Level, 0.5, 16.0);
+  Samples := EnsureRange(Samples, 1, 4);
   A := -0.0038575 * Level;
   B := -0.0133655 * Level;
   D := 1 - A - B;
-  CX := (Input.Width - 1) / 2;
-  CY := (Input.Height - 1) / 2;
-  Radius := Max(1, Min(Input.Width, Input.Height) / 2);
-  Result := TBitmap.Create(Input.Width, Input.Height);
+  CX := (Input.Width * Samples - 1) / 2;
+  CY := (Input.Height * Samples - 1) / 2;
+  Radius := Max(1, Min(Input.Width, Input.Height) * Samples / 2);
+  Result := TBitmap.Create(Input.Width * Samples, Input.Height * Samples);
   try
     Result.Clear(0);
     if not Input.Map(TMapAccess.Read, Src) then
@@ -389,8 +545,8 @@ begin
       if not Result.Map(TMapAccess.Write, Dst) then
         raise Exception.Create('Cannot write barrel bitmap');
       try
-        for Y := 0 to Input.Height - 1 do
-          for X := 0 to Input.Width - 1 do
+        for Y := 0 to Result.Height - 1 do
+          for X := 0 to Result.Width - 1 do
           begin
             DX := (X - CX) / Radius;
             DY := (Y - CY) / Radius;
@@ -398,8 +554,8 @@ begin
             Q := A * R * R * R + B * R * R + D;
             if Abs(Q) < 1E-10 then
               Continue;
-            SX := Trunc(CX + DX * Radius / Abs(Q));
-            SY := Trunc(CY + DY * Radius / Abs(Q));
+            SX := Trunc((CX + DX * Radius / Abs(Q)) / Samples);
+            SY := Trunc((CY + DY * Radius / Abs(Q)) / Samples);
             if (SX >= 0) and (SY >= 0) and (SX < Input.Width) and (SY < Input.Height) then
               Dst.SetPixel(X, Y, Src.GetPixel(SX, SY));
           end;
@@ -480,6 +636,7 @@ var
     Rect, ChildReference, ProjectionBounds: TRectF;
     Matrix: TMatrix;
     Matches, ItemAvailable: Boolean;
+    Filtering: TMixFiltering;
 
     procedure Resolve(Node: IXMLNode);
     begin
@@ -622,53 +779,67 @@ var
             Y := Y - H / 2;
           Rect := RectF(X, Y, X + W, Y + H);
           Opacity := EnsureRange(1 - StrToFloatDef(Attr(Display, 'Transparency', '0'), 0, TFormatSettings.Invariant) / 100, 0, 1);
-          Matrix := Bitmap.Canvas.Matrix;
-          Rotation := Item.ChildNodes.FindNode('Rotation');
-          if Rotation <> nil then
+          Filtering := MixFiltering(Attr(Display, 'Antialiasing', 'High'));
+          Samples := 1;
+          case Filtering of
+            mfMedium: Samples := 2;
+            mfHigh: Samples := 4;
+          end;
+          // Loading, includes and pixel effects must not hold the shared FMX canvas lock.
+          if SameText(Attr(Display, 'Mode', ''), 'Distord') then
           begin
-            PX := X + Dimension(Attr(Rotation, 'XOffset', '50%'), W, H);
-            PY := Y + Dimension(Attr(Rotation, 'YOffset', '50%'), H, W);
-            Bitmap.Canvas.SetMatrix(TMatrix.CreateTranslation(-PX, -PY) * TMatrix.CreateRotation(DegToRad(StrToFloatDef(Attr(Rotation, 'Angle', '0'), 0, TFormatSettings.Invariant))) * TMatrix.CreateTranslation(PX, PY) * Matrix);
+            Points[0] := PointF(Reference.Left + Dimension(Attr(Display, 'X', '0'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y', '0'), Reference.Height, Reference.Width));
+            Points[1] := PointF(Reference.Left + Dimension(Attr(Display, 'X2', '100%'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y2', '0'), Reference.Height, Reference.Width));
+            Points[2] := PointF(Reference.Left + Dimension(Attr(Display, 'X3', '100%'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y3', '100%'), Reference.Height, Reference.Width));
+            Points[3] := PointF(Reference.Left + Dimension(Attr(Display, 'X4', '0'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y4', '100%'), Reference.Height, Reference.Width));
+            ProjectionBounds := RectF(Min(Min(Points[0].X, Points[1].X), Min(Points[2].X, Points[3].X)),
+              Min(Min(Points[0].Y, Points[1].Y), Min(Points[2].Y, Points[3].Y)),
+              Max(Max(Points[0].X, Points[1].X), Max(Points[2].X, Points[3].X)),
+              Max(Max(Points[0].Y, Points[1].Y), Max(Points[2].Y, Points[3].Y)));
+            Warped := ProjectImage(Input, Points, Bitmap.Width, Bitmap.Height, Samples);
+            Input.Free;
+            Input := Warped;
+            Rect := Bitmap.BoundsF;
+          end
+          else if SameText(Attr(Display, 'Mode', ''), 'Barrel') then
+          begin
+            Warped := BarrelImage(Input, StrToFloatDef(Attr(Display, 'BarrelLevel', '1'), 1, TFormatSettings.Invariant), Samples);
+            Input.Free;
+            Input := Warped;
           end;
-          try
-            if SameText(Attr(Display, 'Mode', ''), 'Distord') then
-            begin
-              Points[0] := PointF(Reference.Left + Dimension(Attr(Display, 'X', '0'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y', '0'), Reference.Height, Reference.Width));
-              Points[1] := PointF(Reference.Left + Dimension(Attr(Display, 'X2', '100%'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y2', '0'), Reference.Height, Reference.Width));
-              Points[2] := PointF(Reference.Left + Dimension(Attr(Display, 'X3', '100%'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y3', '100%'), Reference.Height, Reference.Width));
-              Points[3] := PointF(Reference.Left + Dimension(Attr(Display, 'X4', '0'), Reference.Width, Reference.Height), Reference.Top + Dimension(Attr(Display, 'Y4', '100%'), Reference.Height, Reference.Width));
-              Samples := 4;
-              if SameText(Attr(Display, 'Antialiasing', 'High'), 'Medium') then
-                Samples := 2
-              else if SameText(Attr(Display, 'Antialiasing', 'High'), 'None') then
-                Samples := 1;
-              ProjectionBounds := RectF(Min(Min(Points[0].X, Points[1].X), Min(Points[2].X, Points[3].X)),
-                Min(Min(Points[0].Y, Points[1].Y), Min(Points[2].Y, Points[3].Y)),
-                Max(Max(Points[0].X, Points[1].X), Max(Points[2].X, Points[3].X)),
-                Max(Max(Points[0].Y, Points[1].Y), Max(Points[2].Y, Points[3].Y)));
-              Warped := ProjectImage(Input, Points, Bitmap.Width, Bitmap.Height, Samples);
-              Input.Free;
-              Input := Warped;
-              Rect := Bitmap.BoundsF;
-            end
-            else if SameText(Attr(Display, 'Mode', ''), 'Barrel') then
-            begin
-              Warped := BarrelImage(Input, StrToFloatDef(Attr(Display, 'BarrelLevel', '1'), 1, TFormatSettings.Invariant));
-              Input.Free;
-              Input := Warped;
-            end;
-            if (Display <> nil) and not SameText(Attr(Item, 'TestOnly', 'false'), 'true') then
-            begin
-              Bitmap.Canvas.DrawBitmap(Input, Input.BoundsF, Rect, Opacity, SameText(Attr(Display, 'Antialiasing', 'High'), 'None'));
-              Inc(Drawn);
-            end;
-            if SameText(Attr(Display, 'Mode', ''), 'Distord') then
-              Rect := ProjectionBounds;
-            if (Display = nil) or SameText(Attr(Item, 'TestOnly', 'false'), 'true') then
-              Rect := Reference;
-          finally
-            Bitmap.Canvas.SetMatrix(Matrix);
+          if not SameText(Attr(Display, 'Mode', ''), 'Distord') then
+          begin
+            Warped := ResampleBitmap(Input, Max(1, Round(W)), Max(1, Round(H)), Filtering);
+            Input.Free;
+            Input := Warped;
           end;
+          if (Display <> nil) and not SameText(Attr(Item, 'TestOnly', 'false'), 'true') then
+          begin
+            if not Bitmap.Canvas.BeginScene then
+              raise Exception.Create('Cannot begin MIX rendering');
+            try
+              Matrix := Bitmap.Canvas.Matrix;
+              try
+                Rotation := Item.ChildNodes.FindNode('Rotation');
+                if Rotation <> nil then
+                begin
+                  PX := X + Dimension(Attr(Rotation, 'XOffset', '50%'), W, H);
+                  PY := Y + Dimension(Attr(Rotation, 'YOffset', '50%'), H, W);
+                  Bitmap.Canvas.SetMatrix(TMatrix.CreateTranslation(-PX, -PY) * TMatrix.CreateRotation(DegToRad(StrToFloatDef(Attr(Rotation, 'Angle', '0'), 0, TFormatSettings.Invariant))) * TMatrix.CreateTranslation(PX, PY) * Matrix);
+                end;
+                Bitmap.Canvas.DrawBitmap(Input, Input.BoundsF, Rect, Opacity, SameText(Attr(Display, 'Antialiasing', 'High'), 'None'));
+              finally
+                Bitmap.Canvas.SetMatrix(Matrix);
+              end;
+            finally
+              Bitmap.Canvas.EndScene;
+            end;
+            Inc(Drawn);
+          end;
+          if SameText(Attr(Display, 'Mode', ''), 'Distord') then
+            Rect := ProjectionBounds;
+          if (Display = nil) or SameText(Attr(Item, 'TestOnly', 'false'), 'true') then
+            Rect := Reference;
         finally
           Input.Free;
           if (IncludeFile <> '') and TFile.Exists(IncludeFile) then
@@ -710,12 +881,7 @@ begin
   Drawn := 0;
   try
     Bitmap.Clear(TAlphaColor(StrToInt64Def('$' + Attr(View, 'Color', '#00000000').TrimLeft(['#']), 0)));
-    if Bitmap.Canvas.BeginScene then
-    try
-      DrawItems(Doc.DocumentElement.ChildNodes.FindNode('Drawings'), 0, Bitmap.BoundsF);
-    finally
-      Bitmap.Canvas.EndScene;
-    end;
+    DrawItems(Doc.DocumentElement.ChildNodes.FindNode('Drawings'), 0, Bitmap.BoundsF);
     if Drawn = 0 then
       raise Exception.Create('No matching images in mix template');
     Bitmap.SaveToFile(Destination);

@@ -12,7 +12,7 @@ procedure ReleaseCF(Value: Pointer); cdecl; external '/System/Library/Frameworks
 function MacSecret(const Identity, Value: string; WriteAccess: Boolean): string;
 var Key, Service, Secret: UTF8String; Data, Item: Pointer; Size: Cardinal; Code: Integer;
 begin
-  Result:=''; Key:=UTF8String(THashSHA2.GetHashString(Identity)); Service:='org.skraperfmx.Credentials';
+  Result:=''; Key:=UTF8String(THashSHA2.GetHashString(Identity)); Service:=CredentialServiceID;
   Data:=nil; Item:=nil; Size:=0;
   Code:=FindPassword(nil,Length(Service),MarshaledAString(Service),Length(Key),MarshaledAString(Key),Size,Data,Item);
   try

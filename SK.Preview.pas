@@ -15,8 +15,8 @@ implementation
 
 uses
   System.Classes, System.IOUtils, System.Hash, System.Math, System.StrUtils,
-  FMX.Graphics, Xml.XMLDoc, Xml.XMLIntf, System.Variants, SK.Core, SK.Mix,
-  SK.Consts, SK.Platform, SK.Locale;
+  FMX.Graphics, Xml.XMLDoc, Xml.XMLIntf, System.Variants, SK.Json, SK.Storage,
+  SK.Mix, SK.Consts, SK.Platform, SK.Locale;
 
 function MixTitle(const Template: string): string;
 var

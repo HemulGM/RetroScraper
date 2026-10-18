@@ -12,8 +12,8 @@ function RefreshPlatformArtwork(Catalog, Settings, Credentials: TJSONObject; con
 implementation
 
 uses
-  System.Classes, System.IOUtils, System.Hash, System.StrUtils, SK.Core, SK.Data,
-  SK.Catalog, SK.Platform, SK.Cache;
+  System.Classes, System.IOUtils, System.Hash, System.StrUtils, SK.Json,
+  SK.ScreenScraper, SK.Storage, SK.Metadata, SK.Catalog, SK.Platform, SK.Cache;
 
 function IndexFile(const Base: string; SystemID: Integer): string;
 begin

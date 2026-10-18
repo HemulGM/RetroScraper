@@ -8,14 +8,17 @@ type
   end;
 
 const
-  // Presentation identity; persistent identifiers below deliberately stay stable.
-  AppBrand = 'SkraperFMX';
-  AppVersion = '1.4.2';
+  // Public identity used by the UI, HTTP requests and exported filenames.
+  AppBrand = 'RetroScraper';
+  AppVersion = '0.2.2';
   AppUserAgent = AppBrand + '/' + AppVersion;
-  AppDataDirectoryName = 'SkraperFMX';
+  // Legacy storage identifiers preserve existing settings and native keyring access.
+  AppDataDirectoryName = 'RetroScraper';
   CredentialServiceID = 'org.skraperfmx.Credentials';
   CredentialMarker = 'SkraperFMX native keyring v1';
-  ConfigFileName = 'skraper.config.json';
+  ConfigFileName = 'retroscraper.config.json';
+  LegacyConfigFileName = 'skraper.config.json';
+  ExportLogFileName = 'retroscraper-log.txt';
   ConfigSchemaVersion = 2;
   CredentialsFileName = 'credentials.dat';
   DefaultConfigPath = 'Resources/default.config.json';

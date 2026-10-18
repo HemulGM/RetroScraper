@@ -18,16 +18,203 @@ procedure RunWizardConceptSelfTests;
 implementation
 
 uses
-  System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types,
+  System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types, System.UITypes,
   System.Generics.Collections, FMX.Forms, FMX.Graphics, FMX.Types, FMX.Edit,
   FMX.Edit.Style.New, FMX.Controls, FMX.StdCtrls, System.Math, SK.Platform,
-  SK.Core, SK.Consts, SK.Data, SK.Catalog, SK.Artwork, SK.Engine, SK.Setup,
-  SK.Main, SK.Locale, SK.Preview;
+  SK.Json, SK.Configuration, SK.ScreenScraper, SK.Storage, SK.Consts,
+  SK.Metadata, SK.Catalog, SK.Artwork, SK.Engine, SK.Setup, SK.Main, SK.Locale,
+  SK.Preview, SK.Mix;
+
+procedure RunConnectionCultureMixTests(Report: TStrings);
+var
+  Config, Credentials: TJSONObject;
+  Settings: TRetroScraperConfig;
+  Setup: TFormSetup;
+  Root, Fixture, Mode, Quality, FileName, PreviousHash, Hash: string;
+  Expected: TJSONObject;
+  Bitmap: TBitmap;
+  Pixels: TBitmapData;
+  Sources: TDictionary<string, string>;
+  X, Y, Translucent: Integer;
+  Color: TAlphaColor;
+
+  procedure Check(OK: Boolean; const Name: string);
+  begin
+    if not OK then raise Exception.Create('FAIL: ' + Name);
+    Report.Add('PASS: ' + Name);
+  end;
+
+  procedure CultureCase(const Culture, UI, Languages, Regions: string);
+  begin
+    InitializeCultureDefaults(Config, Culture);
+    Check((JStr(Config, 'Culture') = UI) and
+      (JValue(Config, 'AllSystems.Miscellaneous.Languages').ToJSON = Languages) and
+      (JValue(Config, 'AllSystems.Miscellaneous.Regions').ToJSON = Regions),
+      'Initial language and region priorities: ' + Culture);
+  end;
+
+begin
+  Root := TPlatformPath.Combine(WritableBase, 'tests/output/connection-culture-mix-' + TGUID.NewGuid.ToString);
+  ForceDirectories(Root);
+  Config := TJSONObject.Create;
+  Credentials := TJSONObject.Create;
+  Sources := TDictionary<string, string>.Create;
+  try
+    CultureCase('ru-RU', 'ru', '["ru","en"]', '["ru","us","jp","wor","ss"]');
+    CultureCase('en-US', 'en', '["en"]', '["us","jp","wor","ss"]');
+    CultureCase('fr-FR', 'fr', '["fr","en"]', '["fr","eu","us","jp","wor","ss"]');
+    CultureCase('de-CH', 'de', '["de","en"]', '["de","eu","us","jp","wor","ss"]');
+    CultureCase('pt_BR.UTF-8', 'pt', '["pt","en"]', '["br","ame","us","jp","wor","ss"]');
+    CultureCase('ja-JP', 'en', '["ja","en"]', '["jp","us","wor","ss"]');
+    CultureCase('zh-Hans-CN', 'en', '["zh","en"]', '["cn","us","jp","wor","ss"]');
+    CultureCase('C.UTF-8', 'en', '["en"]', '["us","jp","wor","ss"]');
+    Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Root, 'config'));
+    try
+      Expected := TJSONObject.Create;
+      try
+        InitializeCultureDefaults(Expected, CommandLineCulture(SystemCulture));
+        Check(JStr(Settings.Root, 'Culture') = JStr(Expected, 'Culture'), 'Fresh configuration uses the native culture');
+      finally
+        Expected.Free;
+      end;
+      InitializeCultureDefaults(Settings.Root, 'pt-BR');
+      Settings.Save;
+    finally
+      Settings.Free;
+    end;
+    Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Root, 'config'));
+    try
+      Check((JStr(Settings.Root, 'Culture') = 'pt') and
+        (JValue(Settings.Root, 'AllSystems.Miscellaneous.Languages').ToJSON = '["pt","en"]'),
+        'Reopening settings preserves the saved language and metadata priorities');
+      Setup := TFormSetup.Create(nil);
+      try
+        Setup.Configure(Settings, nil, True);
+        Check(Setup.WizardApplicationCard.Visible = not HasApplicationCredentials,
+          'Provisioned application identity removes developer fields from the normal wizard');
+      finally
+        Setup.Free;
+      end;
+    finally
+      Settings.Free;
+    end;
+    if HasApplicationCredentials then
+    begin
+      Check((AccountCredentialValue(Credentials, 'devid') <> '') and
+        (AccountCredentialValue(Credentials, 'devpassword') <> ''), 'User-only credentials resolve the built-in application identity');
+      JSet(Credentials, 'devid', TJSONString.Create('incomplete override'));
+      Check(AccountCredentialValue(Credentials, 'devid') <> 'incomplete override',
+        'Incomplete application override never mixes two different credential pairs');
+    end;
+    JSet(Credentials, 'devid', TJSONString.Create('custom-id'));
+    JSet(Credentials, 'devpassword', TJSONString.Create('custom-secret'));
+    JSet(Credentials, 'ssid', TJSONString.Create('user'));
+    JSet(Credentials, 'sspassword', TJSONString.Create('password'));
+    Check((AccountCredentialValue(Credentials, 'devid') = 'custom-id') and
+      (AccountCredentialValue(Credentials, 'devpassword') = 'custom-secret'),
+      'Complete custom application identities remain supported');
+    JSet(Credentials, 'anonymous', TJSONBool.Create(True));
+    Check((AccountCredentialValue(Credentials, 'ssid') = '_anonymous_') and
+      (AccountCredentialValue(Credentials, 'devpassword') = 'custom-secret'),
+      'Anonymous access replaces only the user account');
+
+    Fixture := TPlatformPath.Combine(Root, 'source.png');
+    Bitmap := TBitmap.Create(31, 29);
+    try
+      Check(Bitmap.Map(TMapAccess.Write, Pixels), 'Can prepare a high-contrast translucent MIX fixture');
+      try
+        for Y := 0 to Bitmap.Height - 1 do
+          for X := 0 to Bitmap.Width - 1 do
+          begin
+            if (X + 2 * Y) mod 7 < 3 then Color := $FF00FF00 else Color := $80000080;
+            if (X < 3) or (Y < 3) or (X > 27) or (Y > 25) then Color := 0;
+            Pixels.SetPixel(X, Y, Color);
+          end;
+      finally
+        Bitmap.Unmap(Pixels);
+      end;
+      Bitmap.SaveToFile(Fixture);
+    finally
+      Bitmap.Free;
+    end;
+    // A uniform translucent colour must retain both coverage and premultiplied channels.
+    Bitmap := TBitmap.Create(7, 5);
+    try
+      Check(Bitmap.Map(TMapAccess.Write, Pixels), 'Can prepare the uniform alpha fixture');
+      try
+        for Y := 0 to 4 do
+          for X := 0 to 6 do
+            Pixels.SetPixel(X, Y, $80402010);
+      finally
+        Bitmap.Unmap(Pixels);
+      end;
+      Bitmap.SaveToFile(TPlatformPath.Combine(Root, 'uniform.png'));
+      ResizeImage(TPlatformPath.Combine(Root, 'uniform.png'), TPlatformPath.Combine(Root, 'uniform-resized.png'), 59, 47, False);
+      Bitmap.LoadFromFile(TPlatformPath.Combine(Root, 'uniform-resized.png'));
+      Check(Bitmap.Map(TMapAccess.Read, Pixels), 'Can inspect the resized alpha fixture');
+      try
+        Color := Pixels.GetPixel(29, 23);
+        Check((Abs(Integer(Color shr 24) - 128) <= 1) and
+          (Abs(Integer((Color shr 16) and $FF) - 64) <= 1) and
+          (Abs(Integer((Color shr 8) and $FF) - 32) <= 1) and
+          (Abs(Integer(Color and $FF) - 16) <= 1),
+          'High-quality resizing preserves a uniform translucent colour without darkening');
+      finally
+        Bitmap.Unmap(Pixels);
+      end;
+    finally
+      Bitmap.Free;
+    end;
+    Sources.Add('ss', Fixture);
+    for Mode in ['Stretch', 'Barrel'] do
+    begin
+      PreviousHash := '';
+      for Quality in ['None', 'Medium', 'High'] do
+      begin
+        FileName := TPlatformPath.Combine(Root, Mode + '-' + Quality);
+        TFile.WriteAllText(FileName + '.xml', '<ImageComposition><Viewport Width="23" Height="19" />' +
+          '<Drawings><Item Type="Screenshot"><Display Width="23" Height="19" KeepRatio="false" Mode="' + Mode +
+          '" Antialiasing="' + Quality + '" BarrelLevel="8" /></Item></Drawings></ImageComposition>', TEncoding.UTF8);
+        RenderMix(FileName + '.xml', Sources, FileName + '.png', 23, 19);
+        Hash := THashSHA2.GetHashStringFromFile(FileName + '.png');
+        if PreviousHash <> '' then
+          Check(Hash <> PreviousHash, Mode + ' uses a distinct ' + Quality + ' filter');
+        PreviousHash := Hash;
+        Bitmap := TBitmap.Create;
+        try
+          Bitmap.LoadFromFile(FileName + '.png');
+          Check((Bitmap.Width = 23) and (Bitmap.Height = 19), Mode + ' keeps the requested dimensions: ' + Quality);
+          Translucent := 0;
+          Check(Bitmap.Map(TMapAccess.Read, Pixels), 'Can inspect ' + Mode + ' ' + Quality);
+          try
+            for Y := 0 to Bitmap.Height - 1 do
+              for X := 0 to Bitmap.Width - 1 do
+              begin
+                Color := Pixels.GetPixel(X, Y);
+                if (Color shr 24 > 0) and (Color shr 24 < 255) then Inc(Translucent);
+                if ((Color shr 16) and $FF) <> 0 then
+                  raise Exception.Create('FAIL: Filtered transparency adds a red fringe');
+              end;
+          finally
+            Bitmap.Unmap(Pixels);
+          end;
+          Check(Translucent > 0, Mode + ' preserves translucent pixels: ' + Quality);
+        finally
+          Bitmap.Free;
+        end;
+      end;
+    end;
+  finally
+    Sources.Free;
+    Credentials.Free;
+    Config.Free;
+  end;
+end;
 
 procedure RunSelectedParityTests(Report: TStrings);
 var
   Root, Before, BeforeCredentials, Path, URL, Kind, Parent, Actual, Culture: string;
-  Settings: TSkraperConfig;
+  Settings: TRetroScraperConfig;
   Setup: TFormSetup;
   Main, StyleHost: TFormMain;
   Catalog, Old, Imported, Game, Item, Entry, Slot, Response, Target: TJSONObject;
@@ -69,9 +256,10 @@ var
   end;
 
 begin
+  RunConnectionCultureMixTests(Report);
   ForceDirectories(TPlatformPath.Combine(WritableBase, 'tests/output'));
   Root := TPlatformPath.Combine(WritableBase, 'tests/parity-' + TGUID.NewGuid.ToString);
-  Settings := TSkraperConfig.Create(Root);
+  Settings := TRetroScraperConfig.Create(Root);
   Catalog := TJSONObject.ParseJSONValue('{"systemes":[' +
     '{"id":1,"type":"Console","extensions":"rom","noms":{"nom_us":"Console One","nom_recalbox":"console"}},' +
     '{"id":2,"type":"Arcade","noms":{"nom_us":"Arcade Two","nom_recalbox":"arcade"}},' +
@@ -92,7 +280,7 @@ begin
       Old.Free
     end;
     Settings.Free;
-    Settings := TSkraperConfig.Create(TPlatformPath.Combine(Root, 'old'));
+    Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Root, 'old'));
     Check(not JBool(Settings.Root, 'IsConfigured') and
       (TJSONArray(JValue(Settings.Root, 'Systems')).Count = 0), 'G01/G07: obsolete FMX settings are discarded');
     Imported := ReadJSON(TPlatformPath.Combine(AppBase, DefaultConfigPath));
@@ -243,16 +431,62 @@ begin
     try
       Setup.StyleBook := StyleHost.StyleBookWinUI3;
       Setup.Configure(Settings, Catalog, False);
-      Check(Setup.SystemList.Items.Count = 2, 'G08: manual catalogue excludes flipper and ID 168');
-      Check(not Setup.SystemList.ListItems[0].ItemData.Bitmap.IsEmpty, 'G09: catalogue displays the cached platform icon');
+      Check(Setup.SystemList.Count = 2, 'G08: manual catalogue excludes flipper and ID 168');
+      Check((Setup.SystemList.Items[0].ImageIndex >= 0) and
+        Setup.PlatformIcons.BitmapExists(Setup.SystemList.Items[0].ImageIndex),
+        'G09: catalogue displays the cached platform icon');
+      Setup.Show;
+      PaintWizard('platform-tree-flat');
       Setup.ShowCategories.IsChecked := True;
-      Check(Setup.SystemList.Items.Count = 4, 'G10: categories group eligible platforms');
-      Setup.ToggleCategory(Setup.SystemList.ListItems[0]);
-      CheckSynchronize;
-      Check(Setup.SystemList.Items.Count = 3, 'G10: category folding preserves other categories');
-      Setup.PlatformSearch.Text := 'Console';
-      Check((Setup.SystemList.Items.Count = 2) and (JInt(TJSONValue(Setup.SystemList.Items.Objects[1]), 'id') = 1),
+      Check((Setup.SystemList.Count = 2) and (Setup.SystemList.Items[0].Count = 1) and
+        (Setup.SystemList.Items[1].Count = 1), 'G10: categories contain platform child nodes');
+      Check(not Setup.SystemList.Items[0].IsExpanded and not Setup.SystemList.Items[1].IsExpanded and
+        (Setup.SystemList.Selected = nil) and not Setup.ApplyButton.Enabled and not Setup.EmptyLabel.Visible,
+        'G10: unknown session categories start collapsed without autoexpanding a selected platform');
+      PaintWizard('platform-tree-collapsed');
+      Setup.ToggleCategory(Setup.SystemList.Items[0]);
+      Check(Setup.SystemList.Items[0].IsExpanded and not Setup.SystemList.Items[1].IsExpanded,
+        'G10: expanding a category preserves other categories');
+      PaintWizard('platform-tree-expanded');
+      Setup.SystemList.Selected := Setup.SystemList.Items[0];
+      Check(not Setup.ApplyButton.Enabled, 'G10: a category cannot be added as a platform');
+      Setup.SystemList.Selected := Setup.SystemList.Items[0].Items[0];
+      Check(Setup.ApplyButton.Enabled, 'G10: selecting a child platform permits manual add');
+      Setup.PlatformSearch.Text := 'Arcade';
+      Check((Setup.SystemList.Count = 1) and (Setup.SystemList.Items[0].Count = 1) and
+        (JInt(TJSONValue(Setup.SystemList.Items[0].Items[0].TagObject), 'id') = 2),
         'G10: grouped search matches platform names');
+      Setup.PlatformSearch.Text := '';
+      Check(Setup.SystemList.Items[0].IsExpanded and not Setup.SystemList.Items[1].IsExpanded and
+        (JInt(TJSONValue(Setup.SystemList.Selected.TagObject), 'id') = 2),
+        'G10: filtering preserves selection and state of categories absent from the results');
+      Setup.ShowCategories.IsChecked := False;
+      Check((Setup.SystemList.Count = 2) and
+        (JInt(TJSONValue(Setup.SystemList.Selected.TagObject), 'id') = 2),
+        'G10: disabling grouping preserves the selected platform');
+      Setup.ShowCategories.IsChecked := True;
+      Check(Setup.SystemList.Items[0].IsExpanded and not Setup.SystemList.Items[1].IsExpanded,
+        'G10: reenabling grouping restores session expansion state');
+      Setup.SystemList.Items[0].IsExpanded := False;
+      Setup.SearchChanged(nil);
+      Check(not Setup.SystemList.Items[0].IsExpanded and (Setup.SystemList.Selected = nil),
+        'G10: native collapse survives rebuilding without selection reopening the category');
+      Setup.SystemList.Items[1].IsExpanded := True;
+      Setup.PlatformSearch.Text := 'missing';
+      Check((Setup.SystemList.Count = 0) and Setup.EmptyLabel.Visible and not Setup.ApplyButton.Enabled,
+        'G10: grouped empty search blocks manual add');
+      Setup.PlatformSearch.Text := '';
+      Check(not Setup.SystemList.Items[0].IsExpanded and Setup.SystemList.Items[1].IsExpanded,
+        'G10: native expansion survives an empty search');
+      Setup.SystemList.Items[1].IsExpanded := False;
+      Setup.SystemList.Items[0].IsExpanded := True;
+      FreeAndNil(Setup);
+      Setup := TFormSetup.Create(nil);
+      Setup.StyleBook := StyleHost.StyleBookWinUI3;
+      Setup.Configure(Settings, Catalog, False);
+      Setup.ShowCategories.IsChecked := True;
+      Check(Setup.SystemList.Items[0].IsExpanded and not Setup.SystemList.Items[1].IsExpanded,
+        'G10: reopening setup restores expansion and collapse for the current application session');
     finally
       Setup.Free;
       StyleHost.Free
@@ -441,7 +675,7 @@ var
   Report: TStringList;
   Setup: TFormSetup;
   Host: TFormMain;
-  Settings: TSkraperConfig;
+  Settings: TRetroScraperConfig;
   Catalog: TJSONObject;
   Picture: TBitmap;
   Root, Culture, Before, ScanRoot, Folder: string;
@@ -484,7 +718,7 @@ begin
   ForceDirectories(Root);
   try
     try
-      Settings := TSkraperConfig.Create(TPlatformPath.Combine(Root, 'config'));
+      Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Root, 'config'));
       Catalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
       Host := TFormMain.Create(nil);
       Setup := TFormSetup.Create(nil);
@@ -506,8 +740,9 @@ begin
         (Setup.WizardStep2Circle.AbsoluteRect.Right < Setup.WizardStep3Circle.AbsoluteRect.Left), 'Wizard steps are separate aligned columns');
       Check((Setup.WizardUserCard.AbsoluteRect.Right < Setup.WizardResourcesCard.AbsoluteRect.Left) and
         SameValue(Setup.WizardUserCard.AbsoluteRect.Top, Setup.WizardResourcesCard.AbsoluteRect.Top, 1), 'Wizard cards match the two-column concept');
-      Check(SameValue(Setup.WizardApplicationCard.AbsoluteRect.Bottom, Setup.WizardResourcesCard.AbsoluteRect.Bottom, 1),
-        'Resource card ends level with the application card');
+      Check((not HasApplicationCredentials and Setup.WizardApplicationCard.Visible) or
+        (HasApplicationCredentials and not Setup.WizardApplicationCard.Visible),
+        'Application credentials are requested only by unprovisioned builds');
       Check(Setup.WizardOffline.AbsoluteRect.Bottom <= Setup.SetupCommandsLayout.AbsoluteRect.Top,
         'Offline option stays above the fixed footer');
       Check(SameValue(Setup.WizardLogin.Height, 40, 1) and SameValue(Setup.WizardPassword.Height, 40, 1),
@@ -515,7 +750,7 @@ begin
       Setup.PasswordRevealClick(Setup.WizardPasswordReveal);
       Check(not Setup.WizardPassword.Password and Setup.WizardPasswordEye.Visible, 'Password reveal button works');
       Setup.PasswordRevealClick(Setup.WizardPasswordReveal);
-      Setup.PasswordRevealClick(Setup.WizardDeveloperPasswordReveal);
+      Setup.DeveloperPasswordRevealClick(Setup.WizardDeveloperPasswordReveal);
       Check(not Setup.WizardDeveloperPassword.Password, 'Application password reveal button works');
       Setup.ShowWizardPage(1);
       Setup.ShowWizardPage(0);
@@ -528,6 +763,8 @@ begin
       Setup.ShowResourceStatus(wrCatalog, 0, 0, 0);
       Check(Setup.WizardConnectCheck.Visible and not Setup.WizardCatalogCheck.Visible, 'Catalogue stage preserves successful connection');
       Setup.ShowResourceStatus(wrArtwork, 243, 88, 972);
+      Check(Setup.WizardMediaCount.AbsoluteRect.Bottom < Setup.WizardMediaProgress.AbsoluteRect.Top,
+        'Restoring download counters preserves their order above the progress bar');
       Check(Setup.WizardConnectCheck.Visible and Setup.WizardCatalogCheck.Visible and Setup.WizardMediaSpin.Enabled and
         (Round(Setup.WizardMediaProgress.Value) = 88) and (Round(Setup.WizardMediaProgress.Max) = 972) and
         Setup.WizardMediaCount.Text.Contains('9%'), 'Artwork stage shows live 88 / 972 and 9 percent progress');
@@ -562,28 +799,28 @@ begin
       Setup.ShowResourceStatus(wrFailed, 0, 0, 0);
       Check(Setup.ApplyButton.Enabled and Setup.WizardLogin.Enabled, 'Resource failure permits editing and retry');
       Setup.ShowResourceStatus(wrIdle, 0, 0, 0);
-      Setup.WizardDeveloperPassword.Text := '';
+      Setup.WizardPassword.Text := '';
       Setup.ApplyButtonClick(nil);
       Check(Setup.WizardAccountInfo.Text = SK.Locale.L('Заполните данные подключения или выберите настройку без подключения.'),
         'Missing credentials are explained in the resource card without a network request');
       Check(not Setup.WizardMediaProgress.Visible, 'Connection validation never shows a fake artwork download');
       Capture('04-validation-error');
-      Setup.WizardDeveloperPassword.Text := 'concept-secret';
+      Setup.WizardPassword.Text := 'concept-password';
       Setup.ShowResourceStatus(wrOffline, 243, 0, 0);
       Check(not Setup.WizardMediaProgress.Visible and not Setup.WizardConnectCheck.Visible,
         'Offline state never claims an authenticated network connection');
       Setup.ShowWizardPage(1);
       Capture('04-platforms');
       Check(Setup.WizardStep1LineActive.Visible and not Setup.WizardStep2LineActive.Visible and
-        SameValue(Setup.WizardStep1LineActive.Width, Setup.WizardStep1LineLayout.Width, 0.1),
+        SameValue(Setup.WizardStep1LineActive.Width, Setup.WizardStep1Line.Width, 0.1),
         'Second stage completely fills only the first connector');
       Check(Setup.SetupCommandsLayout.AbsoluteRect.Top - Setup.PlatformPanel.AbsoluteRect.Bottom >= 15.9,
         'Platform card keeps a sixteen-pixel gap above the footer');
       Setup.ShowWizardPage(2);
       Capture('05-summary-empty');
       Check(Setup.WizardStep1LineActive.Visible and Setup.WizardStep2LineActive.Visible and
-        SameValue(Setup.WizardStep1LineActive.Width, Setup.WizardStep1LineLayout.Width, 0.1) and
-        SameValue(Setup.WizardStep2LineActive.Width, Setup.WizardStep2LineLayout.Width, 0.1),
+        SameValue(Setup.WizardStep1LineActive.Width, Setup.WizardStep1Line.Width, 0.1) and
+        SameValue(Setup.WizardStep2LineActive.Width, Setup.WizardStep2Line.Width, 0.1),
         'Final stage completely fills both connectors');
       ScanRoot := TPlatformPath.Combine(Root,
         'roms/Recalbox library with a long directory name to verify the two-column ROM folder presentation');
@@ -676,7 +913,7 @@ procedure RunEditVisibilityRegressions(Report: TStrings);
 var
   Setup: TFormSetup;
   Host: TFormMain;
-  Settings: TSkraperConfig;
+  Settings: TRetroScraperConfig;
   Catalog: TJSONObject;
   Picture: TBitmap;
   Edit: TEdit;
@@ -690,7 +927,7 @@ var
 begin
   Root := TPlatformPath.Combine(WritableBase, 'tests/output/edit-visibility');
   ForceDirectories(Root);
-  Settings := TSkraperConfig.Create(TPlatformPath.Combine(Root, 'config'));
+  Settings := TRetroScraperConfig.Create(TPlatformPath.Combine(Root, 'config'));
   Catalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
   Host := TFormMain.Create(nil);
   Setup := TFormSetup.Create(nil);
@@ -734,14 +971,14 @@ begin
         4:
           begin
             StageName := 'focused';
-            for Edit in TArray<TEdit>.Create(Setup.WizardDeveloper, Setup.WizardDeveloperPassword, Setup.WizardLogin, Setup.WizardPassword) do
+            for Edit in TArray<TEdit>.Create(Setup.WizardLogin, Setup.WizardPassword) do
               Edit.SetFocus;
             Setup.ApplyButton.SetFocus;
           end;
         5:
           begin
             StageName := 'cleared';
-            for Edit in TArray<TEdit>.Create(Setup.WizardDeveloper, Setup.WizardDeveloperPassword, Setup.WizardLogin, Setup.WizardPassword) do
+            for Edit in TArray<TEdit>.Create(Setup.WizardLogin, Setup.WizardPassword) do
               Edit.Text := '';
           end;
       end;
@@ -758,7 +995,7 @@ begin
         if not Picture.Map(TMapAccess.Read, Pixels) then
           raise Exception.Create('Cannot read pixels');
         try
-          for Edit in TArray<TEdit>.Create(Setup.WizardDeveloper, Setup.WizardDeveloperPassword, Setup.WizardLogin, Setup.WizardPassword) do
+          for Edit in TArray<TEdit>.Create(Setup.WizardLogin, Setup.WizardPassword) do
           begin
             Styled := Edit.PresentationProxy.Receiver as TStyledEdit;
             Content := Styled.Content;

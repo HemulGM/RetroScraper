@@ -3,12 +3,11 @@
 interface
 
 uses
-  SK.platform, System.SysUtils, System.Types, System.UITypes, System.Classes,
-  System.JSON, System.IOUtils, System.StrUtils, System.Generics.Collections,
-  System.Threading, System.SyncObjs, FMX.Types, FMX.Controls,
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.JSON,
+  System.Generics.Collections, System.Threading, FMX.Types, FMX.Controls,
   FMX.Controls.Presentation, FMX.Forms, FMX.Objects, FMX.StdCtrls, FMX.Edit,
-  FMX.ListBox, FMX.Dialogs, FMX.Layouts, SK.Core, SK.Frontend, SK.Catalog,
-  SK.Locale, FMX.ScrollBox, FMX.Ani, FMX.Graphics;
+  FMX.ListBox, FMX.Dialogs, FMX.Layouts, SK.Configuration, SK.Catalog,
+  FMX.ScrollBox, FMX.Ani, FMX.Graphics, FMX.TreeView, FMX.ImgList, System.ImageList;
 
 type
   TWizardResourceStage = (wrIdle, wrConnecting, wrCatalog, wrArtwork, wrReady, wrOffline, wrFailed);
@@ -19,43 +18,31 @@ type
     SetupBodyLayout: TLayout;
     SetupSourceLayout: TLayout;
     SetupFolderLayout: TLayout;
-    EmptyLabelFrame: TLayout;
-    EmptyLabelRow: TLayout;
     SetupSurface: TRectangle;
     TitleLabel: TLabel;
-    WizardMediaGlyphTop: TLayout;
-    WizardMediaCounterLayout: TLayout;
     WizardMediaProgressLayout: TLayout;
     WizardMediaProgressTrack: TRectangle;
     WizardMediaProgressFill: TRectangle;
     WizardFooterDivider: TRectangle;
     WizardHelpButton: TButton;
-    WizardHelpIconLayout: TLayout;
     WizardHelpIcon: FMX.Objects.TPath;
     WizardHelpText: TLabel;
     WizardHeaderLayout: TLayout;
     WizardSubtitle: TLabel;
     WizardSteps: TGridPanelLayout;
     WizardStep1: TLayout;
-    WizardStep1CircleLayout: TLayout;
     WizardStep1Circle: TCircle;
     WizardStep1Number: TLabel;
     WizardStep1Text: TLabel;
-    WizardStep1Connector: TLayout;
-    WizardStep1LineLayout: TLayout;
     WizardStep1Line: TRectangle;
     WizardStep1LineActive: TRectangle;
     WizardStep2: TLayout;
-    WizardStep2CircleLayout: TLayout;
     WizardStep2Circle: TCircle;
     WizardStep2Number: TLabel;
     WizardStep2Text: TLabel;
-    WizardStep2Connector: TLayout;
-    WizardStep2LineLayout: TLayout;
     WizardStep2Line: TRectangle;
     WizardStep2LineActive: TRectangle;
     WizardStep3: TLayout;
-    WizardStep3CircleLayout: TLayout;
     WizardStep3Circle: TCircle;
     WizardStep3Number: TLabel;
     WizardStep3Text: TLabel;
@@ -64,14 +51,12 @@ type
     WizardResourcesCard: TRectangle;
     WizardResourcesTitle: TLabel;
     WizardConnectRow: TLayout;
-    WizardConnectGlyphLayout: TLayout;
     WizardConnectCircle: TCircle;
     WizardConnectCheck: FMX.Objects.TPath;
     WizardConnectTextLayout: TLayout;
     WizardConnectTitle: TLabel;
     WizardConnectDetail: TLabel;
     WizardCatalogRow: TLayout;
-    WizardCatalogGlyphLayout: TLayout;
     WizardCatalogCircle: TCircle;
     WizardCatalogCheck: FMX.Objects.TPath;
     WizardCatalogTextLayout: TLayout;
@@ -90,7 +75,6 @@ type
     WizardMediaNote: TLabel;
     WizardResourcesDivider: TRectangle;
     WizardResourcesInfoRow: TLayout;
-    WizardResourcesInfoGlyph: TLayout;
     WizardResourcesInfoIcon: FMX.Objects.TPath;
     WizardUserCard: TRectangle;
     WizardUserTitle: TLabel;
@@ -113,7 +97,8 @@ type
     SystemLabel: TLabel;
     PlatformPanel: TRectangle;
     PlatformSearch: TEdit;
-    SystemList: TListBox;
+    SystemList: TTreeView;
+    PlatformIcons: TImageList;
     PlatformCount: TLabel;
     EmptyLabel: TLabel;
     DetectCheck: TCheckBox;
@@ -144,6 +129,7 @@ type
     procedure BackButtonClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure PasswordRevealClick(Sender: TObject);
+    procedure DeveloperPasswordRevealClick(Sender: TObject);
     procedure WizardOptionsChanged(Sender: TObject);
     procedure WizardHelpClick(Sender: TObject);
     procedure WizardEditApplyStyle(Sender: TObject);
@@ -160,7 +146,7 @@ type
     procedure ApplyButtonClick(Sender: TObject);
   private
     FFiltering: Boolean;
-    FConfig: TSkraperConfig;
+    FConfig: TRetroScraperConfig;
     FCatalog: TJSONObject;
     FCopyMode, FWizard, FScanning: Boolean;
     FScanCancelled: Integer;
@@ -168,13 +154,12 @@ type
     FScanFound: TArray<TDetectedPlatform>;
     FScanError: string;
     FMediaSources: TObjectList<TJSONObject>;
-    FOriginalConfig, FWorkingConfig: TSkraperConfig;
+    FOriginalConfig, FWorkingConfig: TRetroScraperConfig;
     FOwnedCatalog, FPendingCatalog: TJSONObject;
     FWizardPage: Integer;
     FResourceDone, FResourceTotal: Integer;
     FResourceStage, FResourcePlatforms, FResourceFailureStage: Integer;
     FWizardFound: TArray<TDetectedPlatform>;
-    FCategories: TDictionary<string, Boolean>;
     procedure StartWizardResources;
     procedure FinishWizardResources;
     procedure UpdateWizardProgress;
@@ -182,7 +167,8 @@ type
     procedure UpdateWizardSteps;
     procedure BuildWizardSummary;
     procedure MaskPasswords;
-    procedure RebuildCategories;
+    procedure SaveCategories;
+    function SelectedSystem: TJSONValue;
     procedure FinishDetection;
     procedure UpdateSelection;
     procedure AddSystem(const IDs: TArray<Integer>; const Folder: string);
@@ -190,23 +176,28 @@ type
     procedure StartDetection;
   public
     destructor Destroy; override;
-    procedure Configure(Config: TSkraperConfig; Catalog: TJSONObject; Wizard: Boolean);
+    procedure Configure(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean);
     procedure ShowWizardPage(Page: Integer);
     procedure ShowResourceStatus(Stage: TWizardResourceStage; Platforms, Done, Total: Integer);
     property Scanning: Boolean read FScanning;
     procedure LoadCatalog(Catalog: TJSONObject);
-    function ExecuteMedia(Config: TSkraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
-    function Execute(Config: TSkraperConfig; Catalog: TJSONObject; Wizard: Boolean): Boolean;
+    function ExecuteMedia(Config: TRetroScraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
+    function Execute(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean): Boolean;
   end;
 
 implementation
 
 uses
-  SK.Consts, FMX.BehaviorManager, SK.Artwork, System.Math;
+  SK.Locale, Sk.Main, SK.Frontend, SK.Json, System.SyncObjs, System.StrUtils,
+  System.IOUtils, SK.Platform, SK.Services.Catalog, SK.Consts, SK.ScreenScraper,
+  FMX.BehaviorManager, SK.Artwork, System.Math;
 {$R *.fmx}
 
 type
   TWizardEditAccess = class(TEdit);
+
+var
+  ExpandedPlatformCategories: TDictionary<string, Boolean>;
 
 procedure TFormSetup.WizardEditApplyStyle(Sender: TObject);
 begin
@@ -217,7 +208,6 @@ end;
 
 procedure TFormSetup.FormCreate(Sender: TObject);
 begin
-  FCategories := TDictionary<string, Boolean>.Create;
   FrontEndCombo.ListBox.ScrollAnimation := TBehaviorBoolean.True;
   ApplyLocale(Self);
   ShowWizardPage(0);
@@ -263,24 +253,21 @@ begin
 end;
 
 procedure TFormSetup.PasswordRevealClick(Sender: TObject);
-var
-  AppPassword: Boolean;
 begin
   if FScanning or (FResourceStage in [Ord(wrConnecting), Ord(wrCatalog), Ord(wrArtwork)]) then
     Exit;
-  AppPassword := TEditButton(Sender).Tag = 1;
-  if AppPassword then
-  begin
-    WizardDeveloperPassword.Password := not WizardDeveloperPassword.Password;
-    WizardDeveloperPasswordEyeOff.Visible := WizardDeveloperPassword.Password;
-    WizardDeveloperPasswordEye.Visible := not WizardDeveloperPassword.Password;
-  end
-  else
-  begin
-    WizardPassword.Password := not WizardPassword.Password;
-    WizardPasswordEyeOff.Visible := WizardPassword.Password;
-    WizardPasswordEye.Visible := not WizardPassword.Password;
-  end;
+  WizardPassword.Password := not WizardPassword.Password;
+  WizardPasswordEyeOff.Visible := WizardPassword.Password;
+  WizardPasswordEye.Visible := not WizardPassword.Password;
+end;
+
+procedure TFormSetup.DeveloperPasswordRevealClick(Sender: TObject);
+begin
+  if FScanning or (FResourceStage in [Ord(wrConnecting), Ord(wrCatalog), Ord(wrArtwork)]) then
+    Exit;
+  WizardDeveloperPassword.Password := not WizardDeveloperPassword.Password;
+  WizardDeveloperPasswordEyeOff.Visible := WizardDeveloperPassword.Password;
+  WizardDeveloperPasswordEye.Visible := not WizardDeveloperPassword.Password;
 end;
 
 procedure TFormSetup.WizardOptionsChanged(Sender: TObject);
@@ -346,22 +333,21 @@ begin
   TThread.RemoveQueuedEvents(nil, FinishDetection);
   TThread.RemoveQueuedEvents(nil, FinishWizardResources);
   TThread.RemoveQueuedEvents(nil, UpdateWizardProgress);
-  TThread.RemoveQueuedEvents(nil, RebuildCategories);
+  SaveCategories;
   FPendingCatalog.Free;
   FOwnedCatalog.Free;
   FWorkingConfig.Free;
-  FCategories.Free;
   inherited;
 end;
 
-procedure TFormSetup.Configure(Config: TSkraperConfig; Catalog: TJSONObject; Wizard: Boolean);
+procedure TFormSetup.Configure(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean);
 begin
   FreeAndNil(FWorkingConfig);
   FreeAndNil(FOwnedCatalog);
   FOriginalConfig := Config;
   if Wizard then
   begin
-    FWorkingConfig := TSkraperConfig.CreateSnapshot(Config);
+    FWorkingConfig := TRetroScraperConfig.CreateSnapshot(Config);
     FConfig := FWorkingConfig;
     if Catalog <> nil then
       FOwnedCatalog := Catalog.Clone as TJSONObject
@@ -379,6 +365,7 @@ begin
   RecursiveCheck.IsChecked := False;
   SearchAllCheck.IsChecked := False;
   DetectCheck.IsChecked := Wizard;
+  WizardApplicationCard.Visible := not HasApplicationCredentials;
   WizardDeveloper.Text := JStr(Config.Credentials, 'devid');
   WizardDeveloperPassword.Text := JStr(Config.Credentials, 'devpassword');
   WizardLogin.Text := JStr(Config.Credentials, 'ssid');
@@ -489,7 +476,7 @@ begin
   begin
     ClientWidth := 1200;
     ClientHeight := 760;
-    Caption := 'SkraperFMX · ' + SK.Locale.L('Настройка библиотеки');
+    Caption := AppBrand + ' · ' + SK.Locale.L('Настройка библиотеки');
     WizardHeaderLayout.Height := 156;
     WizardHeaderLayout.Padding.Rect := RectF(40, 20, 36, 0);
     SetupBodyLayout.Margins.Left := 40;
@@ -555,7 +542,6 @@ procedure TFormSetup.StartWizardResources;
 var
   Credentials, Settings: TJSONObject;
   Base: string;
-  V: TJSONValue;
   Count: Integer;
 begin
   JSet(FConfig.Root, 'Anonymous', TJSONBool.Create(WizardAnonymous.IsChecked));
@@ -565,16 +551,13 @@ begin
   JSet(FConfig.Credentials, 'sspassword', TJSONString.Create(WizardPassword.Text));
   if WizardOffline.IsChecked then
   begin
-    Count := 0;
-    if JValue(FCatalog, 'systemes') is TJSONArray then
-      for V in TJSONArray(JValue(FCatalog, 'systemes')) do
-        if SelectablePlatform(V) then
-          Inc(Count);
+    Count := SelectablePlatformCount(FCatalog);
     ShowResourceStatus(wrOffline, Count, 0, 0);
     ShowWizardPage(1);
     Exit;
   end;
-  if (WizardDeveloper.Text.Trim = '') or (WizardDeveloperPassword.Text = '') or
+  if (not HasApplicationCredentials and
+    ((WizardDeveloper.Text.Trim = '') or (WizardDeveloperPassword.Text = ''))) or
     (not WizardAnonymous.IsChecked and ((WizardLogin.Text.Trim = '') or (WizardPassword.Text = ''))) then
   begin
     FScanError := SK.Locale.L('Заполните данные подключения или выберите настройку без подключения.');
@@ -593,47 +576,23 @@ begin
   ShowResourceStatus(wrConnecting, 0, 0, 0);
   FScanTask := TTask.Run(
     procedure
-    var
-      API: TScreenScraper;
-      Response, User: TJSONObject;
-      V: TJSONValue;
-      PlatformCount: Integer;
     begin
-      API := TScreenScraper.Create(Credentials, TPlatformPath.Combine(Base, 'Cache/api'));
-      API.IsCancelled :=
-        function: Boolean
-        begin
-          Result := TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0
-        end;
-      Response := nil;
       try
         try
-          if not JBool(Credentials, 'anonymous') then
-          begin
-            User := API.Authenticate;
-            try
-              if JValue(User, 'response.ssuser') = nil then
-                raise EScreenScraper.Create('No user information returned');
-            finally
-              User.Free
-            end;
-          end;
-          PublishResourceStatus(wrCatalog, 0, 0, 0);
-          Response := API.Systems;
-          if not (JValue(Response, 'response.systemes') is TJSONArray) then
-            raise EScreenScraper.Create('No platforms returned');
-          FPendingCatalog := JValue(Response, 'response').Clone as TJSONObject;
-          PlatformCount := 0;
-          for V in TJSONArray(JValue(FPendingCatalog, 'systemes')) do
-            if SelectablePlatform(V) then
-              Inc(PlatformCount);
-          PublishResourceStatus(wrArtwork, PlatformCount, 0, PlatformCount * 4);
-          RefreshPlatformArtwork(FPendingCatalog, Settings, Credentials, Base, False, API.IsCancelled,
-            procedure(Done, Total: Integer)
+          FPendingCatalog := LoadCatalogResources(Credentials, Settings, Base,
+            function: Boolean
             begin
-              if (Done mod 8 = 0) or (Done = Total) then
-              begin
-                PublishResourceStatus(wrArtwork, PlatformCount, Done, Total);
+              Result := TInterlocked.CompareExchange(FScanCancelled, 0, 0) <> 0;
+            end,
+            procedure(Stage: TCatalogResourceStage; Platforms, Done, Total: Integer)
+            begin
+              case Stage of
+                crConnecting:
+                  PublishResourceStatus(wrConnecting, Platforms, Done, Total);
+                crCatalog:
+                  PublishResourceStatus(wrCatalog, Platforms, Done, Total);
+                crArtwork:
+                  PublishResourceStatus(wrArtwork, Platforms, Done, Total);
               end;
             end);
         except
@@ -643,10 +602,8 @@ begin
             FScanError := E.Message;
         end;
       finally
-        API.Free;
-        Response.Free;
         Credentials.Free;
-        Settings.Free
+        Settings.Free;
       end;
       TThread.Queue(nil, FinishWizardResources);
     end);
@@ -713,7 +670,7 @@ var
 begin
   if FWizard and (FWizardPage = 0) then
   begin
-    Caption := 'SkraperFMX · ' + SK.Locale.L('Настройка библиотеки');
+    Caption := AppBrand + ' · ' + SK.Locale.L('Настройка библиотеки');
     TitleLabel.Text := SK.Locale.L('Настройка библиотеки');
     WizardSubtitle.Text := SK.Locale.L('Подключение к ScreenScraper и загрузка ресурсов');
     ApplyButton.Text := SK.Locale.L('Далее');
@@ -810,7 +767,7 @@ begin
   ShowWizardPage(1);
 end;
 
-function TFormSetup.Execute(Config: TSkraperConfig; Catalog: TJSONObject; Wizard: Boolean): Boolean;
+function TFormSetup.Execute(Config: TRetroScraperConfig; Catalog: TJSONObject; Wizard: Boolean): Boolean;
 begin
   Configure(Config, Catalog, Wizard);
   Result := ShowModal = mrOk;
@@ -825,26 +782,45 @@ end;
 
 procedure TFormSetup.SearchChanged(Sender: TObject);
 var
-  A, V: TJSONValue;
-  Previous: TObject;
+  A, V, Previous: TJSONValue;
   Query, Names, Key, Category, ImageFile: string;
-  Index, MatchCount, J: Integer;
+  MatchCount: Integer;
+  Expanded: Boolean;
   Matches: TList<TJSONValue>;
   Categories: TStringList;
-  Header: TListBoxItem;
+  Header, SelectedRow, FirstRow: TTreeViewItem;
 
-  procedure AddPlatform(Value: TJSONValue);
+  procedure AddPlatform(Value: TJSONValue; ParentItem: TTreeViewItem = nil);
+  var
+    Row: TTreeViewItem;
   begin
-    SystemList.Items.AddObject(PlatformName(FCatalog, nil, JInt(Value, 'id')), Value);
-    if Value = Previous then
-      Index := SystemList.Items.Count - 1;
+    Row := TTreeViewItem.Create(SystemList);
+    Row.TagObject := Value;
+    if FCopyMode then
+      Row.Text := JStr(Value, '_name')
+    else
+      Row.Text := PlatformName(FCatalog, nil, JInt(Value, 'id'));
+    if ParentItem <> nil then
+      Row.Parent := ParentItem
+    else
+      Row.Parent := SystemList;
+    // Selecting a hidden child would make TreeView expand its parent.
+    if (ParentItem = nil) or ParentItem.IsExpanded then
+    begin
+      if FirstRow = nil then
+        FirstRow := Row;
+      if Value = Previous then
+        SelectedRow := Row;
+    end;
+    if FCopyMode then
+      Exit;
     if FConfig <> nil then
       ImageFile := PlatformArtwork(FConfig.Base, JInt(Value, 'id'), 'icon')
     else
       ImageFile := PlatformArtwork(WritableBase, JInt(Value, 'id'), 'icon');
     if ImageFile <> '' then
     try
-      SystemList.ListItems[SystemList.Items.Count - 1].ItemData.Bitmap.LoadFromFile(ImageFile)
+      Row.ImageIndex := PlatformIcons.AddOrSet('platform_' + JStr(Value, 'id'), [1.0], [ImageFile])
     except
     end;
   end;
@@ -852,26 +828,25 @@ var
 begin
   if FFiltering then
     Exit;
-  Previous := nil;
-  if SystemList.ItemIndex >= 0 then
-    Previous := SystemList.Items.Objects[SystemList.ItemIndex];
+  Previous := SelectedSystem;
+  SaveCategories;
   Query := PlatformSearch.Text.Trim.ToLower;
   FFiltering := True;
   SystemList.BeginUpdate;
+  PlatformIcons.BeginUpdate;
   Matches := TList<TJSONValue>.Create;
   Categories := TStringList.Create;
   try
     SystemList.Clear;
-    Index := -1;
+    PlatformIcons.Destination.Clear;
+    PlatformIcons.Source.Clear;
+    SelectedRow := nil;
+    FirstRow := nil;
     if FCopyMode then
     begin
       for V in FMediaSources do
         if (Query = '') or JStr(V, '_name').ToLower.Contains(Query) then
-        begin
-          SystemList.Items.AddObject(JStr(V, '_name'), V);
-          if V = Previous then
-            Index := SystemList.Items.Count - 1;
-        end;
+          Matches.Add(V);
       A := nil;
     end
     else
@@ -889,8 +864,6 @@ begin
         Matches.Add(V);
       end;
     MatchCount := Matches.Count;
-    if FCopyMode then
-      MatchCount := SystemList.Items.Count;
     if ShowCategories.IsChecked and not FCopyMode then
     begin
       Categories.Sorted := True;
@@ -899,30 +872,29 @@ begin
         Categories.Add(JStr(V, 'type', 'Other'));
       for Category in Categories do
       begin
-        SystemList.Items.AddObject(SK.Locale.L(Category), nil);
-        Header := SystemList.ListItems[SystemList.Items.Count - 1];
+        Header := TTreeViewItem.Create(SystemList);
+        Header.Text := SK.Locale.L(Category);
         Header.TagString := Category;
         Header.OnClick := ToggleCategory;
+        Header.StyledSettings := Header.StyledSettings - [TStyledSetting.Style];
         Header.TextSettings.Font.Style := [TFontStyle.fsBold];
-        if FCategories.ContainsKey(Category) and FCategories[Category] then
-          Continue;
+        Header.Parent := SystemList;
+        Expanded := False;
+        ExpandedPlatformCategories.TryGetValue(Category, Expanded);
+        Header.IsExpanded := Expanded;
         for V in Matches do
           if JStr(V, 'type', 'Other') = Category then
-            AddPlatform(V);
+            AddPlatform(V, Header);
       end;
     end
     else
       for V in Matches do
         AddPlatform(V);
-    if (Index < 0) and (SystemList.Items.Count > 0) then
-      for J := 0 to SystemList.Items.Count - 1 do
-        if SystemList.Items.Objects[J] <> nil then
-        begin
-          Index := J;
-          Break
-        end;
-    SystemList.ItemIndex := Index;
+    if SelectedRow = nil then
+      SelectedRow := FirstRow;
+    SystemList.Selected := SelectedRow;
   finally
+    PlatformIcons.EndUpdate;
     SystemList.EndUpdate;
     FFiltering := False;
     Categories.Free;
@@ -939,18 +911,33 @@ end;
 
 procedure TFormSetup.ToggleCategory(Sender: TObject);
 var
-  Category: string;
-  Folded: Boolean;
+  Header: TTreeViewItem;
 begin
-  Category := TListBoxItem(Sender).TagString;
-  Folded := FCategories.ContainsKey(Category) and FCategories[Category];
-  FCategories.AddOrSetValue(Category, not Folded);
-  TThread.ForceQueue(nil, RebuildCategories);
+  Header := TTreeViewItem(Sender);
+  Header.IsExpanded := not Header.IsExpanded;
+  SaveCategories;
 end;
 
-procedure TFormSetup.RebuildCategories;
+procedure TFormSetup.SaveCategories;
+var
+  I: Integer;
+  Header: TTreeViewItem;
 begin
-  SearchChanged(nil)
+  if SystemList = nil then
+    Exit;
+  for I := 0 to SystemList.Count - 1 do
+  begin
+    Header := SystemList.Items[I];
+    if (Header.TagObject = nil) and (Header.TagString <> '') then
+      ExpandedPlatformCategories.AddOrSetValue(Header.TagString, Header.IsExpanded);
+  end;
+end;
+
+function TFormSetup.SelectedSystem: TJSONValue;
+begin
+  Result := nil;
+  if SystemList.Selected <> nil then
+    Result := TJSONValue(SystemList.Selected.TagObject);
 end;
 
 procedure TFormSetup.SelectionChanged(Sender: TObject);
@@ -1001,21 +988,18 @@ begin
   FrontendHomePanel.Visible := not FCopyMode and (FrontEndCombo.ItemIndex = 2);
   if FCopyMode then
   begin
-    ApplyButton.Enabled := SystemList.ItemIndex >= 0;
+    ApplyButton.Enabled := SelectedSystem <> nil;
     Exit
   end;
   A := JValue(FCatalog, 'systemes');
   ApplyButton.Enabled := False;
   if A is TJSONArray then
     ApplyButton.Enabled := (TJSONArray(A).Count > 0) and
-      (DetectCheck.IsChecked or (SystemList.ItemIndex >= 0));
+      (DetectCheck.IsChecked or (SelectedSystem <> nil));
   PlatformSearch.Enabled := not DetectCheck.IsChecked;
   SystemList.Enabled := not DetectCheck.IsChecked;
   if FWizard and (FWizardPage <> 1) then
     ApplyButton.Enabled := not FScanning;
-  if not DetectCheck.IsChecked and (SystemList.ItemIndex >= 0) and
-    (SystemList.Items.Objects[SystemList.ItemIndex] = nil) then
-    ApplyButton.Enabled := False;
 end;
 
 procedure TFormSetup.BrowseButtonClick(Sender: TObject);
@@ -1042,7 +1026,7 @@ begin
   end;
 end;
 
-function TFormSetup.ExecuteMedia(Config: TSkraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
+function TFormSetup.ExecuteMedia(Config: TRetroScraperConfig; Catalog: TJSONObject; TargetIndex: Integer): TJSONObject;
 var
   I: Integer;
   Source: TJSONObject;
@@ -1080,8 +1064,8 @@ begin
     DetectCheck.IsChecked := False;
     PlatformSearch.Text := '';
     SearchChanged(nil);
-    if (ShowModal = mrOk) and (SystemList.ItemIndex >= 0) then
-      Result := TJSONValue(SystemList.Items.Objects[SystemList.ItemIndex]).Clone as TJSONObject;
+    if (ShowModal = mrOk) and (SelectedSystem <> nil) then
+      Result := SelectedSystem.Clone as TJSONObject;
   finally
     SystemList.Clear;
     FMediaSources.Free;
@@ -1090,24 +1074,8 @@ begin
 end;
 
 procedure TFormSetup.AddSystem(const IDs: TArray<Integer>; const Folder: string);
-var
-  S: TJSONObject;
-  A: TJSONArray;
-  V: TJSONValue;
 begin
-  A := FConfig.Root.GetValue<TJSONArray>('Systems');
-  for V in A do
-    if SamePath(JStr(V, 'GamesAndRoms.Path'), Folder) then
-      Exit;
-  S := FConfig.SystemAt(-1).Clone as TJSONObject;
-  try
-    JSet(S, 'UniqueId', TJSONString.Create(TGUID.NewGuid.ToString));
-    ConfigurePlatform(S, FConfig.SystemAt(-1), FCatalog, FrontEndCombo.ItemIndex, IDs, Folder);
-    A.AddElement(S);
-  except
-    S.Free;
-    raise
-  end;
+  FConfig.AddPlatform(FCatalog, FrontEndCombo.ItemIndex, IDs, Folder);
 end;
 
 procedure TFormSetup.CancelButtonClick(Sender: TObject);
@@ -1283,9 +1251,9 @@ begin
   end
   else
   begin
-    if (SystemList.ItemIndex < 0) or (SystemList.Items.Objects[SystemList.ItemIndex] = nil) then
+    if SelectedSystem = nil then
       Exit;
-    Chosen := JInt(TJSONValue(SystemList.Items.Objects[SystemList.ItemIndex]), 'id');
+    Chosen := JInt(SelectedSystem, 'id');
     Matches := LookupPlatforms(FCatalog, System.IOUtils.TPath.GetFileName(RootEdit.Text), FrontEndCombo.ItemIndex, True, True);
     LIDs := TList<Integer>.Create;
     try
@@ -1314,6 +1282,12 @@ begin
   else
     CommitDetected(Found);
 end;
+
+initialization
+  ExpandedPlatformCategories := TDictionary<string, Boolean>.Create;
+
+finalization
+  ExpandedPlatformCategories.Free;
 
 end.
 

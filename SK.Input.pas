@@ -32,7 +32,7 @@ implementation
 uses
   SK.Consts, System.IOUtils, System.Hash, System.Types, System.StrUtils,
   System.RegularExpressions, System.Character, System.Generics.Defaults,
-  System.Zip, SK.Core;
+  System.Zip, SK.Json, Z7.Archive;
 
 type
   TJoinedInput = class(TStream)
@@ -552,9 +552,18 @@ begin
       Stream.Free
     end;
   end
+  else if FileName.EndsWith('.7z', True) then
+  begin
+    Stream := OpenSevenZipInput(FileName, Result.Size, Cancel);
+    try
+      HashInputStream(Stream, Result.CRC, Result.MD5, Result.SHA1, Cancel);
+    finally
+      Stream.Free;
+    end;
+  end
   else
   begin
-    if MatchText(TPath.GetExtension(FileName), ['.rar', '.7z', '.xz', '.gz', '.tar']) then
+    if MatchText(TPath.GetExtension(FileName), ['.rar', '.xz', '.gz', '.tar']) then
       raise Exception.Create('Deferred archive format: ' + TPath.GetExtension(FileName));
     Stream := TJoinedInput.Create(Files);
     try

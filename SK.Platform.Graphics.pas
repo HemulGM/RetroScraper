@@ -50,7 +50,7 @@ begin
     Exit(Preferred);
   FileName := TPlatformPath.Combine(BasePath, FileName);
   Key := PathKey(FileName);
-  // RenderMix callers synchronize FMX drawing; protect the font registry as well.
+  // MIX rendering also runs on workers; serialize registration of custom fonts.
   TMonitor.Enter(RegisteredFonts);
   try
     if RegisteredFonts.TryGetValue(Key, Result) then

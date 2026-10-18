@@ -10,9 +10,10 @@ uses
   SK.Platform.Tests, System.SysUtils, System.Math, System.Classes, System.JSON,
   System.IOUtils, System.Hash, System.Generics.Collections, System.Zip,
   Xml.XMLDoc, Xml.XMLIntf, FMX.Forms, System.Types, FMX.Types, FMX.Graphics,
-  FMX.ListBox, FMX.Layouts, FMX.StdCtrls, FMX.TabControl, SK.Core, SK.Data,
+  FMX.Controls, FMX.ListBox, FMX.Layouts, FMX.StdCtrls, FMX.TabControl, SK.Json,
+  SK.Configuration, SK.ScreenScraper, SK.Storage, SK.GameList, SK.Metadata,
   SK.Engine, SK.Mix, SK.Main, SK.Setup, SK.Frontend, SK.Input, SK.Features.Tests,
-  SK.Catalog, SK.Platform, System.SyncObjs;
+  SK.Catalog, SK.Platform, SK.Consts, System.SyncObjs;
 
 type
   TComboWheelAccess = class(TComboBox);
@@ -280,12 +281,11 @@ begin
   end;
 end;
 
-procedure RunRomFileNameRegressions(Report: TStrings);
+procedure RunOriginalFileNameRegressions(Report: TStrings);
 var
-  Config, Game, Item, Root: TJSONObject;
-  Account: TSkraperConfig;
+  Config, Game, Item, Root, Sys: TJSONObject;
+  Account: TRetroScraperConfig;
   Folder, Original: string;
-  Writer: TGameListWriter;
 
   procedure Check(Condition: Boolean; const Description: string);
   begin
@@ -297,142 +297,100 @@ var
 begin
   Config := TJSONObject.Create;
   Game := TJSONObject.ParseJSONValue('{"id":"540620","notgame":"true","noms":[{"region":"ss","text":"ZZZ(notgame):#NONGAME"}]}') as TJSONObject;
-  Folder := AppBase + 'tests\output\rom-filename-' + TGUID.NewGuid.ToString.Trim(['{', '}']) + '\';
+  Folder := AppBase + 'tests\output\original-filename-' + TGUID.NewGuid.ToString.Trim(['{', '}']) + '\';
   ForceDirectories(Folder);
   try
     Original := Game.ToJSON;
-    Item := DescribeGame(Game, Config, 'LinkWord (1990)(Sega)(USA).sg');
+    Item := DescribeGame(Game, Config, 'LinkWord (1990)(Sega)(USA)(Beta)(Disc 2 of 3).sg');
     try
-      Check(JStr(Item, 'name') = 'LinkWord', 'Notgame defaults to parsed ROM title');
-      Check(JStr(Item, 'region') = 'us', 'Notgame extracts region without separate filename-region setting');
-      Check(JStr(Item, 'releasedate') = '19900101T000000', 'TOSEC filename supplies release year');
-      Check(JStr(Item, 'publisher') = 'Sega', 'TOSEC filename supplies publisher after year');
-      Check(JStr(Item, 'id') = '540620', 'Filename fallback retains service game ID');
-      Check(Game.ToJSON = Original, 'Filename fallback leaves API response unchanged');
-      JSet(Config, 'GamesAndRoms.Path', TJSONString.Create(Folder));
-      JSet(Config, 'GameList.Type', TJSONNumber.Create(1));
-      JSet(Config, 'GameList.Behavior', TJSONNumber.Create(0));
-      JSet(Config, 'GameList.OutputFile', TJSONString.Create(Folder + 'gamelist.xml'));
-      JSet(Item, 'path', TJSONString.Create(Folder + 'LinkWord.sg'));
-      Writer := TGameListWriter.Create(Config);
-      try
-        Writer.Add(Item);
-        Writer.Save;
-        Check((Writer.Document.DocumentElement.ChildNodes[0].ChildNodes['name'].Text = 'LinkWord') and
-          (Writer.Document.DocumentElement.ChildNodes[0].ChildNodes['publisher'].Text = 'Sega') and
-          (Writer.Document.DocumentElement.ChildNodes[0].ChildNodes['releasedate'].Text = '19900101T000000'),
-          'Parsed filename metadata reaches saved gamelist XML');
-      finally
-        Writer.Free;
-      end;
-    finally
-      Item.Free;
-    end;
-    JSet(Config, 'MetaData.ParseRomFileName', TJSONBool.Create(False));
-    Item := DescribeGame(Game, Config, 'LinkWord (1990)(Sega)(USA).sg');
-    try
-      Check(JStr(Item, 'name') = 'ZZZ(notgame):#NONGAME', 'Disabled filename fallback retains service title');
+      Check(JStr(Item, 'name') = 'ZZZ(notgame):#NONGAME', 'Notgame keeps the original service title');
       Check((JStr(Item, 'releasedate') = '') and (JStr(Item, 'publisher') = '') and (JStr(Item, 'region') = ''),
-        'Disabled fallback does not infer other metadata');
+        'Filename does not supply year, publisher or implicit region');
+      Check((JStr(Item, 'id') = '540620') and (Game.ToJSON = Original), 'Metadata keeps the service ID and response unchanged');
     finally
       Item.Free;
     end;
-    JSet(Config, 'MetaData.ParseRomFileName', TJSONBool.Create(True));
-    JSet(Config, 'Miscellaneous.StrictRegionList', TJSONBool.Create(True));
-    JSet(Config, 'Miscellaneous.Regions', TJSONArray.Create.Add('jp'));
-    Item := DescribeGame(Game, Config, 'LinkWord (1991)(Sega)(USA).sg');
+    JSet(Config, 'MetaData.KeepUndecoratedFileName', TJSONBool.Create(True));
+    Item := DescribeGame(Game, Config, 'LinkWord (1990)(Sega)(USA).sg');
     try
-      Check((JStr(Item, 'name') = 'LinkWord') and (JStr(Item, 'releasedate') = '19910101T000000'),
-        'Strict service region preferences do not discard local filename metadata');
+      Check(JStr(Item, 'name') = 'LinkWord', 'Original undecorated filename setting still replaces the service title');
     finally
       Item.Free;
     end;
-    JSet(Config, 'Miscellaneous.StrictRegionList', TJSONBool.Create(False));
-    JSet(Game, 'notgame', TJSONBool.Create(False));
-    Item := DescribeGame(Game, Config, 'LinkWord.sg');
+    JSet(Config, 'MetaData.KeepFileNameDecorations', TJSONBool.Create(True));
+    Item := DescribeGame(Game, Config, 'LinkWord (1990)(Sega)(USA).sg');
     try
-      Check(JStr(Item, 'name') = 'LinkWord', 'Notgame title prefix triggers fallback even without notgame flag');
+      Check(JStr(Item, 'name') = 'LinkWord (1990) (Sega) (USA)', 'Original filename decorations remain literal text');
+      Check((JStr(Item, 'releasedate') = '') and (JStr(Item, 'publisher') = ''), 'Literal decorations are not converted to metadata');
     finally
       Item.Free;
     end;
-    JSet(Game, 'notgame', TJSONBool.Create(True));
-    JSet(Game, 'editeur.text', TJSONString.Create('Known publisher'));
-    JSet(Game, 'dates', TJSONObject.ParseJSONValue('[{"region":"wor","text":"1989"}]'));
-    JSet(Game, 'synopsis', TJSONObject.ParseJSONValue('[{"langue":"en","text":"Known description"}]'));
-    Item := DescribeGame(Game, Config, 'LinkWord (1990)(Sega).sg');
+    JSet(Config, 'MetaData.KeepFileNameDecorations', TJSONBool.Create(False));
+    JSet(Config, 'MetaData.ExtractRegionFromFileName', TJSONBool.Create(True));
+    Item := DescribeGame(Game, Config, 'LinkWord (USA).sg');
     try
-      Check((JStr(Item, 'publisher') = 'Known publisher') and (JStr(Item, 'releasedate') = '19890101T000000') and
-        (JStr(Item, 'desc') = 'Known description'), 'Fallback preserves available API publisher, date and description');
+      Check(JStr(Item, 'region') = 'us', 'Original explicit filename region setting still works');
     finally
       Item.Free;
     end;
-    JSet(Game, 'notgame', TJSONBool.Create(False));
-    JSet(Game, 'noms', TJSONObject.ParseJSONValue('[{"region":"wor","text":"Known game"}]'));
-    Item := DescribeGame(Game, Config, 'Different (USA)(1990)(Sega)(Beta).sg');
-    try
-      Check((JStr(Item, 'name') = 'Known game') and (JStr(Item, 'region') = ''),
-        'Ordinary matched games keep their API title and existing metadata rules');
-    finally
-      Item.Free;
-    end;
+    JSet(Config, 'MetaData.ExtractRegionFromFileName', TJSONBool.Create(False));
     JSet(Config, 'MetaData.NameDecorations', TJSONNumber.Create(1027));
-    JSet(Config, 'GameList.AutoHideSelection', TJSONNumber.Create(2));
-    Item := DescribeGame(nil, Config, 'Unknown (USA)(Beta)(Disc 2 of 3).rom');
+    JSet(Config, 'GameList.AutoHideSelection', TJSONNumber.Create(1026));
+    Item := DescribeGame(nil, Config, 'Unknown (USA)(Beta)(Disc 2 of 3)(1990)(Sega).rom');
     try
-      Check(JBool(Item, 'hidden'), 'Parsed beta flag participates in existing automatic filters');
-    finally
-      Item.Free;
-    end;
-    JSet(Config, 'GameList.AutoHideSelection', TJSONNumber.Create(0));
-    Item := DescribeGame(nil, Config, 'Unknown (USA)(Beta)(Disc 2 of 3).rom');
-    try
-      Check(JStr(Item, 'name') = 'Unknown [US](Beta)(#2)', 'Filename region, beta and disc tags use existing decorations');
-    finally
-      Item.Free;
-    end;
-    JSet(Config, 'MetaData.NameDecorations', TJSONNumber.Create(0));
-    Item := DescribeGame(nil, Config, 'C:\Games (1990)(Sega)\Unknown (Special Edition) (2001-02-03).rom');
-    try
-      Check(JStr(Item, 'name') = 'Unknown (Special Edition)', 'Fallback preserves meaningful title parentheses');
-      Check((JStr(Item, 'releasedate') = '20010203T000000') and (JStr(Item, 'publisher') = ''),
-        'Fallback parses full dates and ignores parent-folder metadata');
-    finally
-      Item.Free;
-    end;
-    Item := DescribeGame(nil, Config, 'Unknown (2001-02-30).rom');
-    try
-      Check(JStr(Item, 'releasedate') = '', 'Invalid filename dates are not exported');
+      Check(JStr(Item, 'name') = 'Unknown', 'Missing games use the existing undecorated filename fallback');
+      Check((JStr(Item, 'region') = '') and (JStr(Item, 'releasedate') = '') and (JStr(Item, 'publisher') = ''),
+        'Missing games receive no synthesized filename metadata');
+      Check(not JBool(Item, 'hidden'), 'Filename beta and disc tags do not become automatic filter flags');
     finally
       Item.Free;
     end;
     JSet(Config, 'GameList.AutoHideUnscraped', TJSONBool.Create(True));
-    Item := DescribeGame(nil, Config, 'Unknown (USA).rom');
+    Item := DescribeGame(nil, Config, 'Unknown.rom');
     try
-      Check(JBool(Item, 'hidden'), 'Parsed local metadata preserves unscraped filtering');
+      Check(JBool(Item, 'hidden'), 'Original unscraped-game filter still works');
+    finally
+      Item.Free;
+    end;
+    JSet(Config, 'MetaData.KeepUndecoratedFileName', TJSONBool.Create(False));
+    JSet(Game, 'noms', TJSONObject.ParseJSONValue('[{"region":"wor","text":"Known game"}]'));
+    JSet(Game, 'editeur.text', TJSONString.Create('Known publisher'));
+    JSet(Game, 'dates', TJSONObject.ParseJSONValue('[{"region":"wor","text":"1989"}]'));
+    Item := DescribeGame(Game, Config, 'Different (1990)(Sega)(Beta).sg');
+    try
+      Check((JStr(Item, 'name') = 'Known game') and (JStr(Item, 'publisher') = 'Known publisher') and
+        (JStr(Item, 'releasedate') = '19890101T000000'), 'Titles, publisher and dates come from the service');
     finally
       Item.Free;
     end;
     Root := ReadJSON(AppBase + 'Resources\default.config.json');
     try
-      Check(JBool(Root, 'AllSystems.MetaData.ParseRomFileName'), 'New configurations enable filename fallback');
-      JSet(Root, 'AllSystems.MetaData.ParseRomFileName', TJSONNull.Create);
-      // Remove the key entirely to model a configuration saved by an older version.
-      TJSONObject(JValue(Root, 'AllSystems.MetaData')).RemovePair('ParseRomFileName').Free;
-      WriteJSON(Folder + 'skraper.config.json', Root);
+      Check(JValue(Root, 'AllSystems.MetaData.ParseRomFileName') = nil, 'Default configuration contains only original metadata settings');
+      JSet(Root, 'ConfigVersion', TJSONNumber.Create(ConfigSchemaVersion));
+      JSet(Root, 'AllSystems.MetaData.ParseRomFileName', TJSONBool.Create(True));
+      JSet(Root, 'AllSystems.MetaData.KeepUndecoratedFileName', TJSONBool.Create(True));
+      Sys := TJSONObject.Create;
+      JSet(Sys, 'MetaData.ParseRomFileName', TJSONBool.Create(False));
+      JSet(Sys, 'MetaData.ExtractRegionFromFileName', TJSONBool.Create(True));
+      JSet(Root, 'Systems', TJSONArray.Create.Add(Sys));
+      WriteJSON(Folder + ConfigFileName, Root);
     finally
       Root.Free;
     end;
-    Account := TSkraperConfig.Create(Folder);
+    Account := TRetroScraperConfig.Create(Folder);
     try
-      Check(JBool(Account.Root, 'AllSystems.MetaData.ParseRomFileName'), 'Old configurations enable new filename fallback');
-      JSet(Account.Root, 'AllSystems.MetaData.ParseRomFileName', TJSONBool.Create(False));
+      Check((JValue(Account.Root, 'AllSystems.MetaData.ParseRomFileName') = nil) and
+        (JValue(Account.SystemAt(0), 'MetaData.ParseRomFileName') = nil), 'Loading removes the obsolete option from global and system settings');
+      Check(JBool(Account.SystemAt(-1), 'MetaData.KeepUndecoratedFileName') and
+        JBool(Account.SystemAt(0), 'MetaData.ExtractRegionFromFileName'), 'Removing the obsolete option preserves original settings');
       Account.Save;
     finally
       Account.Free;
     end;
-    Account := TSkraperConfig.Create(Folder);
+    Account := TRetroScraperConfig.Create(Folder);
     try
-      Check(not JBool(Account.Root, 'AllSystems.MetaData.ParseRomFileName'), 'Explicitly disabled setting survives save and reload');
+      Check((JValue(Account.SystemAt(-1), 'MetaData.ParseRomFileName') = nil) and
+        (JValue(Account.SystemAt(0), 'MetaData.ParseRomFileName') = nil), 'Saving and reloading does not restore the obsolete option');
     finally
       Account.Free;
     end;
@@ -484,6 +442,7 @@ var
   var
     Gate: TScreenScraperNetworkQueue;
     OnlineConfig: TJSONObject;
+    CompletedWithoutUI: Boolean;
   begin
     Gate := nil;
     OnlineConfig := nil;
@@ -502,12 +461,14 @@ var
       Worker.Start;
       Started := TThread.GetTickCount64;
       while not Worker.Finished and (TThread.GetTickCount64 - Started < 30000) do
-        CheckSynchronize(20);
+        TThread.Sleep(20);
+      CompletedWithoutUI := Worker.Finished;
       if not Worker.Finished then
         Worker.Terminate;
       Worker.WaitFor;
       Worker.Snapshot(Status, Lines);
       Lines.SaveToFile(Folder + 'pipeline.log', TEncoding.UTF8);
+      Check(CompletedWithoutUI, 'Media pipeline completes without main-thread synchronization');
       Check(Status.Errors = 0, 'Offline regression pipeline: ' + Status.LastError);
       Check(Status.Requests = 0, 'Regression pipeline makes no network requests');
     finally
@@ -804,6 +765,9 @@ begin
     JSet(Sys, 'Miscellaneous.Regions', TJSONArray.Create.Add('us').Add('jp'));
     JSet(Sys, 'Miscellaneous.Method', TJSONNumber.Create(0));
     Slots := TJSONObject.ParseJSONValue('[{"Type":0,"Image":2,"LinkToNode":true,"Optimize":true,"OutputFolder":"%ROMROOTFOLDER%/media","EmptyOutputFolder":true},{"Type":0,"Image":0,"LinkToNode":true,"Optimize":true,"OutputFolder":"%ROMROOTFOLDER%/media","EmptyOutputFolder":true}]') as TJSONArray;
+    JSet(Slots.Items[1] as TJSONObject, 'ResizeWidth', TJSONBool.Create(True));
+    JSet(Slots.Items[1] as TJSONObject, 'ResizeWidthValue', TJSONNumber.Create(8));
+    JSet(Slots.Items[1] as TJSONObject, 'KeepRatio', TJSONBool.Create(True));
     JSet(Sys, 'Medias', Slots);
     Arr := TJSONArray.Create;
     Arr.AddElement(Sys);
@@ -879,7 +843,15 @@ begin
         Inc(J);
       end;
     Check((Paths[0] <> Paths[1]) and (Paths[0] = Paths[2]), 'Content dedup preserves different region art and shares identical art across game IDs');
+    Bitmap := TBitmap.Create;
+    try
+      Bitmap.LoadFromFile(Folder + 'pipeline\roms\' + Paths[0].Substring(2).Replace('/', '\'));
+      Check((Bitmap.Width = 8) and (Bitmap.Height = 8), 'Image resize completes without main-thread synchronization');
+    finally
+      Bitmap.Free;
+    end;
     Check(Length(TDirectory.GetFiles(Folder + 'pipeline\roms\media', 'stage-*')) = 0, 'Published media leave no staging files');
+    JSet(Slots.Items[1] as TJSONObject, 'ResizeWidth', TJSONBool.Create(False));
     for I := 0 to 1 do
       JSet(Slots.Items[I] as TJSONObject, 'Optimize', TJSONBool.Create(False));
     RunWorker;
@@ -903,16 +875,20 @@ begin
     Item.AddPair('Type', TJSONNumber.Create(2));
     Item.AddPair('LocalMixFile', FileName);
     Item.AddPair('OutputFolder', '%ROMROOTFOLDER%/mix');
+    Item.AddPair('ResizeWidth', TJSONBool.Create(True));
+    Item.AddPair('ResizeWidthValue', TJSONNumber.Create(48));
+    Item.AddPair('KeepRatio', TJSONBool.Create(True));
     Slots.AddElement(Item);
     RunWorker;
     ImageFile := Folder + 'pipeline\roms\mix\sub0\game.png';
     Bitmap := TBitmap.Create;
     try
       Bitmap.LoadFromFile(ImageFile);
-      Check((Bitmap.Width = 64) and (Bitmap.Height = 32), 'MIX renders from existing media without binary cache');
+      Check((Bitmap.Width = 48) and (Bitmap.Height = 24), 'MIX renders and resizes without main-thread synchronization');
     finally
       Bitmap.Free
     end;
+    JSet(Item, 'ResizeWidth', TJSONBool.Create(False));
     TFile.WriteAllText(FileName, '<ImageComposition><Viewport Width="96" Height="48"/><Drawings><Item Type="Screenshot"><Display Width="100%" Height="100%"/></Item></Drawings></ImageComposition>', TEncoding.UTF8);
     TFile.Delete(Folder + 'pipeline\roms\media\sub0\game-media2.png');
     RunWorker;
@@ -1048,6 +1024,67 @@ begin
   end;
 end;
 
+procedure RunLayoutFlowRegressions(Main: TFormMain; Report: TStrings);
+var
+  OriginalHeight, OriginalTop: Single;
+  PhotoVisible: Boolean;
+
+  procedure Check(OK: Boolean; const Description: string);
+  begin
+    if not OK then
+      raise Exception.Create('FAIL: ' + Description);
+    Report.Add('PASS: ' + Description);
+  end;
+
+begin
+  Check((Main.AppTitle.Parent = Main.AppSubtitle.Parent) and
+    (Main.NavLibrary.Parent = Main.NavScraping.Parent) and
+    (Main.NavLibraryIcon.Parent = Main.NavLibrary),
+    'Navigation uses shared stacks and directly owned icons');
+  OriginalHeight := Main.AppTitle.Height;
+  OriginalTop := Main.AppSubtitle.Position.Y;
+  try
+    Main.AppTitle.Height := OriginalHeight + 16;
+    Check(SameValue(Main.AppSubtitle.Position.Y, OriginalTop + 16, 0.1),
+      'Increasing a navigation heading moves the following controls');
+    Main.AppTitle.Visible := False;
+    Check(SameValue(Main.AppSubtitle.Position.Y, OriginalTop - OriginalHeight - Main.AppTitle.Margins.Top, 0.1),
+      'Hiding a navigation heading closes its space in the shared stack');
+  finally
+    Main.AppTitle.Height := OriginalHeight;
+    Main.AppTitle.Visible := True;
+  end;
+  Check(Main.AppTitle.Position.Y < Main.AppSubtitle.Position.Y,
+    'Restoring a hidden heading preserves vertical docking order');
+  PhotoVisible := Main.PictureBoxPhoto.Visible;
+  try
+    Main.PictureBoxPhoto.Visible := False;
+    OriginalTop := Main.InspectorTitle.Position.Y;
+    Main.PictureBoxPhoto.Visible := True;
+    Check(SameValue(Main.InspectorTitle.Position.Y, OriginalTop + Main.PictureBoxPhoto.Height, 0.1),
+      'Showing the system photo moves inspector fields without coordinate updates');
+  finally
+    Main.PictureBoxPhoto.Visible := PhotoVisible;
+  end;
+  Check((Main.InspectorID.Parent = Main.InspectorTitle.Parent) and
+    (Main.InspectorExtensionsLabel.Parent = Main.InspectorExtensions.Parent),
+    'Inspector labels and fields share their vertical container');
+  Check(Main.ButtonRemoveSystem.Position.Y < Main.InspectorProvider.Position.Y,
+    'Inspector actions precede the provider information');
+  Check((Main.RollingButtonSystemSelect.Parent = Main.LabelGamesAndRomAllSystems.Parent) and
+    (Main.RollingButtonSystemSelect.Width > 100),
+    'Alternative system selectors share one usable field slot');
+  OriginalHeight := Main.AccountTitle.Height;
+  OriginalTop := Main.AccountDescription.Position.Y;
+  try
+    Main.AccountTitle.Height := OriginalHeight + 12;
+    Check(SameValue(Main.AccountDescription.Position.Y, OriginalTop + 12, 0.1),
+      'Account fields follow changes to the preceding label height');
+  finally
+    Main.AccountTitle.Height := OriginalHeight;
+  end;
+end;
+
 procedure RunSelfTests;
 var
   Report: TStringList;
@@ -1064,7 +1101,7 @@ var
   Bytes: TBytes;
   Setup: TFormSetup;
   API: TScreenScraper;
-  Account: TSkraperConfig;
+  Account: TRetroScraperConfig;
   Worker: TScrapeWorker;
   Status: TScrapeStatus;
   Systems, Media: TJSONArray;
@@ -1082,6 +1119,7 @@ var
   Pixels: FMX.Graphics.TBitmapData;
   RowButton, MediaButton: TButton;
   RowGrid: TGridPanelLayout;
+  EventRow: TListBoxItem;
   RowProbe: TRowLifetimeProbe;
   ScrollBefore: TPointF;
   OriginalOptimize, OriginalLog: Boolean;
@@ -1122,7 +1160,7 @@ begin
     end;
 
     try
-      RunRomFileNameRegressions(Report);
+      RunOriginalFileNameRegressions(Report);
       Stream := TStringStream.Create('123456789', TEncoding.ASCII);
       try
         HashStream(Stream, CRC, MD5, SHA1);
@@ -1337,7 +1375,7 @@ begin
         Response.Free;
       end;
       // UI regressions use a dedicated library instead of developer paths in defaults.
-      Account := TSkraperConfig.Create(WritableBase);
+      Account := TRetroScraperConfig.Create(WritableBase);
       Response := ReadJSON(AppBase + 'Resources\systems.json');
       try
         JSet(Account.Root, 'Systems', TJSONArray.Create);
@@ -1368,8 +1406,8 @@ begin
             'Wheel passes through: ' + FormMain.Components[I].Name);
         end;
       Check(FormMain.ComponentCount > 300, 'FMX form streaming and style load');
-      Check((FormMain.IconScrap.Data.Count > 0) and (FormMain.IconStop.Data.Count > 0) and
-        (FormMain.PictureBoxLoginIcon.Data.Count > 0), 'Fluent TPath icons stream from FMX');
+      Check((FormMain.NavLibraryIcon.Data.Count > 0) and (FormMain.NavScrapingIcon.Data.Count > 0) and
+        (FormMain.NavSettingsIcon.Data.Count > 0), 'Visible Fluent TPath icons stream from FMX');
       Check(FormMain.RollingButtonSystemSelect.Items.Count = 243, 'Eligible system catalog excludes flipper and non-game databases');
       Check(FormMain.RadioBoxNameCaseAsIs.IsChecked or FormMain.RadioBoxNameCaseLower.IsChecked or FormMain.RadioBoxNameCaseUpper.IsChecked, 'Name case radio binding');
       Check(FormMain.RadioButtonNodeLink.IsChecked or FormMain.RadioButtonNoLink.IsChecked, 'Media link radio binding');
@@ -1380,19 +1418,19 @@ begin
         Response := TJSONObject.ParseJSONValue('{"systemes":[{"id":1,"noms":{"nom_us":"Genesis","nom_recalbox":"megadrive"}},{"id":2,"noms":{"nom_us":"Game Boy"}}]}') as TJSONObject;
         try
           Setup.LoadCatalog(Response);
-          Check(Setup.SystemList.Items.Count = 2, 'Platform list loads catalog');
+          Check(Setup.SystemList.Count = 2, 'Platform list loads catalog');
           Setup.PlatformSearch.Text := 'MEGADRIVE';
-          Check((Setup.SystemList.Items.Count = 1) and
-            (JInt(TJSONValue(Setup.SystemList.Items.Objects[0]), 'id') = 1), 'Platform search matches aliases without case');
+          Check((Setup.SystemList.Count = 1) and
+            (JInt(TJSONValue(Setup.SystemList.Items[0].TagObject), 'id') = 1), 'Platform search matches aliases without case');
           Setup.PlatformSearch.Text := '2';
-          Check(Setup.SystemList.Items[0] = 'Game Boy', 'Platform search matches ID and maps selection');
+          Check(Setup.SystemList.Items[0].Text = 'Game Boy', 'Platform search matches ID and maps selection');
           Setup.PlatformSearch.Text := 'missing';
           Check(Setup.EmptyLabel.Visible and not Setup.ApplyButton.Enabled, 'Empty platform search blocks manual add');
           Setup.DetectCheck.IsChecked := True;
           Check(Setup.ApplyButton.Enabled, 'Auto detection ignores platform search filter');
           Setup.DetectCheck.IsChecked := False;
           Setup.PlatformSearch.Text := '';
-          Check((Setup.SystemList.Items.Count = 2) and Setup.ApplyButton.Enabled, 'Clearing search restores platform list');
+          Check((Setup.SystemList.Count = 2) and Setup.ApplyButton.Enabled, 'Clearing search restores platform list');
           Setup.FrontEndCombo.ItemIndex := 0;
           Setup.RootEdit.Text := 'H:\ROMS';
           Bitmap := TBitmap.Create(940, 580);
@@ -1433,6 +1471,7 @@ begin
       FormMain.Show;
       Sleep(250);
       Application.ProcessMessages;
+      RunLayoutFlowRegressions(FormMain, Report);
       Check((FormMain.PageTabControl.ActiveTab = FormMain.TabLibraryPage) and
         (FormMain.PageTabControl.TabPosition = TTabPosition.None) and
         (FormMain.LibraryPage.Parent.Parent = FormMain.TabLibraryPage), 'Library is the initial hidden-tab page');
@@ -1518,7 +1557,7 @@ begin
       FormMain.SystemSearch.Text := 'no-system-matches-this-filter';
       Check(FormMain.PanelSystemListInner.ChildrenCount = 0, 'System search filters rows');
       FormMain.SystemSearch.Text := '';
-      FormMain.ShellAction(FormMain.NavSettings);
+      FormMain.NavSettingsClick(FormMain.NavSettings);
       OriginalOptimize := FormMain.CheckBoxOptimizeMediaStorage.IsChecked;
       OriginalLog := FormMain.CheckBoxSaveLogs.IsChecked;
       FormMain.CheckBoxSaveLogs.IsChecked := not OriginalLog;
@@ -1533,12 +1572,55 @@ begin
         'Media optimization switch persists through selection changes');
       FrozenTime := FormMain.EditSourceFolder.Text;
       FormMain.EditSourceFolder.Text := 'Z:\temporary-settings-test';
-      FormMain.ShellAction(FormMain.CancelSettings);
+      FormMain.CancelSettingsClick(FormMain.CancelSettings);
       FormMain.SettingsScope.ItemIndex := 1;
       Check(FormMain.EditSourceFolder.Text = FrozenTime, 'Cancel restores settings transaction');
       Check(FormMain.CheckBoxOptimizeMediaStorage.IsChecked = OriginalOptimize, 'Cancel restores media switch value');
       Check(FormMain.CheckBoxSaveLogs.IsChecked = OriginalLog, 'Cancel restores logging switch value');
-      FormMain.ShellAction(FormMain.NavLibrary);
+      FormMain.NavSettingsClick(FormMain.NavSettings);
+      FormMain.SettingsScope.ItemIndex := 1;
+      FormMain.SelectAllSystems.IsChecked := True;
+      FormMain.CheckBoxResizeWidth.IsChecked := True;
+      FormMain.CheckBoxResizeHeight.IsChecked := True;
+      // Model.Text reproduces typing without Enter or losing focus. Assigning
+      // the control's Text property would commit and conceal the original bug.
+      FormMain.EditResizeWidth.Model.Text := '1237';
+      FormMain.EditResizeHeight.Model.Text := '659';
+      if FormMain.PanelMediaInner.ChildrenCount > 1 then
+      begin
+        TButton(FormMain.PanelMediaInner.Children[1]).OnClick(FormMain.PanelMediaInner.Children[1]);
+        TButton(FormMain.PanelMediaInner.Children[0]).OnClick(FormMain.PanelMediaInner.Children[0]);
+      end;
+      Check((Round(FormMain.EditResizeWidth.Value) = 1237) and
+        (Round(FormMain.EditResizeHeight.Value) = 659), 'Uncommitted numeric input survives media selection');
+      FormMain.EditResizeWidth.Model.Text := '1241';
+      FormMain.EditMediaOutputFolder.Model.Text := '%ROMROOTFOLDER%/pending-edit';
+      FormMain.SaveSettingsClick(FormMain.SaveSettings);
+      Account := TRetroScraperConfig.Create(WritableBase);
+      try
+        Media := Account.SystemAt(0).GetValue<TJSONArray>('Medias');
+        Check((JInt(Media.Items[0], 'ResizeWidthValue') = 1241) and
+          (JInt(Media.Items[0], 'ResizeHeightValue') = 659) and
+          (JValue(Media.Items[0], 'ResizeWidthValue') is TJSONNumber) and
+          (JValue(Media.Items[0], 'ResizeHeightValue') is TJSONNumber),
+          'Save persists typed dimensions as JSON numbers before focus is lost');
+        Check(JStr(Media.Items[0], 'OutputFolder') = '%ROMROOTFOLDER%/pending-edit',
+          'Save also captures uncommitted text settings');
+        Check(JInt(Account.SystemAt(0), 'Overriden') and 8 <> 0,
+          'Editing inherited dimensions enables the media override');
+        Check(JInt(Account.SystemAt(-1).GetValue<TJSONArray>('Medias').Items[0], 'ResizeWidthValue') <> 1241,
+          'Platform dimensions leave global media settings unchanged');
+      finally
+        Account.Free;
+      end;
+      FormMain.NavSettingsClick(FormMain.NavSettings);
+      FormMain.SettingsScope.ItemIndex := 1;
+      FormMain.EditResizeWidth.Model.Text := '777';
+      FormMain.CancelSettingsClick(FormMain.CancelSettings);
+      FormMain.SettingsScope.ItemIndex := 1;
+      Check(Round(FormMain.EditResizeWidth.Value) = 1241,
+        'Cancel restores numeric settings after an uncommitted edit');
+      FormMain.NavLibraryClick(FormMain.NavLibrary);
       Sleep(250);
       Application.ProcessMessages;
       Bitmap := TBitmap.Create(1280, 855);
@@ -1551,7 +1633,7 @@ begin
           Bitmap.Canvas.EndScene;
         end;
         Bitmap.SaveToFile(Folder + 'main-form.png');
-        FormMain.ShellAction(FormMain.NavSettings);
+        FormMain.NavSettingsClick(FormMain.NavSettings);
         for I := 0 to FormMain.SettingsTabControl.TabCount - 1 do
         begin
           FormMain.SettingsTabControl.TabIndex := I;
@@ -1572,7 +1654,7 @@ begin
       finally
         Bitmap.Free;
       end;
-      FormMain.ShellAction(FormMain.NavSettings);
+      FormMain.NavSettingsClick(FormMain.NavSettings);
       FormMain.SettingsTabControl.ActiveTab := FormMain.TabMedia;
       FormMain.ClientWidth := 1600;
       FormMain.ClientHeight := 1000;
@@ -1698,10 +1780,12 @@ begin
         Status.PreviewRevision[I] := I + 1;
       end;
       FormMain.ApplyScrapeStatus(Status);
+      EventRow := FormMain.ScrapeEventList.ListItems[0];
       FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:08  Completed: Метаданные получены');
       FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:09  Media saved: Обложка сохранена');
       FormMain.FastColoredTextBoxLogging.Lines.Add('14:32:10  Media error: Не удалось загрузить изображение');
-      FormMain.ShellAction(FormMain.NavLog);
+      FormMain.NavLogClick(FormMain.NavLog);
+      Check(FormMain.ScrapeEventList.ListItems[0] = EventRow, 'New log lines preserve existing event controls');
       Check((FormMain.PageTabControl.ActiveTab = FormMain.TabLogPage) and FormMain.FullLog.Lines.Text.Contains('Метаданные получены'), 'Full journal reflects the run log');
       Lines := TStringList.Create;
       try
@@ -1732,8 +1816,8 @@ begin
           FormMain.ApplyScrapeStatus(Status);
         Check(FormMain.FullLog.ViewportPosition = ScrollBefore,
           'Completed scraping does not reset journal viewport');
-        FormMain.ShellAction(FormMain.NavLibrary);
-        FormMain.ShellAction(FormMain.NavLog);
+        FormMain.NavLibraryClick(FormMain.NavLibrary);
+        FormMain.NavLogClick(FormMain.NavLog);
         Application.ProcessMessages;
         Check(FormMain.FullLog.ViewportPosition = ScrollBefore,
           'Returning to the journal preserves its reading position');
@@ -1756,7 +1840,7 @@ begin
         Lines.Free
       end;
 
-      FormMain.ShellAction(FormMain.NavScraping);
+      FormMain.NavScrapingClick(FormMain.NavScraping);
       Check(FormMain.PageTabControl.ActiveTab = FormMain.TabScrapingPage, 'Navigation returns to the scraping tab');
       Check(FormMain.ScrapeStateText.Text = 'Выполняется', 'Scraping state badge reflects running status');
       Check(FormMain.ScrapeEventList.Count = 3, 'Run log renders events as list items');
@@ -1984,7 +2068,7 @@ begin
       end;
       if FindCmdLineSwitch('online') then
       begin
-        Account := TSkraperConfig.Create(AppBase);
+        Account := TRetroScraperConfig.Create(AppBase);
         try
           API := TScreenScraper.Create(Account.Credentials, Folder + 'api');
           try

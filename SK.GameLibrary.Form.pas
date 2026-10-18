@@ -3,48 +3,27 @@
 interface
 
 uses
-  System.SysUtils, System.Classes, System.JSON, System.Generics.Collections,
-  System.Types, System.UITypes, Xml.XMLIntf, FMX.Types, FMX.Forms, FMX.Controls,
-  FMX.Controls.Presentation, FMX.Layouts, FMX.StdCtrls, FMX.Edit, FMX.ListBox,
-  FMX.Memo, FMX.Memo.Types, FMX.ScrollBox, FMX.Objects, FMX.TabControl,
-  FMX.Dialogs, SK.GameLibrary, FMX.Graphics;
+  SK.UI.FieldEditor, System.SysUtils, System.Classes, System.JSON,
+  System.Generics.Collections, System.Types, System.UITypes, Xml.XMLIntf,
+  FMX.Types, FMX.Forms, FMX.Controls, FMX.Controls.Presentation, FMX.Layouts,
+  FMX.StdCtrls, FMX.Edit, FMX.ListBox, FMX.Memo, FMX.Memo.Types, FMX.ScrollBox,
+  FMX.Objects, FMX.TabControl, FMX.Dialogs, SK.GameLibrary, FMX.Graphics, SK.Engine;
 
 type
-  TGameFieldEditor = class(TLayout)
-  private
-    function GetText: string;
-    procedure SetText(const Value: string);
-    procedure BindControls;
-  public
-    Field: TLibraryField;
-    HeaderLayout, ValueColumn, InputFrame, EditorArea, InputControlFrame: TLayout;
-    ErrorFrame: TRectangle;
-    CaptionLabel, ErrorLabel, MediaNote: TLabel;
-    HelpText, ErrorText: string;
-    InfoButton: TButton;
-    InfoIcon: FMX.Objects.TPath;
-    HelpMemo: TMemo;
-    ValueEdit: TEdit;
-    ValueMemo: TMemo;
-    MediaImage: TImage;
-    PreviewLoading: Boolean;
-    MediaCommands: TLayout;
-    ReplaceMediaButton, ClearMediaButton: TButton;
-    property Text: string read GetText write SetText;
-  end;
+  TGameFieldEditor = SK.UI.FieldEditor.TGameFieldEditor;
 
   TFormGameLibrary = class(TForm)
     Surface: TRectangle;
     RootLayout: TLayout;
     Header: TLayout;
     TitleLabel, CountLabel, PlatformLabel, GameTitleLabel, GamePlatformLabel: TLabel;
-    PlatformHeader, EditorPanel, GameHeader, TabActions: TLayout;
+    EditorPanel, TabActions: TLayout;
     CommandButtons: TGridPanelLayout;
     FieldsTabButton, XMLTabButton: TButton;
     FieldsTabLine, XMLTabLine: TRectangle;
     HeaderIcon: FMX.Objects.TPath;
     FooterDivider, LibraryDivider: TRectangle;
-    FieldRowTemplate: TGameFieldEditor;
+    FieldRowTemplate: TLayout;
     Commands: TLayout;
     SaveButton, ScrapeButton, CloseButton: TButton;
     Body: TLayout;
@@ -53,12 +32,19 @@ type
     GameList: TListBox;
     EditorTabs: TTabControl;
     FieldsTab, XMLTab: TTabItem;
-    FieldsBody, FieldsContent: TLayout;
+    FieldsContent: TLayout;
     FieldsScroll: TVertScrollBox;
     StatusLabel: TLabel;
+    ScrapeProgressLayout: TLayout;
+    ScrapeProgress: TProgressBar;
+    ScrapeActivity: TAniIndicator;
+    ScrapeTimer: TTimer;
     XMLMemo: TMemo;
     MediaDialog: TOpenDialog;
-    FieldInfoIconTemplate: FMX.Objects.TPath;
+    procedure GameListViewportChanged(Sender: TObject; const OldViewportPosition,
+      NewViewportPosition: TPointF; const ContentSizeChanged: Boolean);
+    procedure GameListResized(Sender: TObject);
+    procedure ScrapeTimerTimer(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -67,10 +53,12 @@ type
     procedure ValueChanged(Sender: TObject);
     procedure XMLChanged(Sender: TObject);
     procedure TabChanged(Sender: TObject);
-    procedure EditorTabClick(Sender: TObject);
+    procedure FieldsTabClick(Sender: TObject);
+    procedure XMLTabClick(Sender: TObject);
     procedure SaveClick(Sender: TObject);
     procedure ScrapeClick(Sender: TObject);
-    procedure MediaClick(Sender: TObject);
+    procedure ReplaceMediaClick(Sender: TObject);
+    procedure ClearMediaClick(Sender: TObject);
     procedure InfoClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
   private
@@ -80,13 +68,23 @@ type
     FEditors: TList<TGameFieldEditor>;
     FSelected: Integer;
     FLoading, FDirty, FXMLDirty: Boolean;
+    FUpdatingFieldsHeight: Boolean;
     FRequestedRom, FPlatformTitle: string;
+    FGameItems: TDictionary<Integer, TListBoxItem>;
+    FFirstCover, FLastCover: Integer;
+    FScrapeWorker: TScrapeWorker;
+    FOnCreateScrapeWorker: TFunc<string, TScrapeWorker>;
+    procedure ReloadScrapedGame;
     procedure BuildGames;
+    procedure UpdateGameCard(Index: Integer);
+    procedure UpdateVisibleCovers;
+    procedure RequestGameCover(Item: TListBoxItem);
     procedure LoadGameCover(Picture: TImage; const Paths: TArray<string>; Index: Integer);
     procedure BuildFields;
     procedure LoadGame(Index: Integer);
     procedure UpdateMedia(Editor: TGameFieldEditor);
     procedure UpdateFieldsHeight;
+    procedure HelpLabelResize(Sender: TObject);
     procedure UpdateButtons;
     procedure ApplyXML;
     function SaveGame: Boolean;
@@ -99,60 +97,30 @@ type
     function FieldCount: Integer;
     function ValidateDraft: Boolean;
     property RequestedRom: string read FRequestedRom;
+    property OnCreateScrapeWorker: TFunc<string, TScrapeWorker>
+      read FOnCreateScrapeWorker write FOnCreateScrapeWorker;
   end;
 
 implementation
 
 uses
-  System.IOUtils, System.StrUtils, Xml.XMLDoc, FMX.DialogService.Sync,
-  SK.Platform, SK.Locale, System.Generics.Defaults, System.Math, HGM.FMX.Image;
+  System.IOUtils, SK.Main, System.StrUtils, Xml.XMLDoc, FMX.DialogService.Sync,
+  SK.Platform, SK.Locale, System.Generics.Defaults, System.Math, HGM.FMX.Image, FMX.BehaviorManager,
+  SK.UI.Scraping;
 
 {$R *.fmx}
 
-function FieldCaption(const Name: string): string;
-begin
-  Result := Name;
-  if MatchText(Name, ['name', 'Title', '@name']) then
-    Result := L('Название')
-  else if MatchText(Name, ['desc', 'Notes', 'description']) then
-    Result := L('Описание')
-  else if SameText(Name, 'developer') then
-    Result := L('Разработчик')
-  else if SameText(Name, 'publisher') then
-    Result := L('Издатель')
-  else if SameText(Name, 'players') then
-    Result := L('Число игроков')
-  else if MatchText(Name, ['rating', 'StarRatingFloat']) then
-    Result := L('Рейтинг')
-  else if MatchText(Name, ['releasedate', 'ReleaseDate']) then
-    Result := L('Дата выпуска')
-  else if SameText(Name, 'genre') then
-    Result := L('Жанр')
-  else if SameText(Name, 'region') then
-    Result := L('Регион')
-  else if SameText(Name, 'favorite') then
-    Result := L('Избранное')
-  else if MatchText(Name, ['hidden', 'Hide']) then
-    Result := L('Скрытая игра')
-  else if SameText(Name, 'image') then
-    Result := L('Изображение')
-  else if SameText(Name, 'thumbnail') then
-    Result := L('Миниатюра')
-  else if SameText(Name, 'box') then
-    Result := L('Обложка')
-  else if MatchText(Name, ['logo', 'marquee']) then
-    Result := L('Логотип')
-  else if MatchText(Name, ['video', 'VideoPath']) then
-    Result := L('Видео')
-  else if MatchText(Name, ['manual', 'ManualPath']) then
-    Result := L('Руководство')
-  else if MatchText(Name, ['path', 'ApplicationPath', 'rom/@name']) then
-    Result := L('Путь ROM');
-end;
-
 procedure TFormGameLibrary.FormCreate(Sender: TObject);
+var
+  I: Integer;
 begin
+  // Memo exposes ScrollAnimation only at runtime, including the field template.
+  for I := 0 to ComponentCount - 1 do
+    if Components[I] is TMemo then
+      TMemo(Components[I]).ScrollAnimation := TBehaviorBoolean.True;
   FSelected := -1;
+  FLastCover := -1;
+  FGameItems := TDictionary<Integer, TListBoxItem>.Create;
   FEditors := TList<TGameFieldEditor>.Create;
   FFields := TObjectList<TLibraryField>.Create(True);
   ApplyLocale(Self);
@@ -161,6 +129,10 @@ end;
 
 procedure TFormGameLibrary.FormDestroy(Sender: TObject);
 begin
+  ScrapeTimer.Enabled := False;
+  FScrapeWorker.Free;
+  FOnCreateScrapeWorker := nil;
+  FGameItems.Free;
   FLoading := True;
   FieldsContent.DeleteChildren;
   GameList.Clear;
@@ -186,19 +158,19 @@ end;
 procedure TFormGameLibrary.BuildGames;
 var
   I, SelectedItem: Integer;
-  Filter, Text, Path: string;
+  Filter, Text: string;
   Item: TListBoxItem;
   Picture: TImage;
   Labels: TLayout;
   LabelText: TLabel;
-  Node: IXMLNode;
-  FieldName: string;
-  CoverPaths: TArray<string>;
 begin
   FLoading := True;
   GameList.BeginUpdate;
   try
+    FGameItems.Clear;
     GameList.Clear;
+    FFirstCover := 0;
+    FLastCover := -1;
     SelectedItem := -1;
     Filter := SearchEdit.Text.Trim.ToLower;
     for I := 0 to FLibrary.Games.Count - 1 do
@@ -210,6 +182,7 @@ begin
       Item := TListBoxItem.Create(GameList);
       Item.Parent := GameList;
       Item.Tag := I;
+      FGameItems.Add(I, Item);
       Item.Height := 86;
       Item.Text := '';
       Item.StyleLookup := 'listboxitemstyle';
@@ -222,22 +195,7 @@ begin
       Picture.Margins.Right := 12;
       Picture.WrapMode := TImageWrapMode.Fit;
       Picture.HitTest := False;
-      CoverPaths := nil;
-      for FieldName in ['box', 'image', 'thumbnail', 'ImagePath', 'BoxFrontImagePath'] do
-      begin
-        Node := FLibrary.Games[I].Node.ChildNodes.FindNode(FieldName);
-        if (Node = nil) or (Node.Text.Trim = '') then
-          Continue;
-        try
-          Path := FLibrary.MediaPath(Node.Text);
-          if Path <> '' then
-            CoverPaths := CoverPaths + [Path];
-        except
-          // Skip malformed media paths and try the remaining cover fields.
-        end;
-      end;
       Picture.Visible := False;
-      LoadGameCover(Picture, CoverPaths, 0);
       Labels := TLayout.Create(Item);
       Labels.Parent := Item;
       Labels.Align := TAlignLayout.Client;
@@ -246,6 +204,7 @@ begin
       LabelText.Parent := Labels;
       LabelText.Align := TAlignLayout.Top;
       LabelText.Height := 30;
+      LabelText.Name := 'GameName';
       LabelText.Text := Text;
       LabelText.HitTest := False;
       LabelText.TextSettings.Trimming := TTextTrimming.Character;
@@ -254,6 +213,7 @@ begin
       LabelText.Parent := Labels;
       LabelText.Align := TAlignLayout.Top;
       LabelText.Height := 24;
+      LabelText.Name := 'GameRom';
       LabelText.Text := TPath.GetFileName(FLibrary.Games[I].RomPath);
       LabelText.Opacity := 0.7;
       LabelText.HitTest := False;
@@ -268,18 +228,108 @@ begin
     GameList.EndUpdate;
     FLoading := False
   end;
+  UpdateVisibleCovers;
+end;
+
+procedure TFormGameLibrary.UpdateGameCard(Index: Integer);
+var
+  Item: TListBoxItem;
+  Picture: TImage;
+begin
+  if not FGameItems.TryGetValue(Index, Item) then
+    Exit;
+  TLabel(Item.FindComponent('GameName')).Text := FLibrary.Title(Index);
+  TLabel(Item.FindComponent('GameRom')).Text := TPath.GetFileName(FLibrary.Games[Index].RomPath);
+  Picture := TImage(Item.FindComponent('GameCover'));
+  Picture.Bitmap.RemoveCallback(Picture);
+  Picture.Bitmap.SetSize(0, 0);
+  Picture.Visible := False;
+  Picture.Tag := 0;
+  UpdateVisibleCovers;
+end;
+
+procedure TFormGameLibrary.RequestGameCover(Item: TListBoxItem);
+var
+  Picture: TImage;
+  Node: IXMLNode;
+  FieldName, Path: string;
+  Paths: TArray<string>;
+begin
+  Picture := TImage(Item.FindComponent('GameCover'));
+  if Picture.Tag <> 0 then
+    Exit;
+  Picture.Tag := 1;
+  Paths := nil;
+  for FieldName in ['box', 'image', 'thumbnail', 'ImagePath', 'BoxFrontImagePath'] do
+  begin
+    Node := FLibrary.Games[Item.Tag].Node.ChildNodes.FindNode(FieldName);
+    if (Node = nil) or (Node.Text.Trim = '') then
+      Continue;
+    try
+      Path := FLibrary.MediaPath(Node.Text);
+      if (Path <> '') and not MatchText(Path, Paths) then
+        Paths := Paths + [Path];
+    except
+      // Skip malformed media paths and try the remaining cover fields.
+    end;
+  end;
+  LoadGameCover(Picture, Paths, 0);
+end;
+
+procedure TFormGameLibrary.UpdateVisibleCovers;
+var
+  First, Last, I: Integer;
+  Picture: TImage;
+begin
+  if FLoading or (FLibrary = nil) or (GameList.Count = 0) then
+    Exit;
+  // All rows have the same height. Include one neighboring row on either side.
+  First := Max(0, Floor(GameList.ViewportPosition.Y / 86) - 1);
+  Last := Min(GameList.Count - 1,
+    Ceil((GameList.ViewportPosition.Y + GameList.Height) / 86));
+  for I := FFirstCover to FLastCover do
+    if (I < GameList.Count) and ((I < First) or (I > Last)) then
+    begin
+      Picture := TImage(GameList.ListItems[I].FindComponent('GameCover'));
+      if Picture.Tag = 1 then
+      begin
+        Picture.Bitmap.RemoveCallback(Picture);
+        Picture.Tag := 0;
+      end;
+    end;
+  FFirstCover := First;
+  FLastCover := Last;
+  for I := First to Last do
+    RequestGameCover(GameList.ListItems[I]);
+end;
+
+procedure TFormGameLibrary.GameListViewportChanged(Sender: TObject;
+  const OldViewportPosition, NewViewportPosition: TPointF; const ContentSizeChanged: Boolean);
+begin
+  UpdateVisibleCovers;
+end;
+
+procedure TFormGameLibrary.GameListResized(Sender: TObject);
+begin
+  UpdateVisibleCovers;
 end;
 
 procedure TFormGameLibrary.LoadGameCover(Picture: TImage; const Paths: TArray<string>; Index: Integer);
 begin
   if Index >= Length(Paths) then
+  begin
+    Picture.Tag := 2;
     Exit;
+  end;
   // Picture owns the request lifetime, including when search rebuilds the list.
   Picture.Bitmap.LoadFromFileAsync(Picture, Paths[Index], 48, 70,
     procedure(Success: Boolean)
     begin
       if Success then
-        Picture.Visible := True
+      begin
+        Picture.Tag := 2;
+        Picture.Visible := True;
+      end
       else
         LoadGameCover(Picture, Paths, Index + 1);
     end);
@@ -314,6 +364,7 @@ end;
 procedure TFormGameLibrary.GameChanged(Sender: TObject);
 var
   Index: Integer;
+  Item: TListBoxItem;
 begin
   if FLoading or (GameList.Selected = nil) then
     Exit;
@@ -322,26 +373,16 @@ begin
     Exit;
   if not ResolveUnsaved then
   begin
-    BuildGames;
+    FLoading := True;
+    try
+      if FGameItems.TryGetValue(FSelected, Item) then
+        GameList.ItemIndex := Item.Index;
+    finally
+      FLoading := False;
+    end;
     Exit
   end;
   LoadGame(Index);
-end;
-
-function TGameFieldEditor.GetText: string;
-begin
-  if ValueMemo.Visible then
-    Result := ValueMemo.Text
-  else
-    Result := ValueEdit.Text;
-end;
-
-procedure TGameFieldEditor.SetText(const Value: string);
-begin
-  if ValueMemo.Visible then
-    ValueMemo.Text := Value
-  else
-    ValueEdit.Text := Value;
 end;
 
 function TFormGameLibrary.FieldEditor(const FieldName: string): TGameFieldEditor;
@@ -357,93 +398,6 @@ end;
 function TFormGameLibrary.FieldCount: Integer;
 begin
   Result := FEditors.Count
-end;
-
-function TemplatePart(Root: TFmxObject; const PartName: string): TFmxObject;
-var
-  Child, Found: TFmxObject;
-begin
-  if Root.StyleName = PartName then
-    Exit(Root);
-  if Root.Children <> nil then
-    for Child in Root.Children do
-    begin
-      Found := TemplatePart(Child, PartName);
-      if Found <> nil then
-        Exit(Found);
-    end;
-  Result := nil;
-end;
-
-procedure TGameFieldEditor.BindControls;
-begin
-  HeaderLayout := TLayout(TemplatePart(Self, 'fieldheader'));
-  ValueColumn := TLayout(TemplatePart(Self, 'fieldvaluecolumn'));
-  InputFrame := TLayout(TemplatePart(Self, 'fieldinputframe'));
-  EditorArea := TLayout(TemplatePart(Self, 'fieldeditorarea'));
-  InputControlFrame := TLayout(TemplatePart(Self, 'fieldinputcontrols'));
-  ErrorFrame := TRectangle(TemplatePart(Self, 'fielderrorframe'));
-  CaptionLabel := TLabel(TemplatePart(Self, 'fieldcaption'));
-  ErrorLabel := TLabel(TemplatePart(Self, 'fielderror'));
-  InfoButton := TButton(TemplatePart(Self, 'fieldinfo'));
-  InfoIcon := FMX.Objects.TPath(TemplatePart(Self, 'fieldinfoicon'));
-  HelpMemo := TMemo(TemplatePart(Self, 'fieldhelp'));
-  ValueEdit := TEdit(TemplatePart(Self, 'fieldedit'));
-  ValueMemo := TMemo(TemplatePart(Self, 'fieldmemo'));
-  MediaImage := TImage(TemplatePart(Self, 'fieldmediaimage'));
-  MediaCommands := TLayout(TemplatePart(Self, 'fieldmediacommands'));
-  ReplaceMediaButton := TButton(TemplatePart(Self, 'fieldreplace'));
-  ClearMediaButton := TButton(TemplatePart(Self, 'fieldclear'));
-  MediaNote := TLabel(TemplatePart(Self, 'fieldmedianote'));
-  if (HeaderLayout = nil) or (ValueColumn = nil) or (InputFrame = nil) or
-    (EditorArea = nil) or (InputControlFrame = nil) or (ErrorFrame = nil) or
-    (CaptionLabel = nil) or (ErrorLabel = nil) or
-    (InfoButton = nil) or (InfoIcon = nil) or (HelpMemo = nil) or
-    (ValueEdit = nil) or (ValueMemo = nil) or (MediaImage = nil) or
-    (MediaCommands = nil) or (ReplaceMediaButton = nil) or
-    (ClearMediaButton = nil) or (MediaNote = nil) then
-    raise Exception.Create('The game field FMX template is incomplete');
-end;
-
-function FieldOrder(Field: TLibraryField): Integer;
-begin
-  Result := 100;
-  if MatchText(Field.Caption, ['name', 'Title', '@name']) then
-    Exit(0);
-  if MatchText(Field.Caption, ['desc', 'Notes', 'description']) then
-    Exit(1);
-  if MatchText(Field.Caption, ['rating', 'StarRatingFloat']) then
-    Exit(2);
-  if MatchText(Field.Caption, ['releasedate', 'ReleaseDate']) then
-    Exit(3);
-  if SameText(Field.Caption, 'players') then
-    Exit(4);
-  if SameText(Field.Caption, 'box') then
-    Exit(5);
-  if MatchText(Field.Caption, ['image', 'ImagePath', 'BoxFrontImagePath']) then
-    Exit(6);
-  if Field.IsMedia then
-    Exit(10);
-  if SameText(Field.Caption, 'developer') then
-    Exit(20);
-  if SameText(Field.Caption, 'publisher') then
-    Exit(21);
-  if SameText(Field.Caption, 'genre') then
-    Exit(22);
-  if SameText(Field.Caption, 'region') then
-    Exit(23);
-  if SameText(Field.Caption, 'classification') then
-    Exit(24);
-  if SameText(Field.Caption, 'favorite') then
-    Exit(25);
-  if MatchText(Field.Caption, ['hidden', 'Hide']) then
-    Exit(26);
-  if Field.Rule(1) = lrRomPath then
-    Exit(30);
-  if MatchText(Field.Caption, ['hash', 'crc', 'md5', 'sha1']) then
-    Exit(40);
-  if Field.Caption.StartsWith('@') then
-    Exit(90);
 end;
 
 procedure TFormGameLibrary.BuildFields;
@@ -469,8 +423,7 @@ begin
     for I := 0 to FFields.Count - 1 do
     begin
       F := FFields[I];
-      Editor := TGameFieldEditor(FieldRowTemplate.Clone(FieldsContent));
-      Editor.BindControls;
+      Editor := TGameFieldEditor.CreateFromTemplate(FieldsContent, FieldRowTemplate);
       Editor.Parent := FieldsContent;
       Editor.Align := TAlignLayout.Top;
       Editor.Visible := True;
@@ -486,8 +439,9 @@ begin
         Editor.InfoButton.Tag := I;
         Editor.InfoButton.Hint := L('Формат и допустимые значения');
         Editor.InfoButton.OnClick := InfoClick;
-        Editor.HelpMemo.Text := Editor.HelpText;
-        Editor.HelpMemo.Visible := False;
+        Editor.HelpLabel.Text := Editor.HelpText;
+        Editor.HelpLabel.Visible := False;
+        Editor.HelpLabel.OnResize := HelpLabelResize;
         Editor.ValueMemo.Visible := MatchText(F.Node.NodeName, ['desc', 'Notes', 'description']) or
           F.Value.Contains(#10) or F.Value.Contains(#13);
         Editor.ValueEdit.Visible := not Editor.ValueMemo.Visible;
@@ -506,8 +460,8 @@ begin
           Editor.ClearMediaButton.Text := L('Очистить');
           Editor.ReplaceMediaButton.Tag := I;
           Editor.ClearMediaButton.Tag := I;
-          Editor.ReplaceMediaButton.OnClick := MediaClick;
-          Editor.ClearMediaButton.OnClick := MediaClick;
+          Editor.ReplaceMediaButton.OnClick := ReplaceMediaClick;
+          Editor.ClearMediaButton.OnClick := ClearMediaClick;
           UpdateMedia(Editor);
         end;
       finally
@@ -528,27 +482,41 @@ var
   Editor: TGameFieldEditor;
   H, Total: Single;
 begin
-  Total := 0;
-  for Editor in FEditors do
-  begin
-    if Editor.ValueMemo.Visible then
-      H := Editor.ValueMemo.Height
-    else
-      H := Editor.ValueEdit.Height;
-    Editor.InputControlFrame.Height := H;
-    if Editor.ErrorLabel.Visible then
-      H := H + Editor.ErrorLabel.Height;
-    if Editor.HelpMemo.Visible then
-      H := Max(H, 128);
-    Editor.InputFrame.Height := H;
-    if Editor.MediaCommands.Visible then
-      H := H + Editor.MediaCommands.Height + Editor.MediaNote.Height;
-    if Editor.MediaImage.Visible then
-      H := Max(H, 140);
-    Editor.Height := H;
-    Total := Total + H + Editor.Margins.Top + Editor.Margins.Bottom;
+  if FUpdatingFieldsHeight or (FEditors = nil) then
+    Exit;
+  FUpdatingFieldsHeight := True;
+  try
+    Total := 0;
+    for Editor in FEditors do
+    begin
+      if Editor.ValueMemo.Visible then
+        H := Editor.ValueMemo.Height
+      else
+        H := Editor.ValueEdit.Height;
+      Editor.InputControlFrame.Height := H;
+      if Editor.ErrorLabel.Visible then
+        H := H + Editor.ErrorLabel.Height;
+      if Editor.HelpLabel.Visible then
+        H := H + Editor.HelpLabel.Height + Editor.HelpLabel.Margins.Top +
+          Editor.HelpLabel.Margins.Bottom;
+      Editor.InputFrame.Height := H;
+      if Editor.MediaCommands.Visible then
+        H := H + Editor.MediaCommands.Height + Editor.MediaNote.Height;
+      if Editor.MediaImage.Visible then
+        H := Max(H, 140);
+      Editor.Height := H;
+      Total := Total + H + Editor.Margins.Top + Editor.Margins.Bottom;
+    end;
+    FieldsContent.Height := Total;
+  finally
+    FUpdatingFieldsHeight := False;
   end;
-  FieldsContent.Height := Total;
+end;
+
+procedure TFormGameLibrary.HelpLabelResize(Sender: TObject);
+begin
+  if not FLoading then
+    UpdateFieldsHeight;
 end;
 
 procedure TFormGameLibrary.ValueChanged(Sender: TObject);
@@ -596,12 +564,16 @@ begin
   BuildFields;
 end;
 
-procedure TFormGameLibrary.EditorTabClick(Sender: TObject);
+procedure TFormGameLibrary.FieldsTabClick(Sender: TObject);
 begin
-  if Sender = FieldsTabButton then
-    EditorTabs.ActiveTab := FieldsTab
-  else
-    EditorTabs.ActiveTab := XMLTab;
+  EditorTabs.ActiveTab := FieldsTab;
+  FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
+  XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
+end;
+
+procedure TFormGameLibrary.XMLTabClick(Sender: TObject);
+begin
+  EditorTabs.ActiveTab := XMLTab;
   FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
   XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
 end;
@@ -685,11 +657,20 @@ end;
 
 procedure TFormGameLibrary.UpdateButtons;
 var
-  HasGame: Boolean;
+  HasGame, Scraping: Boolean;
   Errors: Integer;
   Editor: TGameFieldEditor;
 begin
-  HasGame := FSelected >= 0;
+  Scraping := FScrapeWorker <> nil;
+  CloseButton.Enabled := True;
+  HasGame := (FSelected >= 0) and not Scraping;
+  GamesPanel.Enabled := not Scraping;
+  ScrapeProgressLayout.Visible := Scraping;
+  ScrapeActivity.Enabled := Scraping;
+  if Scraping then
+    CloseButton.Text := L('Отменить')
+  else
+    CloseButton.Text := L('Закрыть');
   Errors := 0;
   if not FXMLDirty then
     for Editor in FEditors do
@@ -701,7 +682,7 @@ begin
   FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
   XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
   SaveButton.Enabled := HasGame and FDirty and (Errors = 0);
-  ScrapeButton.Enabled := HasGame;
+  ScrapeButton.Enabled := HasGame and Assigned(FOnCreateScrapeWorker);
   StatusLabel.StyledSettings := StatusLabel.StyledSettings - [TStyledSetting.FontColor];
   if Errors > 0 then
   begin
@@ -716,7 +697,7 @@ begin
   end;
 end;
 
-procedure TFormGameLibrary.MediaClick(Sender: TObject);
+procedure TFormGameLibrary.ReplaceMediaClick(Sender: TObject);
 var
   I: Integer;
   Editor: TGameFieldEditor;
@@ -725,20 +706,29 @@ begin
   if (I < 0) or (I >= FEditors.Count) then
     Exit;
   Editor := FEditors[I];
-  if Sender = Editor.ClearMediaButton then
-    Editor.Text := ''
-  else
-  begin
-    MediaDialog.Filter := L('Все файлы') + '|*.*';
-    if not MediaDialog.Execute then
-      Exit;
-    try
-      Editor.Text := FLibrary.MediaReference(MediaDialog.FileName)
-    except
-      on E: Exception do
-        ReportError(E)
-    end;
+  MediaDialog.Filter := L('Все файлы') + '|*.*';
+  if not MediaDialog.Execute then
+    Exit;
+  try
+    Editor.Text := FLibrary.MediaReference(MediaDialog.FileName)
+  except
+    on E: Exception do
+      ReportError(E)
   end;
+  UpdateMedia(Editor);
+  UpdateFieldsHeight;
+end;
+
+procedure TFormGameLibrary.ClearMediaClick(Sender: TObject);
+var
+  I: Integer;
+  Editor: TGameFieldEditor;
+begin
+  I := TControl(Sender).Tag;
+  if (I < 0) or (I >= FEditors.Count) then
+    Exit;
+  Editor := FEditors[I];
+  Editor.Text := '';
   UpdateMedia(Editor);
   UpdateFieldsHeight;
 end;
@@ -752,10 +742,10 @@ begin
   if (I < 0) or (I >= FEditors.Count) then
     Exit;
   Editor := FEditors[I];
-  if Editor.HelpMemo = nil then
+  if Editor.HelpLabel = nil then
     Exit;
-  Editor.HelpMemo.Visible := not Editor.HelpMemo.Visible;
-  Editor.InfoButton.IsPressed := Editor.HelpMemo.Visible;
+  Editor.HelpLabel.Visible := not Editor.HelpLabel.Visible;
+  Editor.InfoButton.IsPressed := Editor.HelpLabel.Visible;
   UpdateFieldsHeight;
 end;
 
@@ -817,7 +807,8 @@ begin
     Exit;
   FLibrary.Save(FSelected, FDraft);
   FDirty := False;
-  BuildGames;
+  UpdateGameCard(FSelected);
+  GameTitleLabel.Text := FLibrary.Title(FSelected);
   UpdateButtons;
   StatusLabel.Text := L('Игра сохранена. Резервная копия создана рядом с библиотекой.');
 end;
@@ -857,7 +848,8 @@ end;
 
 procedure TFormGameLibrary.ScrapeClick(Sender: TObject);
 begin
-  if (FSelected < 0) or not ResolveUnsaved then
+  if (FScrapeWorker <> nil) or (FSelected < 0) or
+    not Assigned(FOnCreateScrapeWorker) or not ResolveUnsaved then
     Exit;
   FRequestedRom := FLibrary.Games[FSelected].RomPath;
   if not (TFile.Exists(FRequestedRom) or TDirectory.Exists(FRequestedRom)) then
@@ -866,8 +858,74 @@ begin
     StatusLabel.Text := L('ROM выбранной игры не найден');
     Exit;
   end;
-  FDirty := False;
-  ModalResult := mrOK;
+  try
+    FScrapeWorker := FOnCreateScrapeWorker(FRequestedRom);
+    if FScrapeWorker = nil then
+      Exit;
+    ScrapeProgress.Value := 0;
+    UpdateButtons;
+    StatusLabel.Text := StageText('Starting');
+    FScrapeWorker.Start;
+    ScrapeTimer.Enabled := True;
+  except
+    on E: Exception do
+    begin
+      FreeAndNil(FScrapeWorker);
+      UpdateButtons;
+      ReportError(E);
+    end;
+  end;
+end;
+
+procedure TFormGameLibrary.ReloadScrapedGame;
+begin
+  FLibrary.ReloadGame(FSelected);
+  LoadGame(FSelected);
+  UpdateGameCard(FSelected);
+end;
+
+procedure TFormGameLibrary.ScrapeTimerTimer(Sender: TObject);
+var
+  Status: TScrapeStatus;
+  Lines: TStringList;
+begin
+  if FScrapeWorker = nil then
+    Exit;
+  Lines := TStringList.Create;
+  try
+    FScrapeWorker.Snapshot(Status, Lines);
+  finally
+    Lines.Free;
+  end;
+  ScrapeProgress.Max := Max(1, Status.MediaTotal);
+  ScrapeProgress.Value := Status.CurrentMedia;
+  StatusLabel.Text := StageText(Status.Stage);
+  if Status.MediaTotal > 0 then
+    StatusLabel.Text := StatusLabel.Text + Format(' · %d / %d',
+      [Status.CurrentMedia, Status.MediaTotal]);
+  // Finished is checked on the thread as well: status can precede thread cleanup.
+  if not FScrapeWorker.Finished then
+    Exit;
+  ScrapeTimer.Enabled := False;
+  FreeAndNil(FScrapeWorker);
+  try
+    ReloadScrapedGame;
+    UpdateButtons;
+    if Status.LastError <> '' then
+      StatusLabel.Text := Status.LastError
+    else if Status.Cancelled or (Status.Errors > 0) then
+      StatusLabel.Text := StageText(Status.Stage)
+    else if Status.Found = 0 then
+      StatusLabel.Text := L('Игра не найдена')
+    else
+      StatusLabel.Text := StageText('Completed');
+  except
+    on E: Exception do
+    begin
+      UpdateButtons;
+      ReportError(E);
+    end;
+  end;
 end;
 
 procedure TFormGameLibrary.ReportError(E: Exception);
@@ -878,16 +936,20 @@ end;
 
 procedure TFormGameLibrary.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  CanClose := ResolveUnsaved
+  CanClose := FScrapeWorker = nil;
+  if CanClose then
+    CanClose := ResolveUnsaved
+  else
+  begin
+    FScrapeWorker.Terminate;
+    CloseButton.Enabled := False;
+  end;
 end;
 
 procedure TFormGameLibrary.CloseClick(Sender: TObject);
 begin
   Close
 end;
-
-initialization
-  RegisterFmxClasses([TGameFieldEditor]);
 
 end.
 

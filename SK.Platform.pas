@@ -44,6 +44,8 @@ function ResourceBase: string;
 
 function WritableBase: string;
 
+function SystemCulture: string;
+
 implementation
 
 uses
@@ -54,10 +56,48 @@ uses
   Posix.Base, Posix.SysTypes, Posix.Unistd, Posix.SysWait, Posix.Signal,
   Posix.Stdio, Posix.Errno, Posix.Dlfcn, Posix.SysStat,
   {$IFDEF MACOS}
-  Macapi.Security,
+  Macapi.Security, Macapi.CoreFoundation,
   {$ENDIF}
   {$ENDIF}
   System.Hash;
+
+function SystemCulture: string;
+{$IFDEF MSWINDOWS}
+var
+  Buffer: array[0..LOCALE_NAME_MAX_LENGTH - 1] of Char;
+{$ELSEIF Defined(MACOS)}
+var
+  Locale: CFLocaleRef;
+  Identifier: CFStringRef;
+  Buffer: array[0..255] of UTF8Char;
+{$ENDIF}
+begin
+  Result := '';
+  {$IFDEF MSWINDOWS}
+  if GetUserDefaultLocaleName(Buffer, Length(Buffer)) > 0 then
+    Result := PChar(@Buffer[0]);
+  {$ELSEIF Defined(MACOS)}
+  Locale := CFLocaleCopyCurrent;
+  if Locale <> nil then
+  try
+    Identifier := CFLocaleGetIdentifier(Locale);
+    if (Identifier <> nil) and CFStringGetCString(Identifier, @Buffer[0],
+      SizeOf(Buffer), kCFStringEncodingUTF8) then
+      Result := UTF8ToString(PUTF8Char(@Buffer[0]));
+  finally
+    CFRelease(Locale);
+  end;
+  {$ELSE}
+  Result := GetEnvironmentVariable('LC_ALL');
+  if Result = '' then
+    Result := GetEnvironmentVariable('LC_MESSAGES');
+  if Result = '' then
+    Result := GetEnvironmentVariable('LANG');
+  {$ENDIF}
+  if (Result = '') or SameText(Result.Split(['.', '@'])[0], 'C') or
+    SameText(Result, 'POSIX') then
+    Result := 'en-US';
+end;
 
 function NativePath(const Value: string): string;
 begin
@@ -195,7 +235,9 @@ begin
     FindCmdLineSwitch('wizardconcepttest') or
     FindCmdLineSwitch('directorytest') or FindCmdLineSwitch('librarytest') then
   begin
-    TestBase := GetEnvironmentVariable('SKRAPERFMX_TEST_DATA');
+    TestBase := GetEnvironmentVariable('RETROSCRAPER_TEST_DATA');
+    if TestBase = '' then
+      TestBase := GetEnvironmentVariable('SKRAPERFMX_TEST_DATA');
     if TestBase <> '' then
     begin
       TestBase := TPath.GetFullPath(TestBase);

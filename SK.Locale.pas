@@ -26,7 +26,7 @@ implementation
 uses
   System.JSON, System.Math, System.IOUtils, System.TypInfo,
   System.Generics.Collections, FMX.Controls, FMX.StdCtrls, FMX.Edit, FMX.ListBox,
-  FMX.TabControl, SK.Platform, SK.Core;
+  FMX.TabControl, SK.Platform, SK.Json;
 
 type
   TLocaleBindings = class(TComponent)

@@ -5,45 +5,15 @@ interface
 uses
   System.SysUtils, System.Classes, System.JSON, System.IOUtils, System.Hash,
   System.Generics.Collections, System.SyncObjs, System.Zip, System.StrUtils,
-  Xml.XMLDoc, Xml.XMLIntf, SK.Platform, SK.Core;
+  SK.Scrape.Types, Xml.XMLDoc, Xml.XMLIntf, SK.Platform, SK.Json,
+  SK.ScreenScraper, SK.Storage;
 
 type
-  TEngineStatus = record
-    Stage, FileName, SystemName: string;
-    CurrentMedia, MediaTotal: Integer;
-    Running: Boolean;
-  end;
+  TEngineStatus = SK.Scrape.Types.TEngineStatus;
 
-  TInputQueue = class
-  private
-    FNext: Integer;
-    FStopped: Integer;
-    FStopReason: string;
-    function GetStopped: Boolean;
-    function GetStopReason: string;
-  public
-    Files: TArray<string>;
-    constructor Create(const InputFiles: TArray<string>);
-    function Pop(out FileName: string): Boolean;
-    procedure Stop(const Reason: string);
-    property Stopped: Boolean read GetStopped;
-    property StopReason: string read GetStopReason;
-  end;
+  TInputQueue = SK.Scrape.Types.TInputQueue;
 
-  TScrapeStatus = record
-    Running, Finished, Cancelled: Boolean;
-    Total, Completed, Found, Missing, Errors, Downloaded, Saved, Requests, Cached, Favorites, Hidden: Integer;
-    SystemsTotal, SystemsCompleted: Integer;
-    CurrentSystem, CurrentSystemID, CurrentFile, LastError, Stage: string;
-    CurrentTotal, CurrentCompleted, CurrentMedia, MediaTotal, MediaFound, MediaRequested: Integer;
-    PreviewData: array[0..2] of TBytes;
-    PreviewRevision: array[0..2] of Int64;
-    PreviewSource: array[0..2] of string;
-    QuotaText: string;
-    QuotaUpdated: TDateTime;
-    Started, FinishedAt: TDateTime;
-    Engines: TArray<TEngineStatus>;
-  end;
+  TScrapeStatus = SK.Scrape.Types.TScrapeStatus;
 
   TScrapeWorker = class(TThread)
   private
@@ -99,55 +69,10 @@ procedure HashStream(Stream: TStream; out CRC, MD5, SHA1: string; Cancel: TFunc<
 implementation
 
 uses
-  SK.Consts, SK.Input, System.RegularExpressions, System.Math,
+  SK.Xml, SK.Consts, SK.Input, System.RegularExpressions, System.Math,
   System.Generics.Defaults, System.DateUtils, System.Types, System.Variants,
-  SK.Mix, SK.Data, SK.Frontend, SK.Cache, SK.Catalog, SK.Locale;
-
-constructor TInputQueue.Create(const InputFiles: TArray<string>);
-begin
-  inherited Create;
-  Files := InputFiles;
-  FNext := -1
-end;
-
-function TInputQueue.Pop(out FileName: string): Boolean;
-var
-  i: Integer;
-begin
-  i := TInterlocked.Increment(FNext);
-  Result := not Stopped and (i < Length(Files));
-  if Result then
-    FileName := Files[i]
-end;
-
-function TInputQueue.GetStopped: Boolean;
-begin
-  Result := TInterlocked.CompareExchange(FStopped, 0, 0) <> 0;
-end;
-
-function TInputQueue.GetStopReason: string;
-begin
-  TMonitor.Enter(Self);
-  try
-    Result := FStopReason;
-  finally
-    TMonitor.Exit(Self);
-  end;
-end;
-
-procedure TInputQueue.Stop(const Reason: string);
-begin
-  TMonitor.Enter(Self);
-  try
-    if not Stopped then
-    begin
-      FStopReason := Reason;
-      TInterlocked.Exchange(FStopped, 1);
-    end;
-  finally
-    TMonitor.Exit(Self);
-  end;
-end;
+  SK.Mix, SK.GameList, SK.Metadata, SK.Output, SK.Frontend, SK.Cache, SK.Catalog,
+  SK.Locale, FMX.Graphics;
 
 procedure TScrapeWorker.CaptureQuota(User: TJSONObject);
 begin
@@ -362,12 +287,30 @@ end;
 procedure TScrapeWorker.PublishImage(const FileName: string);
 var
   Data: TBytes;
+  Preview: TBitmap;
+  Stream: TMemoryStream;
 begin
   if not MatchText(TPath.GetExtension(FileName), PreviewImageExtensions) then
     Exit;
-  // Immutable byte snapshots keep a preview valid even if an optimized output is overwritten.
+  // Decode and shrink on the worker. The UI only receives a small immutable PNG.
   try
-    Data := TFile.ReadAllBytes(FileName);
+    Preview := TBitmap.Create;
+    try
+      Preview.LoadThumbnailFromFile(FileName, MixPreviewWidth, MixPreviewHeight, False);
+      if Preview.IsEmpty then
+        Exit;
+      Stream := TMemoryStream.Create;
+      try
+        Preview.SaveToStream(Stream);
+        SetLength(Data, Stream.Size);
+        Stream.Position := 0;
+        Stream.ReadBuffer(Data, Length(Data));
+      finally
+        Stream.Free;
+      end;
+    finally
+      Preview.Free;
+    end;
   except
     Exit
   end;
@@ -395,45 +338,9 @@ begin
   end;
 end;
 
-function Joined(Obj: TJSONValue; const Path, Fallback: string): string;
-var
-  V, i: TJSONValue;
-begin
-  Result := '';
-  V := JValue(Obj, Path);
-  if V is TJSONArray then
-    for i in TJSONArray(V) do
-    begin
-      if Result <> '' then
-        Result := Result + ',';
-      Result := Result + i.Value;
-    end;
-  if Result = '' then
-    Result := Fallback;
-end;
-
 procedure Put(Node: IXMLNode; const Name, Value: string);
-var
-  N: IXMLNode;
 begin
-  if Value = '' then
-    Exit;
-  N := Node.ChildNodes.FindNode(Name);
-  if N = nil then
-    N := Node.AddChild(Name);
-  N.Text := Value;
-end;
-
-function Transform(const S: string; Mode: Integer): string;
-begin
-  case Mode of
-    1:
-      Result := S.ToUpper;
-    2:
-      Result := S.ToLower;
-  else
-    Result := S;
-  end;
+  SetXmlChildText(Node, Name, Value, True);
 end;
 
 function TScrapeWorker.FetchMedia(Game: TJSONObject; Sys: TJSONObject; const RomFile: string; Node: IXMLNode): Integer;
@@ -644,7 +551,7 @@ var
         CacheLock := SharedResourceLock('source|' + PathKey(Persistent));
         LockResource(CacheLock);
         try
-          ForceDirectories(ExtractFilePath(Persistent));
+          EnsureDirectory(ExtractFilePath(Persistent));
           if not SamePath(Existing, Persistent) then
             if not UsableFile(Persistent) or not SameText(FileDigest(Persistent), FileDigest(Existing)) then
               CopySource(Existing, Persistent);
@@ -694,7 +601,7 @@ var
         CacheLock := SharedResourceLock('source|' + PathKey(Persistent));
         LockResource(CacheLock);
         try
-          ForceDirectories(ExtractFilePath(Persistent));
+          EnsureDirectory(ExtractFilePath(Persistent));
           if not UsableFile(Persistent) or not SameText(FileDigest(Persistent), FileDigest(FileName)) then
             CopySource(FileName, Persistent);
           FileName := Persistent;
@@ -792,7 +699,7 @@ var
     end
     else
       FinalName := TPlatformPath.Combine(Folder, RelativeName + Extension);
-    ForceDirectories(ExtractFilePath(FinalName));
+    EnsureDirectory(ExtractFilePath(FinalName));
     Lock := SharedResourceLock('publish|' + PathKey(FinalName));
     LockResource(Lock);
     try
@@ -897,7 +804,7 @@ begin
       Link := MediaNode(TJSONArray(Configs), MediaIndex);
       Folder := JStr(C, 'OutputFolder', NativePath('%ROMROOTFOLDER%\media\images'));
       Folder := ResolveOutput(Folder, JStr(Sys, 'GamesAndRoms.Path'), RomFile);
-      ForceDirectories(Folder);
+      EnsureDirectory(Folder);
       if JBool(C, 'EmptyOutputFolder') then
         FCleanupRoots.AddOrSetValue(IncludeTrailingPathDelimiter(PathKey(Folder)), True);
       OutputName := ChangeFileExt(ExtractRelativePath(IncludeTrailingPathDelimiter(JStr(Sys, 'GamesAndRoms.Path')), RomFile), '');
@@ -1069,20 +976,16 @@ begin
             Dest := TPlatformPath.Combine(Folder, BaseName + MixExtension(Template));
             W := 0;
             H := 0;
-            Synchronize(
-              procedure
-              begin
-                SetStage('Composing mix');
-                RenderMix(Template, Sources, Dest, W, H);
-                if JBool(C, 'ResizeWidth') or JBool(C, 'ResizeHeight') then
-                begin
-                  if JBool(C, 'ResizeWidth') then
-                    W := JInt(C, 'ResizeWidthValue', DefaultMediaWidth);
-                  if JBool(C, 'ResizeHeight') then
-                    H := JInt(C, 'ResizeHeightValue', DefaultMediaHeight);
-                  ResizeImage(Dest, Dest, W, H, JBool(C, 'KeepRatio', True));
-                end;
-              end);
+            SetStage('Composing mix');
+            RenderMix(Template, Sources, Dest, W, H);
+            if JBool(C, 'ResizeWidth') or JBool(C, 'ResizeHeight') then
+            begin
+              if JBool(C, 'ResizeWidth') then
+                W := JInt(C, 'ResizeWidthValue', DefaultMediaWidth);
+              if JBool(C, 'ResizeHeight') then
+                H := JInt(C, 'ResizeHeightValue', DefaultMediaHeight);
+              ResizeImage(Dest, Dest, W, H, JBool(C, 'KeepRatio', True));
+            end;
           finally
             Sources.Free;
           end;
@@ -1103,11 +1006,7 @@ begin
               W := JInt(C, 'ResizeWidthValue', DefaultMediaWidth);
             if JBool(C, 'ResizeHeight') then
               H := JInt(C, 'ResizeHeightValue', DefaultMediaHeight);
-            Synchronize(
-              procedure
-              begin
-                ResizeImage(URL, Dest, W, H, JBool(C, 'KeepRatio', True));
-              end);
+            ResizeImage(URL, Dest, W, H, JBool(C, 'KeepRatio', True));
           end
           else
             TFile.Copy(URL, Dest, True);
@@ -1625,15 +1524,11 @@ begin
         end);
       if Terminated then
         raise EAbort.Create('Cancelled');
-      Synchronize(TThreadProcedure(
-        procedure
+      FolderFiles := Writer.PrepareFolders(
+        function: Boolean
         begin
-          FolderFiles := Writer.PrepareFolders(
-            function: Boolean
-            begin
-              Result := Terminated
-            end)
-        end));
+          Result := Terminated
+        end);
       for Path in FolderFiles do
         FProduced.AddOrSetValue(PathKey(Path), True);
       Writer.Save(
@@ -1891,7 +1786,7 @@ begin
           if JBool(Sys, 'Miscellaneous.SaveLogs') then
           begin
             try
-              ForceDirectories(FBase + 'Logs');
+              EnsureDirectory(FBase + 'Logs');
               FLogFile := TPlatformPath.Combine(FBase, NativePath('Logs\') + FormatDateTime('yyyymmdd-hhnnss', Now) + '-' + JStr(Sys, 'SystemId') + '.log');
               Log('Scraping log started.');
             except

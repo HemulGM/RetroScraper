@@ -15,7 +15,7 @@ implementation
 
 uses
   System.Classes, System.IOUtils, System.Hash, System.Generics.Collections,
-  SK.Core, SK.Platform, SK.Catalog;
+  SK.Json, SK.Storage, SK.Platform, SK.Catalog;
 
 function OwnerFolder(const Base: string): string;
 begin

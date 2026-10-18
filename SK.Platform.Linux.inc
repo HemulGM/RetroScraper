@@ -29,11 +29,11 @@ begin
     Error:=nil;
     try
       Key:=UTF8String(THashSHA2.GetHashString(Identity)); Secret:=UTF8String(Value);
-      Insert(Attributes,MarshaledAString('application'),MarshaledAString('org.skraperfmx.Credentials'));
+      Insert(Attributes,MarshaledAString('application'),MarshaledAString(CredentialServiceID));
       Insert(Attributes,MarshaledAString('account'),MarshaledAString(Key));
       // Use non-variadic APIs: their ABI is identical across Delphi/C compilers.
       if WriteAccess then begin
-        if StorePassword(nil,Attributes,nil,'SkraperFMX ScreenScraper',MarshaledAString(Secret),nil,Error)=0 then
+        if StorePassword(nil,Attributes,nil,AppBrand + ' ScreenScraper',MarshaledAString(Secret),nil,Error)=0 then
           raise Exception.Create('Cannot save credentials: unlock the desktop keyring');
       end else begin
         Password:=Lookup(nil,Attributes,nil,Error);

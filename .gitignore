@@ -21,6 +21,8 @@
 *.~*
 /skraper.config.json
 /skraper.config.json.bak
+/retroscraper.config.json
+/retroscraper.config.json.bak
 *.local
 /build-platforms.cmd
 /build.cmd
@@ -28,3 +30,5 @@
 /CROSS_PLATFORM.txt
 /Mixes/Skraper(Beta7)-UserMix(EN).pdf
 /Mixes/Skraper(Beta7)-UserMix(FR).pdf
+/SK.ScreenScraper.Application.inc
+/archive-tests/*

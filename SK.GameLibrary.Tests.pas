@@ -12,11 +12,11 @@ procedure RunGameLibrarySelfTests;
 implementation
 
 uses
-  System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types,
-  System.UITypes, System.Generics.Collections, System.Zip, Xml.XMLDoc,
-  Xml.XMLIntf, FMX.Forms, FMX.Graphics, FMX.Types, FMX.BehaviorManager, SK.Core,
+  System.SysUtils, System.IOUtils, System.JSON, System.Hash, System.Types, System.Math,
+  System.UITypes, System.Generics.Collections, System.Zip, System.StrUtils, Xml.XMLDoc,
+  Xml.XMLIntf, FMX.Forms, FMX.Graphics, FMX.Types, FMX.BehaviorManager, SK.Json,
   SK.Platform, SK.GameLibrary, SK.GameLibrary.Form, SK.Engine, SK.Main,
-  HGM.FMX.Image, FMX.Objects;
+  HGM.FMX.Image, FMX.Objects, FMX.ListBox, FMX.StdCtrls;
 
 procedure RunGameLibraryTests(Report: TStrings);
 var
@@ -30,7 +30,10 @@ var
   Worker: TScrapeWorker;
   Status: TScrapeStatus;
   Lines: TStringList;
-  Window: TFormGameLibrary;
+  Window, LazyWindow: TFormGameLibrary;
+  SelectedCard, OtherCard: TListBoxItem;
+  LazyConfig: TJSONObject;
+  ScrollBefore: TPointF;
   Main: TFormMain;
   Bitmap: TBitmap;
   Zip: TZipFile;
@@ -428,10 +431,10 @@ begin
         (Window.FieldEditor('rating').InfoIcon.Data.Count > 0), 'Constrained fields receive a Fluent information button');
       Check(not Window.FieldEditor('desc').InfoButton.Visible, 'Free-form description does not get irrelevant restrictions');
       Window.InfoClick(Window.FieldEditor('rating').InfoButton);
-      Check(Window.FieldEditor('rating').HelpMemo.Visible and
+      Check(Window.FieldEditor('rating').HelpLabel.Visible and
         Window.FieldEditor('rating').HelpText.Contains('0.85'), 'Information button expands allowed values and an example');
       Window.InfoClick(Window.FieldEditor('rating').InfoButton);
-      Check(not Window.FieldEditor('rating').HelpMemo.Visible, 'Information can be collapsed without changing the game');
+      Check(not Window.FieldEditor('rating').HelpLabel.Visible, 'Information can be collapsed without changing the game');
       Before := TFile.ReadAllText(ListFile);
       Window.FieldEditor('rating').Text := '3';
       Check(Window.FieldEditor('rating').ErrorLabel.Visible and not Window.ValidateDraft,
@@ -447,9 +450,11 @@ begin
       Check(Window.FieldEditor('rating').ValueEdit.AbsoluteRect.Left >
         Window.FieldEditor('rating').CaptionLabel.AbsoluteRect.Right,
         'Concept layout places input next to its label');
-      Check(Window.FieldEditor('rating').HelpMemo.AbsoluteRect.Left >
-        Window.FieldEditor('rating').ValueEdit.AbsoluteRect.Right,
-        'Expanded help appears beside the field input');
+      Check((Window.FieldEditor('rating').HelpLabel.AbsoluteRect.Top >=
+        Window.FieldEditor('rating').ValueEdit.AbsoluteRect.Bottom) and
+        SameValue(Window.FieldEditor('rating').HelpLabel.AbsoluteRect.Left,
+          Window.FieldEditor('rating').ValueEdit.AbsoluteRect.Left, 1),
+        'Expanded help appears below the field input without narrowing it');
       Check(Window.FieldEditor('rating').InfoButton.Height <= 40,
         'Information button remains compact when help is expanded');
       Bitmap := TBitmap.Create(1280, 850);
@@ -503,13 +508,7 @@ begin
       Doc := LoadXMLDocument(ListFile);
       Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['customflag'].Text = 'XML edit', 'Advanced XML edits persist custom game fields');
       Window.EditorTabs.ActiveTab := Window.FieldsTab;
-      Bitmap := TBitmap.Create(96, 64);
-      try
-        Bitmap.Clear($FF60CDFF);
-        Bitmap.SaveToFile(TPlatformPath.Combine(Roms, 'replacement.png'))
-      finally
-        Bitmap.Free
-      end;
+      // replacement.png was created before any asynchronous preview requests.
       Window.FieldEditor('image').Text := './replacement.png';
       Window.ValueChanged(Window.FieldEditor('image').ValueEdit);
       Check(Window.FieldEditor('image').PreviewLoading and Window.FieldEditor('image').MediaImage.Bitmap.IsEmpty,
@@ -589,6 +588,168 @@ begin
       finally
         Bitmap.Free
       end;
+      // Exercise the library button through the same asynchronous worker contract as main.
+      Window.OnCreateScrapeWorker :=
+        function(Rom: string): TScrapeWorker
+        begin
+          Result := TScrapeWorker.Create(Config, Credentials, Base, 0, True, 1, Rom);
+        end;
+      Response := TJSONObject.ParseJSONValue('{"response":{"jeu":{"id":42,"romid":7,"noms":[{"region":"us","text":"Inline Alpha"}],"rom":{"romregions":"us"}}}}') as TJSONObject;
+      try
+        WriteJSON(TPlatformPath.Combine(Base, 'Cache/api/' + THashSHA2.GetHashString('jeuInfos.php?systemeid=1&romtype=jeu&romnom=A') + '.json'), Response);
+      finally
+        Response.Free;
+      end;
+      Doc := LoadXMLDocument(ListFile);
+      Other := Doc.DocumentElement.ChildNodes[1].XML;
+      SelectedCard := Window.GameList.ListItems[0];
+      OtherCard := Window.GameList.ListItems[1];
+      Window.ModalResult := mrNone;
+      Window.ScrapeClick(nil);
+      Check((Window.ModalResult = mrNone) and Window.ScrapeProgressLayout.Visible and
+        Window.ScrapeActivity.Enabled and not Window.ScrapeButton.Enabled and
+        not Window.GamesPanel.Enabled and not Window.EditorTabs.Enabled,
+        'Library scrape stays in the editor and shows progress while preventing concurrent edits');
+      Window.ScrapeClick(nil);
+      WaitUntil(
+        function: Boolean
+        begin
+          Window.ScrapeTimerTimer(nil);
+          Result := not Window.ScrapeTimer.Enabled;
+        end, 'Inline library scrape completes');
+      Check((Window.GameTitleLabel.Text = 'Inline Alpha') and
+        (Window.FieldEditor('name').Text = 'Inline Alpha') and
+        Window.XMLMemo.Text.Contains('Inline Alpha') and
+        (Window.GameList.Selected.Tag = 0),
+        'Inline scrape refreshes selected game fields, XML, title and list');
+      Check((Window.GameList.ListItems[0] = SelectedCard) and
+        (Window.GameList.ListItems[1] = OtherCard) and
+        (TLabel(SelectedCard.FindComponent('GameName')).Text = 'Inline Alpha'),
+        'Scraping updates the selected card without recreating any list rows');
+      Check(Window.ScrapeButton.Enabled and Window.EditorTabs.Enabled and
+        Window.GamesPanel.Enabled and not Window.ScrapeProgressLayout.Visible and
+        not Window.ScrapeActivity.Enabled and (Window.ModalResult = mrNone),
+        'Inline scrape restores the editor without closing the library');
+      Doc := LoadXMLDocument(ListFile);
+      Check(Doc.DocumentElement.ChildNodes[1].XML = Other,
+        'Inline scrape preserves other library games');
+      Window.FieldEditor('name').Text := 'Edited after inline scrape';
+      Window.SaveClick(nil);
+      Doc := LoadXMLDocument(ListFile);
+      Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['name'].Text = 'Edited after inline scrape',
+        'Library revision is refreshed so edits can be saved after scraping');
+      Check((Window.GameList.ListItems[0] = SelectedCard) and
+        (Window.GameList.ListItems[1] = OtherCard) and
+        (TLabel(SelectedCard.FindComponent('GameName')).Text = 'Edited after inline scrape'),
+        'Saving updates only the selected card and preserves other row objects');
+      Response := TJSONObject.ParseJSONValue('{"response":{}}') as TJSONObject;
+      try
+        WriteJSON(TPlatformPath.Combine(Base, 'Cache/api/' + THashSHA2.GetHashString('jeuInfos.php?systemeid=1&romtype=jeu&romnom=A') + '.json'), Response);
+      finally
+        Response.Free;
+      end;
+      Before := TFile.ReadAllText(ListFile);
+      Window.ScrapeClick(nil);
+      WaitUntil(
+        function: Boolean
+        begin
+          Window.ScrapeTimerTimer(nil);
+          Result := not Window.ScrapeTimer.Enabled;
+        end, 'Inline not-found scrape completes');
+      Doc := LoadXMLDocument(ListFile);
+      Check((Window.FieldEditor('name').Text = 'Edited after inline scrape') and
+        (Doc.DocumentElement.ChildNodes[0].ChildNodes['name'].Text = 'Edited after inline scrape') and
+        (Doc.DocumentElement.ChildNodes[1].XML = Other) and Window.ScrapeButton.Enabled,
+        'Inline not-found result preserves fields and restores controls');
+      Window.FieldEditor('name').Text := 'Edited after not-found scrape';
+      Window.SaveClick(nil);
+      Doc := LoadXMLDocument(ListFile);
+      Check(Doc.DocumentElement.ChildNodes[0].ChildNodes['name'].Text = 'Edited after not-found scrape',
+        'Edits can be saved after a not-found scrape');
+      Before := TFile.ReadAllText(ListFile);
+      Window.OnCreateScrapeWorker :=
+        function(Rom: string): TScrapeWorker
+        begin
+          Result := TScrapeWorker.Create(Config, Credentials, Base, 0, True, 1, Rom);
+          Result.Terminate;
+        end;
+      Window.ScrapeClick(nil);
+      Found := True;
+      Window.FormCloseQuery(nil, Found);
+      Check(not Found, 'Closing during a scrape waits for worker cancellation');
+      WaitUntil(
+        function: Boolean
+        begin
+          Window.ScrapeTimerTimer(nil);
+          Result := not Window.ScrapeTimer.Enabled;
+        end, 'Inline cancelled scrape completes');
+      Check((TFile.ReadAllText(ListFile) = Before) and Window.CloseButton.Enabled and
+        Window.ScrapeButton.Enabled and (Window.ModalResult = mrNone),
+        'Cancelled inline scrape preserves the library and restores actions');
+      // A larger list must only request visible previews, including after scrolling.
+      LazyConfig := Sys.Clone as TJSONObject;
+      LazyWindow := nil;
+      try
+        Path := TPlatformPath.Combine(Roms, 'lazy-library.xml');
+        Doc := TXMLDocument.Create(nil);
+        Doc.Active := True;
+        Doc.AddChild('gameList');
+        for I := 0 to 199 do
+        begin
+          with Doc.DocumentElement.AddChild('game') do
+          begin
+            AddChild('path').Text := './lazy-' + I.ToString + '.rom';
+            AddChild('name').Text := 'Lazy game ' + I.ToString;
+            AddChild('image').Text := './replacement.png';
+          end;
+        end;
+        Doc.SaveToFile(Path);
+        JSet(LazyConfig, 'GameList.OutputFile', TJSONString.Create(Path));
+        LazyWindow := TFormGameLibrary.Create(nil);
+        LazyWindow.StyleBook := Main.StyleBookWinUI3;
+        LazyWindow.GameList.ScrollAnimation := TBehaviorBoolean.False;
+        Started := TThread.GetTickCount64;
+        LazyWindow.LoadPlatform(LazyConfig, 'Lazy previews');
+        Report.Add(Format('200-game library load: %d ms', [TThread.GetTickCount64 - Started]));
+        N := 0;
+        for I := 0 to LazyWindow.GameList.Count - 1 do
+          if TImage(LazyWindow.GameList.ListItems[I].FindComponent('GameCover')).Tag <> 0 then
+            Inc(N);
+        Check((N > 0) and (N < 15) and
+          (TImage(LazyWindow.GameList.ListItems[100].FindComponent('GameCover')).Tag = 0),
+          'Opening a large library requests only visible previews and adjacent rows');
+        LazyWindow.GameList.ApplyStyleLookup;
+        LazyWindow.GameList.RealignContent;
+        LazyWindow.GameList.ViewportPosition := PointF(0, 86 * 40);
+        WaitUntil(
+          function: Boolean
+          begin
+            Result := not TImage(LazyWindow.GameList.ListItems[40].FindComponent('GameCover')).Bitmap.IsEmpty;
+          end, 'Scrolling loads previews for newly visible games');
+        Check(TImage(LazyWindow.GameList.ListItems[100].FindComponent('GameCover')).Tag = 0,
+          'Scrolling does not queue previews for distant rows');
+        SelectedCard := LazyWindow.GameList.ListItems[40];
+        OtherCard := LazyWindow.GameList.ListItems[41];
+        LazyWindow.GameList.ItemIndex := 40;
+        ScrollBefore := LazyWindow.GameList.ViewportPosition;
+        LazyWindow.FieldEditor('name').Text := 'Renamed visible game';
+        LazyWindow.SaveClick(nil);
+        Check((LazyWindow.GameList.ListItems[40] = SelectedCard) and
+          (LazyWindow.GameList.ListItems[41] = OtherCard) and
+          (Abs(LazyWindow.GameList.ViewportPosition.Y - ScrollBefore.Y) < 1) and
+          (TLabel(SelectedCard.FindComponent('GameName')).Text = 'Renamed visible game') and
+          (TLabel(OtherCard.FindComponent('GameName')).Text = 'Lazy game 41'),
+          'Saving a scrolled game preserves scroll position and all list cards');
+        LazyWindow.GameList.ViewportPosition := PointF(0, 0);
+        WaitUntil(
+          function: Boolean
+          begin
+            Result := not TImage(LazyWindow.GameList.ListItems[0].FindComponent('GameCover')).Bitmap.IsEmpty;
+          end, 'Returning to the start retains or reloads its previews');
+      finally
+        LazyWindow.Free;
+        LazyConfig.Free;
+      end;
       Window.ValueChanged(Window.FieldEditor('image').ValueEdit);
       Check(Window.FieldEditor('image').PreviewLoading, 'Window destruction is exercised with a pending preview');
     finally
@@ -619,6 +780,9 @@ begin
         else
           Draft.DocumentElement.Attributes['name'] := 'Edited DAT';
         LibraryData.Save(N, Draft);
+        LibraryData.ReloadGame(N);
+        Check(LibraryData.Title(N) = IfThen(I = 2, 'Edited LB', 'Edited DAT'),
+          'Refreshing one game supports library format ' + I.ToString);
         Doc := LoadXMLDocument(Path);
         if I = 2 then
           Check(Doc.DocumentElement.ChildNodes[1].ChildNodes['Name'].Text = 'Helper', 'LaunchBox edit preserves additional applications')
@@ -653,6 +817,8 @@ begin
         Zip.Free
       end;
       Check(TEncoding.UTF8.GetString(Bytes).Contains('Edited ZIP'), 'Compressed gamelist supports a single-game edit');
+      LibraryData.ReloadGame(N);
+      Check(LibraryData.Title(N) = 'Edited ZIP', 'Refreshing one game supports compressed gamelists');
     finally
       LibraryData.Free
     end;

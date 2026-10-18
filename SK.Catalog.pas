@@ -30,7 +30,7 @@ implementation
 uses
   System.Classes, System.IOUtils, System.StrUtils, System.Math,
   System.RegularExpressions, System.Generics.Collections,
-  System.Generics.Defaults, System.NetEncoding, SK.Core, SK.Platform;
+  System.Generics.Defaults, System.NetEncoding, SK.Json, SK.Platform;
 
 function SelectablePlatform(SystemInfo: TJSONValue): Boolean;
 begin

@@ -25,7 +25,7 @@ implementation
 
 uses
   System.Classes, System.IOUtils, System.StrUtils, System.Math, SK.Platform,
-  SK.Core, SK.Consts, SK.Catalog;
+  SK.Json, SK.Storage, SK.Consts, SK.Catalog;
 
 function SafePlatformName(const Name: string): string;
 var
@@ -90,7 +90,7 @@ begin
           14..16:
             Folder := 'Arcade - Marquee';
         else
-          Folder := 'Skraper'
+          Folder := AppBrand
         end;
       1, 2:
         Folder := 'Screenshot - Game Select';

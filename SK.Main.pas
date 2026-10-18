@@ -3,23 +3,80 @@
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  System.JSON, System.IOUtils, System.Hash, System.Math, System.DateUtils,
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.JSON,
   System.Threading, FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics,
   FMX.Dialogs, FMX.StdCtrls, FMX.Controls.Presentation, FMX.Layouts, FMX.Objects,
-  FMX.Edit, FMX.ListBox, FMX.TabControl, FMX.Memo, FMX.ScrollBox,
-  FMX.DialogService, FMX.DialogService.Sync, FMX.Styles, FMX.Filter.Effects,
-  SK.Platform, System.Generics.Collections, SK.Core, SK.Engine, SK.Setup, SK.Mix,
-  SK.Frontend, SK.Data, SK.Catalog, SK.Cache, SK.Preview, SK.Locale,
-  FMX.Memo.Types;
+  FMX.Edit, FMX.ListBox, FMX.TabControl, FMX.Memo, FMX.ScrollBox, FMX.Styles,
+  FMX.Filter.Effects, SK.UI.Log, SK.UI.Scraping, SK.Folders, SK.Settings.Session,
+  System.Generics.Collections, SK.Configuration, SK.Engine, FMX.Memo.Types,
+  FMX.NumberBox, FMX.EditBox;
 
 type
-  TFolderItemCount = record
-    Files, Folders: Int64;
-    Error: string;
-  end;
+  TFolderItemCount = SK.Folders.TFolderItemCount;
 
   TFormMain = class(TForm)
+    NavigationService: TLayout;
+    InspectorFolderLine: TLayout;
+    InspectorOverrideLine: TLayout;
+    ScrapeGameLine: TLayout;
+    ScrapeTimeLine: TLayout;
+    LabelMediaPercentLine: TLayout;
+    LabelFrontEndLine: TLayout;
+    LabelFrontEndHostLine: TLayout;
+    LabelFrontEndPathLine: TLayout;
+    LabelSystemSelectLine: TLayout;
+    SystemSelectionChoices: TLayout;
+    LabelSourceFolderLine: TLayout;
+    LabelLaunchBoxPlaformLine: TLayout;
+    LabelSourceExtensionsLine: TLayout;
+    materialLabel1Line: TLayout;
+    ExistingListLabelLine: TLayout;
+    LabelDestinationFolderLine: TLayout;
+    LabelFolderEntriesLine: TLayout;
+    CheckBoxFavoriteRatingLine: TLayout;
+    CheckBoxFavoriteContainingWordsLine: TLayout;
+    CheckBoxHideContainingWordsLine: TLayout;
+    CheckBoxAutoHiddenExtentionLine: TLayout;
+    CheckBoxExcludeContainingWordsLine: TLayout;
+    CheckBoxAutoHideAlternateLine: TLayout;
+    CheckBoxAutoHideHackLine: TLayout;
+    CheckBoxAutoHideTranslationLine: TLayout;
+    CheckBoxAutoHideRegionsLine: TLayout;
+    CheckBoxAutoExcludeHackLine: TLayout;
+    CheckBoxAutoExcludeTranslationLine: TLayout;
+    CheckBoxAutoExcludeUnlicensedLine: TLayout;
+    CheckBoxAutoExcludeRegionsLine: TLayout;
+    TextCaseGroupTitleLine: TLayout;
+    CheckBoxMoveArticlesLine: TLayout;
+    CheckBoxUseFilenameRegionsLine: TLayout;
+    CheckBoxNameDecorationKeepUndecoratedFilenameLine: TLayout;
+    CheckBoxNameDecorationKeepFilenameDecorationLine: TLayout;
+    CheckBoxDoNotIncludeSynopsisLine: TLayout;
+    MediaListHeading: TLayout;
+    MediaListActions: TLayout;
+    MediaTypeLine: TLayout;
+    MediaVariantLine: TLayout;
+    MediaVariantEditors: TLayout;
+    LabelMediaOutputFolderLine: TLayout;
+    LabelLinkSelectionLine: TLayout;
+    RadioButtonNodeLinkLine: TLayout;
+    CheckBoxOptimizeMediaStorageLine: TLayout;
+    CheckBoxMediaEmptyOutputFolderLine: TLayout;
+    CheckBoxResizeWidthLine: TLayout;
+    LabelMethodLine: TLayout;
+    LabelLanguageLine: TLayout;
+    LabelRegionLine: TLayout;
+    LabelClassificationLine: TLayout;
+    CheckBoxSaveLogsLine: TLayout;
+    CheckBoxVerboseLoggingLine: TLayout;
+    CheckBoxSaveMissingLine: TLayout;
+    LabelHTTPTriesLine: TLayout;
+    LabelCacheTTLLine: TLayout;
+    ReuseExistingMediaCaptionLine: TLayout;
+    AccountStatusDotLine: TLayout;
+    AccountThreadsLabelLine: TLayout;
+    AccountQuotaLabelLine: TLayout;
+    PageHeadingLine: TLayout;
     SecondarySystemsRow: TLayout;
     SecondarySystemsLabel: TLabel;
     EditSecondarySystems: TEdit;
@@ -32,7 +89,6 @@ type
     UILanguage: TComboBox;
     CheckBoxAnonymous: TCheckBox;
     CacheStatusLabel: TLabel;
-    LibraryInspectorSpacer: TLayout;
     OpenPlatformLibrary: TButton;
     LibrarySearchLayout: TLayout;
     LibraryActionLayout: TLayout;
@@ -41,7 +97,6 @@ type
     LibraryHeaderSelectCell: TLayout;
     LibraryHeaderSystemCell: TLayout;
     LibraryHeaderPathCell: TLayout;
-    LibraryHeaderSettingsCell: TLayout;
     LibraryHeaderGrid: TGridPanelLayout;
     SettingsScopeLayout: TLayout;
     ScrapeProgressLayout: TLayout;
@@ -50,558 +105,6 @@ type
     ScrapeLogHeaderLayout: TLayout;
     MediaBodyLayout: TLayout;
     MediaEditorLayout: TLayout;
-    AppTitleFrame: TLayout;
-    AppTitleRow: TLayout;
-    AppSubtitleFrame: TLayout;
-    AppSubtitleRow: TLayout;
-    NavLibraryFrame: TLayout;
-    NavLibraryRow: TLayout;
-    NavLibraryIconFrame: TLayout;
-    NavLibraryIconRow: TLayout;
-    NavScrapingFrame: TLayout;
-    NavScrapingRow: TLayout;
-    NavScrapingIconFrame: TLayout;
-    NavScrapingIconRow: TLayout;
-    NavSettingsFrame: TLayout;
-    NavSettingsRow: TLayout;
-    NavSettingsIconFrame: TLayout;
-    NavSettingsIconRow: TLayout;
-    NavLogFrame: TLayout;
-    NavLogRow: TLayout;
-    NavLogIconFrame: TLayout;
-    NavLogIconRow: TLayout;
-    ServiceTitleFrame: TLayout;
-    ServiceTitleRow: TLayout;
-    ServiceStateFrame: TLayout;
-    ServiceStateRow: TLayout;
-    NavAccountFrame: TLayout;
-    NavAccountRow: TLayout;
-    NavigationEdgeFrame: TLayout;
-    ServiceDividerFrame: TLayout;
-    ServiceDividerRow: TLayout;
-    ScrapeStateBadgeFrame: TLayout;
-    ScrapeStateBadgeRow: TLayout;
-    ScrapeStateTextFrame: TLayout;
-    PageTitleFrame: TLayout;
-    PageSubtitleFrame: TLayout;
-    IconAddSystemFrame: TLayout;
-    IconAddSystemRow: TLayout;
-    LibraryHeaderSurfaceFrame: TLayout;
-    PictureBoxScreenscraperFrame: TLayout;
-    PictureBoxScreenscraperRow: TLayout;
-    LabelCourtesyOfFrame: TLayout;
-    LabelCourtesyOfRow: TLayout;
-    InspectorTitleFrame: TLayout;
-    InspectorTitleRow: TLayout;
-    InspectorIDFrame: TLayout;
-    InspectorIDRow: TLayout;
-    InspectorFolderLabelFrame: TLayout;
-    InspectorFolderLabelRow: TLayout;
-    InspectorFolderFrame: TLayout;
-    InspectorFolderRow: TLayout;
-    InspectorExtensionsLabelFrame: TLayout;
-    InspectorExtensionsLabelRow: TLayout;
-    InspectorExtensionsFrame: TLayout;
-    InspectorExtensionsRow: TLayout;
-    InspectorOverrideFrame: TLayout;
-    InspectorOverrideRow: TLayout;
-    ConfigureSystemFrame: TLayout;
-    ConfigureSystemRow: TLayout;
-    ConfigureSystemAccentIconFrame: TLayout;
-    ConfigureSystemAccentIconRow: TLayout;
-    ButtonRemoveSystemFrame: TLayout;
-    ButtonRemoveSystemRow: TLayout;
-    InspectorProviderFrame: TLayout;
-    InspectorProviderRow: TLayout;
-    InspectorSettingsDividerFrame: TLayout;
-    InspectorSettingsDividerRow: TLayout;
-    InspectorProviderDividerFrame: TLayout;
-    InspectorProviderDividerRow: TLayout;
-    InspectorBrowseFrame: TLayout;
-    InspectorUseGlobalFrame: TLayout;
-    InspectorProviderValueFrame: TLayout;
-    InspectorItemCountFrame: TLayout;
-    ConfigureAllAccentIconFrame: TLayout;
-    ConfigureAllAccentIconRow: TLayout;
-    LabelRequestsValueFrame: TLayout;
-    LabelRequestsValueRow: TLayout;
-    LabelDownloadedMediaFrame: TLayout;
-    LabelDownloadedMediaRow: TLayout;
-    PictureBoxGearsFrame: TLayout;
-    PictureBoxGearsRow: TLayout;
-    LabelCachedFrame: TLayout;
-    LabelCachedRow: TLayout;
-    LabelFavoriteGamesValueFrame: TLayout;
-    LabelFavoriteGamesValueRow: TLayout;
-    LabelCachedValueFrame: TLayout;
-    LabelCachedValueRow: TLayout;
-    LabelDownloadedMediaValueFrame: TLayout;
-    LabelDownloadedMediaValueRow: TLayout;
-    LabelHiddenGamesFrame: TLayout;
-    LabelHiddenGamesRow: TLayout;
-    LabelRequestsFrame: TLayout;
-    LabelRequestsRow: TLayout;
-    LabelFavoriteGamesFrame: TLayout;
-    LabelFavoriteGamesRow: TLayout;
-    LabelHiddenGamesValueFrame: TLayout;
-    LabelHiddenGamesValueRow: TLayout;
-    ProgressBarScrapingSystemsFrame: TLayout;
-    PictureBoxPhotoFrame: TLayout;
-    PictureBoxPhotoRow: TLayout;
-    LabelSystemNameFrame: TLayout;
-    LabelScrapingSystemCountFrame: TLayout;
-    LabelScrapingSystemCountRow: TLayout;
-    LabelScrapingGameCountFrame: TLayout;
-    LabelScrapingGameCountRow: TLayout;
-    ScrapePercentFrame: TLayout;
-    ScrapePercentRow: TLayout;
-    ProgressBarScrappingGamesFrame: TLayout;
-    LabelElapsedFrame: TLayout;
-    LabelElapsedRow: TLayout;
-    LabelElapsedValueFrame: TLayout;
-    LabelElapsedValueRow: TLayout;
-    LabelEstimatedTimeFrame: TLayout;
-    LabelEstimatedTimeRow: TLayout;
-    LabelEstimatedTimeValueFrame: TLayout;
-    LabelEstimatedTimeValueRow: TLayout;
-    LabelScrapedGamesFrame: TLayout;
-    LabelScrapedGamesValueFrame: TLayout;
-    MetricGameNotFoundDividerFrame: TLayout;
-    LabelGameNotFoundFrame: TLayout;
-    LabelGameNotFoundValueFrame: TLayout;
-    MetricErrorsDividerFrame: TLayout;
-    LabelErrorsFrame: TLayout;
-    LabelErrorsValueFrame: TLayout;
-    MetricSavedMediaDividerFrame: TLayout;
-    LabelSavedMediaFrame: TLayout;
-    LabelSavedMediaValueFrame: TLayout;
-    MetricQuotaDividerFrame: TLayout;
-    LabelQuotaFrame: TLayout;
-    LabelQuotaValueFrame: TLayout;
-    WorkerSurfaceFrame: TLayout;
-    PictureBoxWorkEnginesFrame: TLayout;
-    PictureBoxWorkEnginesRow: TLayout;
-    LabelWorkEnginesFrame: TLayout;
-    LabelWorkEnginesRow: TLayout;
-    PanelScrapingEnginesFrame: TLayout;
-    WorkerHeaderDividerFrame: TLayout;
-    RecentMediaTitleFrame: TLayout;
-    RecentMediaTitleRow: TLayout;
-    PreviewGridFrame: TLayout;
-    RecentMediaNoteFrame: TLayout;
-    OpenFullLogAccentIconFrame: TLayout;
-    OpenFullLogAccentIconRow: TLayout;
-    FastColoredTextBoxLoggingFrame: TLayout;
-    LabelMediaPercentFrame: TLayout;
-    LabelMediaCoverageFrame: TLayout;
-    LabelMediaCoverageRow: TLayout;
-    ProgressBarMediaFoundPercentFrame: TLayout;
-    MediaCoverageDetailFrame: TLayout;
-    ScrapeFooterSurfaceFrame: TLayout;
-    ScrapeSummaryFrame: TLayout;
-    ButtonScrapFrame: TLayout;
-    ButtonScrapRow: TLayout;
-    IconScrapFrame: TLayout;
-    IconScrapRow: TLayout;
-    IconStopFrame: TLayout;
-    IconStopRow: TLayout;
-    ScrapeFooterTopBorderFrame: TLayout;
-    SettingsTabBaselineFrame: TLayout;
-    PanelFrontEndCardFrame: TLayout;
-    DividerFrontEndFrame: TLayout;
-    DividerFrontEndRow: TLayout;
-    PictureBoxFrontEndFrame: TLayout;
-    PictureBoxFrontEndRow: TLayout;
-    PanelFrontEndV3TitleFrame: TLayout;
-    LabelFrontEndFrame: TLayout;
-    RollingButtonFrontEndFrame: TLayout;
-    RollingButtonFrontEndRow: TLayout;
-    LabelFrontEndHostFrame: TLayout;
-    EditFrontEndHostFrame: TLayout;
-    EditFrontEndHostRow: TLayout;
-    LabelFrontEndPathFrame: TLayout;
-    EditFrontEndPathFrame: TLayout;
-    CheckBoxKillFrontEndFrame: TLayout;
-    ButtonFrontEndPathFrame: TLayout;
-    ButtonFrontEndPathRow: TLayout;
-    LabelGameRomsSpecificConfigWarningFrame: TLayout;
-    LabelGameRomsSpecificConfigWarningRow: TLayout;
-    CheckBoxGameRomsSpecificConfigFrame: TLayout;
-    CheckBoxGameRomsSpecificConfigRow: TLayout;
-    PanelSourceFolderCardFrame: TLayout;
-    PanelSourceFolderV3TitleFrame: TLayout;
-    LabelSystemSelectFrame: TLayout;
-    RollingButtonSystemSelectFrame: TLayout;
-    LabelSourceFolderFrame: TLayout;
-    EditSourceFolderFrame: TLayout;
-    LabelGamesAndRomAllSystemsFrame: TLayout;
-    ButtonSourceFolderFrame: TLayout;
-    ButtonSourceFolderRow: TLayout;
-    PanelGameFileExtensionsCardFrame: TLayout;
-    PanelGameFileExtensionsV3TitleFrame: TLayout;
-    LabelSourceExtensionsFrame: TLayout;
-    EditGamesAndRomsExtensionsFrame: TLayout;
-    ExtensionsHelpFrame: TLayout;
-    PanelLaunchBoxPlatformCardFrame: TLayout;
-    LabelLaunchBoxPlaformFrame: TLayout;
-    EditLaunchBoxPlatformFrame: TLayout;
-    LaunchBoxHelpFrame: TLayout;
-    CheckBoxGameListSpecificConfigFrame: TLayout;
-    CheckBoxGameListSpecificConfigRow: TLayout;
-    LabelGameListSpecificConfigWarningFrame: TLayout;
-    LabelGameListSpecificConfigWarningRow: TLayout;
-    PanelGameListTypeCardFrame: TLayout;
-    PanelGameListTypeV3TitleFrame: TLayout;
-    materialLabel1Frame: TLayout;
-    RollingButtonGamelistFrame: TLayout;
-    RollingButtonGamelistRow: TLayout;
-    ExistingListLabelFrame: TLayout;
-    RollingButtonGamelistBehaviorFrame: TLayout;
-    RollingButtonGamelistBehaviorRow: TLayout;
-    CheckBoxOptimizeGameFileFrame: TLayout;
-    CheckBoxOptimizeGameFileRow: TLayout;
-    PanelDestinationFolderFrame: TLayout;
-    PanelDestinationFolderCardFrame: TLayout;
-    LabelDestinationFolderFrame: TLayout;
-    EditDestinationFolderFrame: TLayout;
-    LabelFolderEntriesFrame: TLayout;
-    RollingButtonProcessFoldersFrame: TLayout;
-    ButtonDestinationFolderFrame: TLayout;
-    ButtonDestinationFolderRow: TLayout;
-    PanelAutoFavoriteCardFrame: TLayout;
-    LabelAutoFavoriteFrame: TLayout;
-    CheckBoxFavoriteRatingFrame: TLayout;
-    RollingButtonAutoFavoriteRatingFrame: TLayout;
-    CheckBoxFavoriteContainingWordsFrame: TLayout;
-    EditFavoriteContainingWordsFrame: TLayout;
-    CheckBoxAutoFavoriteTopStaffFrame: TLayout;
-    FavoriteHelpFrame: TLayout;
-    PanelAutoHideCardFrame: TLayout;
-    LabelAutoHideFrame: TLayout;
-    CheckBoxHideNonScrapedFrame: TLayout;
-    CheckBoxHideContainingWordsFrame: TLayout;
-    EditHideContainingWordsFrame: TLayout;
-    CheckBoxAutoHiddenExtentionFrame: TLayout;
-    EditAutoHiddenExtentionsFrame: TLayout;
-    PanelAutoExcludeCardFrame: TLayout;
-    LabelAutoExcludeFrame: TLayout;
-    CheckBoxExcludeNonScrapedFrame: TLayout;
-    CheckBoxExcludeContainingWordsFrame: TLayout;
-    EditExcludeContainingWordsFrame: TLayout;
-    GameFiltersChevronFrame: TLayout;
-    GameFiltersChevronRow: TLayout;
-    PanelAutoHide2CardFrame: TLayout;
-    PanelAutoHide2V3TitleFrame: TLayout;
-    CheckBoxAutoHideAlternateFrame: TLayout;
-    CheckBoxAutoHideAlternateRow: TLayout;
-    CheckBoxAutoHideUnlicensedFrame: TLayout;
-    CheckBoxAutoHideUnlicensedRow: TLayout;
-    CheckBoxAutoHidePrototypeFrame: TLayout;
-    CheckBoxAutoHidePrototypeRow: TLayout;
-    CheckBoxAutoHideBetaFrame: TLayout;
-    CheckBoxAutoHideBetaRow: TLayout;
-    CheckBoxAutoHideHackFrame: TLayout;
-    CheckBoxAutoHideHackRow: TLayout;
-    CheckBoxAutoHideSupportFrame: TLayout;
-    CheckBoxAutoHideSupportRow: TLayout;
-    CheckBoxAutoHideCloneFrame: TLayout;
-    CheckBoxAutoHideCloneRow: TLayout;
-    CheckBoxAutoHideBestFrame: TLayout;
-    CheckBoxAutoHideBestRow: TLayout;
-    CheckBoxAutoHideTranslationFrame: TLayout;
-    CheckBoxAutoHideTranslationRow: TLayout;
-    CheckBoxAutoHideDemoFrame: TLayout;
-    CheckBoxAutoHideDemoRow: TLayout;
-    CheckBoxAutoHideRegionsFrame: TLayout;
-    EditAutoHideRegionsFrame: TLayout;
-    PanelAutoExclude2CardFrame: TLayout;
-    PanelAutoExclude2V3TitleFrame: TLayout;
-    CheckBoxAutoExcludeHackFrame: TLayout;
-    CheckBoxAutoExcludeHackRow: TLayout;
-    CheckBoxAutoExcludePrototypeFrame: TLayout;
-    CheckBoxAutoExcludePrototypeRow: TLayout;
-    CheckBoxAutoExcludeCloneFrame: TLayout;
-    CheckBoxAutoExcludeCloneRow: TLayout;
-    CheckBoxAutoExcludeBestFrame: TLayout;
-    CheckBoxAutoExcludeBestRow: TLayout;
-    CheckBoxAutoExcludeTranslationFrame: TLayout;
-    CheckBoxAutoExcludeTranslationRow: TLayout;
-    CheckBoxAutoExcludeAlternateFrame: TLayout;
-    CheckBoxAutoExcludeAlternateRow: TLayout;
-    CheckBoxAutoExcludeDemoFrame: TLayout;
-    CheckBoxAutoExcludeDemoRow: TLayout;
-    CheckBoxAutoExcludeBetaFrame: TLayout;
-    CheckBoxAutoExcludeBetaRow: TLayout;
-    CheckBoxAutoExcludeUnlicensedFrame: TLayout;
-    CheckBoxAutoExcludeUnlicensedRow: TLayout;
-    CheckBoxAutoExcludeSupportFrame: TLayout;
-    CheckBoxAutoExcludeSupportRow: TLayout;
-    CheckBoxAutoExcludeRegionsFrame: TLayout;
-    EditAutoExcludeRegionsFrame: TLayout;
-    MetadataCaseCardFrame: TLayout;
-    PanelTextCaseTitleFrame: TLayout;
-    PanelTextCaseTitleCardFrame: TLayout;
-    LabelTextCaseFrame: TLayout;
-    LabelTextCaseRow: TLayout;
-    PictureBoxMetaDataFrame: TLayout;
-    PictureBoxMetaDataRow: TLayout;
-    LabelMetadataSpecificConfigWarningFrame: TLayout;
-    LabelMetadataSpecificConfigWarningRow: TLayout;
-    CheckBoxMetadataSpecificConfigFrame: TLayout;
-    CheckBoxMetadataSpecificConfigRow: TLayout;
-    TextCaseGroupTitleFrame: TLayout;
-    TextCaseHelpFrame: TLayout;
-    PanelNameCaseCardFrame: TLayout;
-    PanelDescriptionCaseCardFrame: TLayout;
-    PanelGenreCaseCardFrame: TLayout;
-    NameDescriptionGroupTitleFrame: TLayout;
-    CheckBoxMoveArticlesFrame: TLayout;
-    CheckBoxMoveArticlesRow: TLayout;
-    CheckBoxUseFilenameRegionsFrame: TLayout;
-    CheckBoxUseFilenameRegionsRow: TLayout;
-    CheckBoxNameDecorationKeepUndecoratedFilenameFrame: TLayout;
-    CheckBoxNameDecorationKeepUndecoratedFilenameRow: TLayout;
-    CheckBoxNameDecorationKeepFilenameDecorationFrame: TLayout;
-    CheckBoxNameDecorationKeepFilenameDecorationRow: TLayout;
-    CheckBoxDoNotIncludeSynopsisFrame: TLayout;
-    CheckBoxDoNotIncludeSynopsisRow: TLayout;
-    CheckBoxMoveArticlesHelpFrame: TLayout;
-    CheckBoxUseFilenameRegionsHelpFrame: TLayout;
-    CheckBoxNameDecorationKeepUndecoratedFilenameHelpFrame: TLayout;
-    CheckBoxNameDecorationKeepFilenameDecorationHelpFrame: TLayout;
-    CheckBoxDoNotIncludeSynopsisHelpFrame: TLayout;
-    PanelNameDecorationsCardFrame: TLayout;
-    LabelNameDecorationsFrame: TLayout;
-    LabelNameDecorationsRow: TLayout;
-    PanelNameDecorationsV3TitleFrame: TLayout;
-    DecorationGridFrame: TLayout;
-    MediaStorageSurfaceFrame: TLayout;
-    MediaStorageTitleFrame: TLayout;
-    LabelMediaOutputFolderFrame: TLayout;
-    EditMediaOutputFolderFrame: TLayout;
-    ButtonMediaOutputFolderFrame: TLayout;
-    ButtonMediaOutputFolderRow: TLayout;
-    PanelLinkSelectionFrame: TLayout;
-    LabelLinkSelectionFrame: TLayout;
-    LabelLinkSelectionRow: TLayout;
-    MediaXMLFieldFrame: TLayout;
-    MediaXMLFieldRow: TLayout;
-    RadioButtonNodeLinkFrame: TLayout;
-    RadioButtonNodeLinkRow: TLayout;
-    RadioButtonNoLinkFrame: TLayout;
-    RadioButtonNoLinkRow: TLayout;
-    CheckBoxOptimizeMediaStorageFrame: TLayout;
-    CheckBoxOptimizeMediaStorageRow: TLayout;
-    CheckBoxOptimizeMediaStorageCaptionFrame: TLayout;
-    CheckBoxMediaEmptyOutputFolderFrame: TLayout;
-    CheckBoxMediaEmptyOutputFolderRow: TLayout;
-    CheckBoxMediaEmptyOutputFolderCaptionFrame: TLayout;
-    MediaSourceSurfaceFrame: TLayout;
-    MediaSourceTitleFrame: TLayout;
-    LabelMediaTypeFrame: TLayout;
-    RollingButtonMediaTypeSelectorFrame: TLayout;
-    MediaVariantLabelFrame: TLayout;
-    RollingButtonInternalMixSelectorFrame: TLayout;
-    RollingButtonImageSelectorFrame: TLayout;
-    EditUserProvidedMixFrame: TLayout;
-    ButtonUserProvidedMixFrame: TLayout;
-    ButtonUserProvidedMixRow: TLayout;
-    PictureBoxMediaSubTypeFrame: TLayout;
-    PictureBoxMediaSubTypeRow: TLayout;
-    ButtonMediaTypeLeftFrame: TLayout;
-    ButtonMediaTypeLeftRow: TLayout;
-    ButtonMediaTypeRightFrame: TLayout;
-    ButtonMediaTypeRightRow: TLayout;
-    LabelMediaSpecificConfigWarningFrame: TLayout;
-    LabelMediaSpecificConfigWarningRow: TLayout;
-    CheckBoxMediaSpecificConfigFrame: TLayout;
-    CheckBoxMediaSpecificConfigRow: TLayout;
-    MediaListSurfaceFrame: TLayout;
-    ButtonMediaLeftFrame: TLayout;
-    ButtonMediaLeftRow: TLayout;
-    ButtonCycleMediaSamplesFrame: TLayout;
-    ButtonCycleMediaSamplesRow: TLayout;
-    ButtonMediaMoveToLeftFrame: TLayout;
-    ButtonMediaMoveToLeftRow: TLayout;
-    ButtonMediaMoveToRightFrame: TLayout;
-    ButtonMediaMoveToRightRow: TLayout;
-    ButtonMediaRightFrame: TLayout;
-    ButtonMediaRightRow: TLayout;
-    LabelScrapedMediaListFrame: TLayout;
-    LabelScrapedMediaListRow: TLayout;
-    ButtonAddMediaFrame: TLayout;
-    ButtonAddMediaRow: TLayout;
-    IconAddMediaFrame: TLayout;
-    IconAddMediaRow: TLayout;
-    PanelMediaOuterFrame: TLayout;
-    ButtonMediaMoveLeftFrame: TLayout;
-    ButtonMediaMoveLeftRow: TLayout;
-    ButtonMediaMoveLeftWinIconFrame: TLayout;
-    ButtonMediaMoveLeftWinIconRow: TLayout;
-    ButtonMediaMoveRightFrame: TLayout;
-    ButtonMediaMoveRightRow: TLayout;
-    ButtonMediaMoveRightWinIconFrame: TLayout;
-    ButtonMediaMoveRightWinIconRow: TLayout;
-    ButtonDeleteMediaFrame: TLayout;
-    ButtonDeleteMediaRow: TLayout;
-    ButtonDeleteMediaWinIconFrame: TLayout;
-    ButtonDeleteMediaWinIconRow: TLayout;
-    ButtonCopyFromMainFrame: TLayout;
-    ButtonCopyFromMainRow: TLayout;
-    ButtonCopyFromMainWinIconFrame: TLayout;
-    ButtonCopyFromMainWinIconRow: TLayout;
-    ButtonRefreshUserMixFrame: TLayout;
-    ButtonRefreshUserMixRow: TLayout;
-    ButtonRefreshUserMixWinIconFrame: TLayout;
-    ButtonRefreshUserMixWinIconRow: TLayout;
-    ButtonDeleteAllFrame: TLayout;
-    ButtonDeleteAllRow: TLayout;
-    MediaCommandsHintFrame: TLayout;
-    MediaCommandsHintRow: TLayout;
-    MediaListHeaderDividerFrame: TLayout;
-    MediaResizeSurfaceFrame: TLayout;
-    ResizeTitleFrame: TLayout;
-    ResizeTitleRow: TLayout;
-    CheckBoxResizeWidthFrame: TLayout;
-    CheckBoxResizeWidthRow: TLayout;
-    EditResizeWidthFrame: TLayout;
-    EditResizeWidthRow: TLayout;
-    CheckBoxResizeHeightFrame: TLayout;
-    CheckBoxResizeHeightRow: TLayout;
-    EditResizeHeightFrame: TLayout;
-    EditResizeHeightRow: TLayout;
-    CheckBoxKeepImageRatioFrame: TLayout;
-    CheckBoxKeepImageRatioRow: TLayout;
-    ResizeWidthUnitFrame: TLayout;
-    ResizeHeightUnitFrame: TLayout;
-    PanelResetConfigFrame: TLayout;
-    LabelConfigurationManagementFrame: TLayout;
-    LabelConfigurationManagementRow: TLayout;
-    RaisedButtonResetConfigFrame: TLayout;
-    RaisedButtonResetConfigRow: TLayout;
-    LabelMiscellaneousSpecificConfigWarningFrame: TLayout;
-    LabelMiscellaneousSpecificConfigWarningRow: TLayout;
-    CheckBoxMiscellaneousSpecificConfigFrame: TLayout;
-    CheckBoxMiscellaneousSpecificConfigRow: TLayout;
-    SearchLocaleGroupTitleFrame: TLayout;
-    PanelMethodFrame: TLayout;
-    PanelMethodCardFrame: TLayout;
-    ButtonMethodLeftFrame: TLayout;
-    ButtonMethodLeftRow: TLayout;
-    ButtonMethodRightFrame: TLayout;
-    ButtonMethodRightRow: TLayout;
-    LabelMethodFrame: TLayout;
-    RollingButtonMethodFrame: TLayout;
-    RollingButtonMethodRow: TLayout;
-    PanelCountryPreferencesFrame: TLayout;
-    PanelCountryPreferencesCardFrame: TLayout;
-    ButtonClassificationLeftFrame: TLayout;
-    ButtonClassificationLeftRow: TLayout;
-    ButtonClassificationRightFrame: TLayout;
-    ButtonClassificationRightRow: TLayout;
-    LabelLanguageFrame: TLayout;
-    EditLanguagesFrame: TLayout;
-    EditLanguagesRow: TLayout;
-    LabelRegionFrame: TLayout;
-    EditRegionsFrame: TLayout;
-    EditRegionsRow: TLayout;
-    LabelClassificationFrame: TLayout;
-    RollingButtonClassificationFrame: TLayout;
-    RollingButtonClassificationRow: TLayout;
-    CheckBoxRomRegionFirstFrame: TLayout;
-    CheckBoxRegionStrictModeFrame: TLayout;
-    LanguagesHelpFrame: TLayout;
-    LanguagesHelpRow: TLayout;
-    RegionsHelpFrame: TLayout;
-    RegionsHelpRow: TLayout;
-    PanelLogsCardFrame: TLayout;
-    LogOptionsTitleFrame: TLayout;
-    CheckBoxSaveLogsFrame: TLayout;
-    CheckBoxSaveLogsRow: TLayout;
-    CheckBoxSaveLogsCaptionFrame: TLayout;
-    CheckBoxVerboseLoggingFrame: TLayout;
-    CheckBoxVerboseLoggingRow: TLayout;
-    CheckBoxVerboseLoggingCaptionFrame: TLayout;
-    CheckBoxSaveMissingFrame: TLayout;
-    CheckBoxSaveMissingRow: TLayout;
-    CheckBoxSaveMissingCaptionFrame: TLayout;
-    PanelNetworkCardFrame: TLayout;
-    ButtonHTTPTriesLeftFrame: TLayout;
-    ButtonHTTPTriesLeftRow: TLayout;
-    ButtonHTTPTriesRightFrame: TLayout;
-    ButtonHTTPTriesRightRow: TLayout;
-    ButtonCacheTTLRightFrame: TLayout;
-    ButtonCacheTTLRightRow: TLayout;
-    ButtonCacheTTLLeftFrame: TLayout;
-    ButtonCacheTTLLeftRow: TLayout;
-    NetworkTitleFrame: TLayout;
-    LabelHTTPTriesFrame: TLayout;
-    RollingButtonHTTPTriesFrame: TLayout;
-    LabelCacheTTLFrame: TLayout;
-    RollingButtonCacheTTLFrame: TLayout;
-    ReuseExistingMediaCaptionFrame: TLayout;
-    ReuseExistingMediaSwitchFrame: TLayout;
-    ReuseExistingMediaSwitchRow: TLayout;
-    PanelCacheManagementCardFrame: TLayout;
-    LabelCacheManagementFrame: TLayout;
-    LabelCacheManagementRow: TLayout;
-    PanelCacheManagementV3TitleFrame: TLayout;
-    CacheSafetyNoteFrame: TLayout;
-    CacheActionGridFrame: TLayout;
-    AccountServiceCardFrame: TLayout;
-    AccountCredentialsCardFrame: TLayout;
-    PictureBoxScreenScraperShotFrame: TLayout;
-    PictureBoxScreenScraperShotRow: TLayout;
-    LabelJoinUsFrame: TLayout;
-    LabelJoinUsRow: TLayout;
-    ButtonDiscordFrame: TLayout;
-    ButtonDiscordRow: TLayout;
-    PictureBoxLoginIconFrame: TLayout;
-    PictureBoxLoginIconRow: TLayout;
-    PictureBoxPasswordIconFrame: TLayout;
-    PictureBoxPasswordIconRow: TLayout;
-    AccountTitleFrame: TLayout;
-    AccountDescriptionFrame: TLayout;
-    AccountLoginLabelFrame: TLayout;
-    EditLoginFrame: TLayout;
-    AccountPasswordLabelFrame: TLayout;
-    EditPasswordFrame: TLayout;
-    ButtonTestAccountFrame: TLayout;
-    AccountCredentialNoteFrame: TLayout;
-    AccountStatusTitleFrame: TLayout;
-    AccountConnectionStateFrame: TLayout;
-    AccountStatusDotFrame: TLayout;
-    AccountStatusDotRow: TLayout;
-    LabelThreadAvailableFrame: TLayout;
-    AccountThreadsLabelFrame: TLayout;
-    AccountThreadsValueFrame: TLayout;
-    AccountQuotaLabelFrame: TLayout;
-    AccountQuotaValueFrame: TLayout;
-    LabelSSAdvertisementFrame: TLayout;
-    LabelSSAdvertisementRow: TLayout;
-    ServiceAboutTitleFrame: TLayout;
-    ServiceAboutNoteFrame: TLayout;
-    ButtonWebFrame: TLayout;
-    ButtonWebRow: TLayout;
-    SettingsFooterSurfaceFrame: TLayout;
-    ResetSettingsFrame: TLayout;
-    ResetSettingsRow: TLayout;
-    CancelSettingsFrame: TLayout;
-    CancelSettingsRow: TLayout;
-    SaveSettingsFrame: TLayout;
-    SaveSettingsRow: TLayout;
-    SettingsFooterTopBorderFrame: TLayout;
-    FullLogFrame: TLayout;
-    ExportLogFrame: TLayout;
-    ExportLogRow: TLayout;
-    ImportConfigButtonFrame: TLayout;
-    ImportConfigButtonRow: TLayout;
-    ImportConfigButtonIconFrame: TLayout;
-    ImportConfigButtonIconRow: TLayout;
-    ExportConfigButtonFrame: TLayout;
-    ExportConfigButtonRow: TLayout;
-    ExportConfigButtonIconFrame: TLayout;
-    ExportConfigButtonIconRow: TLayout;
     InspectorItemCount: TLabel;
     GameFiltersChevron: FMX.Objects.TPath;
     CheckBoxMoveArticlesHelp: TLabel;
@@ -689,35 +192,10 @@ type
     ServiceAboutTitle: TLabel;
     ServiceAboutNote: TLabel;
 
-    MetadataCaseCard: TRectangle;
-    SettingsTabBaseline: TRectangle;
     InspectorBrowse: TButton;
     InspectorBrowseIcon: TPath;
     InspectorUseGlobal: TSwitch;
     InspectorProviderValue: TEdit;
-    PanelFrontEndCard: TRectangle;
-    PanelSourceFolderCard: TRectangle;
-    PanelGameFileExtensionsCard: TRectangle;
-    PanelLaunchBoxPlatformCard: TRectangle;
-    PanelGameListTypeCard: TRectangle;
-    PanelDestinationFolderCard: TRectangle;
-    PanelAutoFavoriteCard: TRectangle;
-    PanelAutoHideCard: TRectangle;
-    PanelAutoHide2Card: TRectangle;
-    PanelAutoExcludeCard: TRectangle;
-    PanelAutoExclude2Card: TRectangle;
-    PanelTextCaseTitleCard: TRectangle;
-    PanelNameCaseCard: TRectangle;
-    PanelDescriptionCaseCard: TRectangle;
-    PanelGenreCaseCard: TRectangle;
-    PanelNameDecorationsCard: TRectangle;
-    PanelMethodCard: TRectangle;
-    PanelCountryPreferencesCard: TRectangle;
-    PanelLogsCard: TRectangle;
-    PanelNetworkCard: TRectangle;
-    PanelCacheManagementCard: TRectangle;
-    AccountCredentialsCard: TRectangle;
-    AccountServiceCard: TRectangle;
     ScrapeEventList: TListBox;
 
     CheckBoxOptimizeMediaStorageCaption: TLabel;
@@ -734,7 +212,6 @@ type
     OpenFullLogAccentIcon: FMX.Objects.TPath;
     InspectorSettingsDivider: TRectangle;
     InspectorProviderDivider: TRectangle;
-    LibraryHeaderSurface: TRectangle;
     LibraryHeaderDivider: TRectangle;
     LibraryCheckColumnDivider: TRectangle;
     LibraryPathColumnDivider: TRectangle;
@@ -747,7 +224,6 @@ type
     MediaStorageSurface: TRectangle;
     MediaResizeSurface: TRectangle;
     ResizeWidthUnit: TLabel;
-    ResizeHeightUnit: TLabel;
     ScrapeProgressSurface: TRectangle;
     ScrapeMetricsRule: TRectangle;
     ScrapeMetricsGrid: TGridPanelLayout;
@@ -858,34 +334,9 @@ type
     IconUserProvidedMix: FMX.Objects.TPath;
     IconAddSystem: FMX.Objects.TPath;
     IconAddMedia: FMX.Objects.TPath;
-    IconRemoveSystem: FMX.Objects.TPath;
-    IconDeleteMedia: FMX.Objects.TPath;
-    IconDeleteAll: FMX.Objects.TPath;
-    IconCopyFromMain: FMX.Objects.TPath;
-    IconMediaTypeLeft: FMX.Objects.TPath;
-    IconMediaTypeRight: FMX.Objects.TPath;
-    IconMediaLeft: FMX.Objects.TPath;
-    IconMediaMoveLeft: FMX.Objects.TPath;
-    IconMediaMoveToLeft: FMX.Objects.TPath;
-    IconMediaMoveToRight: FMX.Objects.TPath;
-    IconMediaMoveRight: FMX.Objects.TPath;
-    IconMediaRight: FMX.Objects.TPath;
-    IconMethodLeft: FMX.Objects.TPath;
-    IconMethodRight: FMX.Objects.TPath;
-    IconHTTPTriesLeft: FMX.Objects.TPath;
-    IconHTTPTriesRight: FMX.Objects.TPath;
-    IconCacheTTLRight: FMX.Objects.TPath;
-    IconCacheTTLLeft: FMX.Objects.TPath;
-    IconClassificationLeft: FMX.Objects.TPath;
-    IconClassificationRight: FMX.Objects.TPath;
-    IconScrap: FMX.Objects.TPath;
-    IconStop: FMX.Objects.TPath;
     PanelMain: TLayout;
     ProgressBarScrappingGames: TProgressBar;
-    LabelScrapingSystemCount: TLabel;
     LabelScrapingGameCount: TLabel;
-    LabelSystemName: TLabel;
-    ProgressBarScrapingSystems: TProgressBar;
     PictureBoxPhoto: TImage;
     ButtonScrap: TButton;
     PanelSettings: TLayout;
@@ -972,7 +423,6 @@ type
     EditLaunchBoxPlatform: TEdit;
     LabelLaunchBoxPlaform: TLabel;
     PanelFrontEnd: TLayout;
-    DividerFrontEnd: TRectangle;
     LabelFrontEnd: TLabel;
     RollingButtonFrontEnd: TComboBox;
     EditFrontEndHost: TEdit;
@@ -980,7 +430,6 @@ type
     LabelFrontEndPath: TLabel;
     CheckBoxKillFrontEnd: TCheckBox;
     EditFrontEndPath: TEdit;
-    PictureBoxFrontEnd: TImage;
     ButtonFrontEndPath: TButton;
     TabMedia: TTabItem;
     PanelScrollMediaOuter: TVertScrollBox;
@@ -991,19 +440,14 @@ type
     LabelMediaOutputFolder: TLabel;
     LabelMediaType: TLabel;
     RollingButtonInternalMixSelector: TComboBox;
-    PictureBoxMediaSubType: FMX.Objects.TPath;
     RollingButtonImageSelector: TComboBox;
-    ButtonMediaTypeLeft: TButton;
     CheckBoxMediaEmptyOutputFolder: TSwitch;
     PanelImageResizeConfig: TLayout;
-    CheckBoxResizeHeight: TCheckBox;
     CheckBoxKeepImageRatio: TCheckBox;
-    EditResizeWidth: TEdit;
+    EditResizeWidth: TNumberBox;
     CheckBoxResizeWidth: TCheckBox;
-    EditResizeHeight: TEdit;
     EditUserProvidedMix: TEdit;
     RollingButtonMediaTypeSelector: TComboBox;
-    ButtonMediaTypeRight: TButton;
     EditMediaOutputFolder: TEdit;
     PanelLinkSelection: TLayout;
     LabelLinkSelection: TLabel;
@@ -1016,19 +460,14 @@ type
     PanelScrapedMediaSelector: TLayout;
     ButtonDeleteMedia: TButton;
     ButtonDeleteAll: TButton;
-    ButtonMediaLeft: TButton;
     ButtonMediaMoveLeft: TButton;
     LabelScrapedMediaList: TLabel;
-    ButtonCycleMediaSamples: TButton;
-    ButtonMediaMoveToLeft: TButton;
-    ButtonMediaMoveToRight: TButton;
     PanelMediaOuter: TVertScrollBox;
     PanelMediaInner: TLayout;
     ButtonRefreshUserMix: TButton;
     ButtonAddMedia: TButton;
     ButtonMediaMoveRight: TButton;
     ButtonCopyFromMain: TButton;
-    ButtonMediaRight: TButton;
     TabMetadata: TTabItem;
     PanelScrollMetadataOuter: TVertScrollBox;
     PanelScrollMetadataInner: TLayout;
@@ -1037,8 +476,6 @@ type
     RadioBoxGenreCaseAsIs: TRadioButton;
     LabelGenreCase: TLabel;
     RadioBoxGenreCaseUpper: TRadioButton;
-    PanelTextCaseTitle: TLayout;
-    LabelTextCase: TLabel;
     PanelNameDecorations: TLayout;
     CheckBoxNameDecorationHack: TCheckBox;
     CheckBoxNameDecorationTranslation: TCheckBox;
@@ -1050,12 +487,7 @@ type
     CheckBoxNameDecorationSupport: TCheckBox;
     CheckBoxNameDecorationPrototype: TCheckBox;
     CheckBoxNameDecorationRegion: TCheckBox;
-    LabelNameDecorations: TLabel;
     CheckBoxNameDecorationBeta: TCheckBox;
-    CheckBoxParseRomFileNameFrame: TLayout;
-    CheckBoxParseRomFileNameRow: TLayout;
-    CheckBoxParseRomFileName: TCheckBox;
-    CheckBoxParseRomFileNameHelp: TLabel;
     CheckBoxUseFilenameRegions: TCheckBox;
     CheckBoxNameDecorationClone: TCheckBox;
     CheckBoxNameDecorationBest: TCheckBox;
@@ -1070,23 +502,15 @@ type
     RadioBoxNameCaseAsIs: TRadioButton;
     RadioBoxNameCaseUpper: TRadioButton;
     LabelNameCase: TLabel;
-    PictureBoxMetaData: FMX.Objects.TPath;
     PanelDescriptionCase: TLayout;
     RadioBoxDescriptionCaseUpper: TRadioButton;
     RadioBoxDescriptionCaseAsIs: TRadioButton;
     RadioBoxDescriptionCaseLower: TRadioButton;
     LabelDescriptionCase: TLabel;
     TabAccount: TTabItem;
-    PictureBoxScreenScraperShot: TImage;
-    PictureBoxLoginIcon: FMX.Objects.TPath;
     EditLogin: TEdit;
-    PictureBoxPasswordIcon: FMX.Objects.TPath;
     PanelScreenScraperDescription: TLayout;
-    LabelSSAdvertisement: TLabel;
     LabelThreadAvailable: TLabel;
-    LabelJoinUs: TLabel;
-    ButtonDiscord: TButton;
-    ButtonWeb: TButton;
     EditPassword: TEdit;
     ButtonTestAccount: TButton;
     TabMiscellaneous: TTabItem;
@@ -1094,16 +518,10 @@ type
     PanelScrollMiscInner: TLayout;
     PanelMethod: TLayout;
     RollingButtonMethod: TComboBox;
-    ButtonMethodLeft: TButton;
     LabelMethod: TLabel;
-    ButtonMethodRight: TButton;
     PanelNetwork: TLayout;
-    ButtonHTTPTriesLeft: TButton;
     RollingButtonCacheTTL: TComboBox;
     LabelHTTPTries: TLabel;
-    ButtonHTTPTriesRight: TButton;
-    ButtonCacheTTLRight: TButton;
-    ButtonCacheTTLLeft: TButton;
     LabelCacheTTL: TLabel;
     RollingButtonHTTPTries: TComboBox;
     PanelCountryPreferences: TLayout;
@@ -1111,11 +529,9 @@ type
     LabelClassification: TLabel;
     CheckBoxRegionStrictMode: TCheckBox;
     EditRegions: TEdit;
-    ButtonClassificationLeft: TButton;
     LabelLanguage: TLabel;
     CheckBoxRomRegionFirst: TCheckBox;
     RollingButtonClassification: TComboBox;
-    ButtonClassificationRight: TButton;
     EditLanguages: TEdit;
     PanelAdvancedScpecifyConfig: TLayout;
     LabelMiscellaneousSpecificConfigWarning: TLabel;
@@ -1124,43 +540,27 @@ type
     CheckBoxSaveLogs: TSwitch;
     CheckBoxSaveMissing: TSwitch;
     CheckBoxVerboseLogging: TSwitch;
-    PanelResetConfig: TLayout;
-    LabelConfigurationManagement: TLabel;
-    RaisedButtonResetConfig: TButton;
     PanelCacheManagement: TLayout;
     RaisedButtonClearGameInformationCache: TButton;
     RaisedButtonClearAllCaches: TButton;
-    LabelCacheManagement: TLabel;
     RaisedButtonClearMediaCache: TButton;
     PanelScrapingInProgress: TLayout;
     FastColoredTextBoxLogging: TMemo;
     PanelScraping: TLayout;
-    LabelRequestsValue: TLabel;
-    PanelScrapStatusContainer: TLayout;
     PictureBoxScrapSample3: TImage;
     PictureBoxScrapSample1: TImage;
     PictureBoxScrapSample2: TImage;
-    LabelElapsed: TLabel;
-    LabelDownloadedMedia: TLabel;
-    PictureBoxGears: FMX.Objects.TPath;
     LabelSavedMedia: TLabel;
     LabelErrors: TLabel;
     LabelErrorsValue: TLabel;
     LabelEstimatedTimeValue: TLabel;
     LabelScrapedGames: TLabel;
-    LabelCached: TLabel;
-    LabelFavoriteGamesValue: TLabel;
-    LabelCachedValue: TLabel;
-    LabelDownloadedMediaValue: TLabel;
-    LabelHiddenGames: TLabel;
     LabelMediaPercent: TLabel;
     LabelGameNotFound: TLabel;
     LabelElapsedValue: TLabel;
-    LabelRequests: TLabel;
     LabelSavedMediaValue: TLabel;
     PanelWorkEngines: TLayout;
     LabelWorkEngines: TLabel;
-    PictureBoxWorkEngines: FMX.Objects.TPath;
     PanelScrapingEngines: TVertScrollBox;
     LabelEngineState: TLabel;
     LabelEngineFile: TLabel;
@@ -1171,18 +571,13 @@ type
     LabelMediaCoverage: TLabel;
     ScrapingScroll: TVertScrollBox;
     ProgressBarMediaFoundPercent: TProgressBar;
-    LabelFavoriteGames: TLabel;
-    LabelHiddenGamesValue: TLabel;
     LabelGameNotFoundValue: TLabel;
-    LabelEstimatedTime: TLabel;
     LabelScrapedGamesValue: TLabel;
     PanelLeftPan: TLayout;
     PanelSystemListOuter: TVertScrollBox;
     PanelSystemListInner: TLayout;
     ButtonAddSystem: TButton;
-    PictureBoxScreenscraper: TImage;
     ButtonRunWizard: TButton;
-    LabelCourtesyOf: TLabel;
     ButtonRemoveSystem: TButton;
     ImportConfigButton: TButton;
     ExportConfigButton: TButton;
@@ -1191,12 +586,30 @@ type
     StatusTimer: TTimer;
     StyleBookWinUI3: TStyleBook;
     LayoutHead: TLayout;
+    Layout1: TLayout;
+    CheckBoxResizeHeight: TCheckBox;
+    EditResizeHeight: TNumberBox;
+    ResizeHeightUnit: TLabel;
+    Layout2: TLayout;
+    ButtonWeb: TButton;
     procedure OpenPlatformLibraryClick(Sender: TObject);
     procedure PageTabChanged(Sender: TObject);
-    procedure ShellAction(Sender: TObject);
+    procedure NavLibraryClick(Sender: TObject);
+    procedure NavScrapingClick(Sender: TObject);
+    procedure NavSettingsClick(Sender: TObject);
+    procedure NavLogClick(Sender: TObject);
+    procedure NavAccountClick(Sender: TObject);
+    procedure ConfigureSystemClick(Sender: TObject);
+    procedure ConfigureAllClick(Sender: TObject);
+    procedure StartScrapingClick(Sender: TObject);
+    procedure ResetSettingsClick(Sender: TObject);
+    procedure CancelSettingsClick(Sender: TObject);
+    procedure SaveSettingsClick(Sender: TObject);
+    procedure ExportLogClick(Sender: TObject);
     procedure ScopeChanged(Sender: TObject);
     procedure SearchChanged(Sender: TObject);
     procedure SystemCheckChanged(Sender: TObject);
+    procedure SelectAllSystemsChanged(Sender: TObject);
     procedure ToggleGameFilters(Sender: TObject);
     procedure InspectorChanged(Sender: TObject);
     procedure InspectorBrowseClick(Sender: TObject);
@@ -1206,13 +619,45 @@ type
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
-    procedure ActionClick(Sender: TObject);
+    procedure ImportConfigButtonClick(Sender: TObject);
+    procedure ExportConfigButtonClick(Sender: TObject);
+    procedure ButtonRunWizardClick(Sender: TObject);
+    procedure ButtonTestAccountClick(Sender: TObject);
+    procedure ButtonScrapClick(Sender: TObject);
+    procedure ButtonAddSystemClick(Sender: TObject);
+    procedure ButtonRemoveSystemClick(Sender: TObject);
+    procedure ButtonSourceFolderClick(Sender: TObject);
+    procedure ButtonDestinationFolderClick(Sender: TObject);
+    procedure ButtonMediaOutputFolderClick(Sender: TObject);
+    procedure ButtonFrontEndPathClick(Sender: TObject);
+    procedure ButtonUserProvidedMixClick(Sender: TObject);
+    procedure ButtonWebClick(Sender: TObject);
+    procedure ButtonRefreshUserMixClick(Sender: TObject);
+    procedure ButtonMediaMoveLeftClick(Sender: TObject);
+    procedure ButtonMediaMoveRightClick(Sender: TObject);
+    procedure ButtonAddMediaClick(Sender: TObject);
+    procedure ButtonDeleteMediaClick(Sender: TObject);
+    procedure ButtonDeleteAllClick(Sender: TObject);
+    procedure ButtonCopyFromMainClick(Sender: TObject);
+    procedure RaisedButtonClearAllCachesClick(Sender: TObject);
+    procedure RaisedButtonClearGameInformationCacheClick(Sender: TObject);
+    procedure RaisedButtonClearMediaCacheClick(Sender: TObject);
+    procedure RaisedButtonResetConfigClick(Sender: TObject);
     procedure SettingChanged(Sender: TObject);
+    procedure UILanguageChanged(Sender: TObject);
+    procedure CredentialsChanged(Sender: TObject);
+    procedure PlatformSelectionChanged(Sender: TObject);
+    procedure MediaSettingsChanged(Sender: TObject);
+    procedure MediaKindChanged(Sender: TObject);
+    procedure FrontendChanged(Sender: TObject);
+    procedure SettingValueChanging(Sender: TObject);
     procedure StatusTimerTimer(Sender: TObject);
   private
     FCheckedSystems: TDictionary<string, Boolean>;
-    FSettingsSnapshot, FCredentialSnapshot: TJSONObject;
-    FConfig: TSkraperConfig;
+    FSettings: TSettingsSession;
+    FScrapePresenter: TScrapePresenter;
+    FLogPresenter: TLogPresenter;
+    FConfig: TRetroScraperConfig;
     FSelected, FMedia, FSample: Integer;
     FEffective: TJSONObject;
     FRefreshing, FAccountBusy, FCacheBusy: Boolean;
@@ -1224,18 +669,10 @@ type
     FFolderCountFuture: IFuture<TFolderItemCount>;
     FFolderCountRequestedPath, FFolderCountActivePath: string;
     FFolderCountPending: Boolean;
-    FPreviewRevisions: array[0..2] of Int64;
-    FDisplayedSystemID: string;
-    FEngineLabels: TObjectList<TLabel>;
-    FLogInfoData, FLogSuccessData, FLogErrorData: TPathData;
-    FDisplayedLogCount: Integer;
-    FDisplayedLogTail: string;
-    FFullLogCount: Integer;
-    FFullLogTail: string;
-    FFullLogReset: Boolean;
-    FScrapeSubtitle: string;
-    FEngineProgress: TObjectList<TProgressBar>;
-    FEngineRows: TObjectList<TLayout>;
+    function CanOpenSettings: Boolean;
+    function CanExecuteAction(AllowRunningWorker: Boolean = False): Boolean;
+    procedure RefreshMediaPreview;
+    procedure MoveMedia(Direction: Integer; ToEdge: Boolean);
     procedure ShowPage(Page: Integer);
     procedure SyncFullLog;
     procedure UpdateInspector;
@@ -1245,6 +682,7 @@ type
     function SystemTitle(Index: Integer): string;
     function SystemKey(Index: Integer): string;
     procedure RefreshSettings;
+    function StoreSettingValue(Control: TControl; Validate: Boolean): Boolean;
     procedure BuildSystems;
     procedure BuildMedia;
     procedure SelectSystem(Sender: TObject);
@@ -1274,35 +712,17 @@ var
 implementation
 
 uses
+  SK.Locale, SK.Preview, SK.Cache, SK.Catalog, SK.Metadata, SK.Frontend, SK.Mix,
+  SK.Setup, SK.Storage, SK.Json, SK.Platform, FMX.DialogService.Sync,
+  FMX.DialogService, System.DateUtils, System.Math, System.Hash, System.IOUtils,
+  System.Variants, SK.UI.Settings, SK.Services.Catalog, SK.UI.Controls,
   SK.Consts, FMX.BehaviorManager, SK.GameLibrary.Form, SK.Artwork;
 
 {$R *.fmx}
 
 function CountFolderItems(const Folder: string): TFolderItemCount;
-var
-  Entry: string;
 begin
-  Result := Default(TFolderItemCount);
-  if Folder.Trim = '' then
-  begin
-    Result.Error := SK.Locale.L('Папка не указана');
-    Exit
-  end;
-  if not TDirectory.Exists(Folder) then
-  begin
-    Result.Error := SK.Locale.L('Папка не найдена');
-    Exit
-  end;
-  try
-    for Entry in TDirectory.GetFileSystemEntries(Folder) do
-      if TDirectory.Exists(Entry) then
-        Inc(Result.Folders)
-      else
-        Inc(Result.Files);
-  except
-    on E: Exception do
-      Result.Error := SK.Locale.L('Не удалось прочитать папку');
-  end;
+  Result := SK.Folders.CountFolderItems(Folder);
 end;
 
 procedure TFormMain.PollFolderCount;
@@ -1351,39 +771,6 @@ begin
   end;
 end;
 
-function LoadLogPath(const RelativePath: string): TPathData;
-var
-  Source: TStringStream;
-  Binary: TMemoryStream;
-  Path: FMX.Objects.TPath;
-begin
-  Source := TStringStream.Create(TFile.ReadAllText(TPlatformPath.Combine(AppBase, RelativePath), TEncoding.UTF8), TEncoding.UTF8);
-  try
-    Binary := TMemoryStream.Create;
-    try
-      ObjectTextToBinary(Source, Binary);
-      Binary.Position := 0;
-      Path := FMX.Objects.TPath.Create(nil);
-      try
-        Binary.ReadComponent(Path);
-        Result := TPathData.Create;
-        try
-          Result.Assign(Path.Data);
-        except
-          Result.Free;
-          raise;
-        end;
-      finally
-        Path.Free;
-      end;
-    finally
-      Binary.Free;
-    end;
-  finally
-    Source.Free;
-  end;
-end;
-
 procedure TFormMain.FormCreate(Sender: TObject);
 var
   I: Integer;
@@ -1396,17 +783,29 @@ begin
       TComboBox(Components[I]).ListBox.ScrollAnimation := TBehaviorBoolean.True;
   Caption := AppBrand;
   AppTitle.Text := AppBrand;
-  FFullLogReset := True;
-  FLogInfoData := LoadLogPath(LogInfoIconPath);
-  FLogSuccessData := LoadLogPath(LogSuccessIconPath);
-  FLogErrorData := LoadLogPath(LogErrorIconPath);
   FCheckedSystems := TDictionary<string, Boolean>.Create;
-  FEngineRows := TObjectList<TLayout>.Create(True);
-  FEngineLabels := TObjectList<TLabel>.Create(False);
-  FEngineProgress := TObjectList<TProgressBar>.Create(False);
+  FLogPresenter := TLogPresenter.Create(Self);
+  FScrapePresenter := TScrapePresenter.Create(Self);
+  FScrapePresenter.OnLogChanged :=
+    procedure
+    begin
+      ScrapeLogChanged(nil);
+    end;
+  FScrapePresenter.OnFullLog :=
+    procedure
+    begin
+      SyncFullLog;
+    end;
+  FScrapePresenter.OnFinished :=
+    procedure
+    begin
+      UpdateSelectionCount;
+      UpdateInspector;
+    end;
   FSelected := -1;
   FMedia := 0;
-  FConfig := TSkraperConfig.Create(WritableBase);
+  FConfig := TRetroScraperConfig.Create(WritableBase);
+  FSettings := TSettingsSession.Create(FConfig);
   SetLocale(CommandLineCulture(JStr(FConfig.Root, 'Culture', 'ru')));
   JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
   FRefreshing := True;
@@ -1425,11 +824,11 @@ begin
   EditUserProvidedMix.Hint := 'Media.LocalMixFile';
   EditLanguages.OnChange := SettingChanged;
   EditRegions.OnChange := SettingChanged;
-  EditUserProvidedMix.OnChange := SettingChanged;
+  EditUserProvidedMix.OnChange := MediaSettingsChanged;
   RadioButtonNodeLink.Hint := 'Media.LinkToNode|radio-bool|true';
-  RadioButtonNodeLink.OnChange := SettingChanged;
+  RadioButtonNodeLink.OnChange := MediaSettingsChanged;
   RadioButtonNoLink.Hint := 'Media.LinkToNode|radio-bool|false';
-  RadioButtonNoLink.OnChange := SettingChanged;
+  RadioButtonNoLink.OnChange := MediaSettingsChanged;
   RollingButtonFrontEnd.Items.Text := 'Recalbox' + sLineBreak + 'RetroPie' + sLineBreak + 'LaunchBox' + sLineBreak + 'RetroBat' + sLineBreak + 'Generic';
   BuildSystems;
   BuildMedia;
@@ -1447,15 +846,10 @@ end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
-  FLogInfoData.Free;
-  FLogSuccessData.Free;
-  FLogErrorData.Free;
+  FLogPresenter.Free;
+  FScrapePresenter.Free;
   FCheckedSystems.Free;
-  FSettingsSnapshot.Free;
-  FCredentialSnapshot.Free;
-  FEngineRows.Free;
-  FEngineLabels.Free;
-  FEngineProgress.Free;
+  FSettings.Free;
   FWorker.Free;
   FEffective.Free;
   FCatalog.Free;
@@ -1521,8 +915,6 @@ begin
     begin
       FWorker.Terminate;
       CanClose := False;
-      IconScrap.Visible := False;
-      IconStop.Visible := False;
       ButtonScrap.Text := SK.Locale.L('Остановка…');
     end;
   end;
@@ -1581,43 +973,7 @@ end;
 
 function TFormMain.SystemKey(Index: Integer): string;
 begin
-  Result := JStr(FConfig.SystemAt(Index), 'SystemId') + '|' +
-    JStr(FConfig.SystemAt(Index), 'GamesAndRoms.Path').ToLower;
-end;
-
-procedure SetRowAccent(Button: TButton; Selected: Boolean);
-var
-  Child: TFmxObject;
-begin
-  for Child in Button.Children do
-    if (Child is TRectangle) and (Child.StyleName = 'rowaccent') then
-      TRectangle(Child).Visible := Selected;
-end;
-
-procedure AddRowAccent(Button: TButton; Selected, Divider: Boolean);
-var
-  Surface: TRectangle;
-begin
-  Surface := TRectangle.Create(Button);
-  Surface.Parent := Button;
-  Surface.StyleName := 'rowaccent';
-  Surface.Align := TAlignLayout.Contents;
-  Surface.Fill.Color := $FF304B5B;
-  Surface.Stroke.Kind := TBrushKind.None;
-  Surface.XRadius := 4;
-  Surface.YRadius := 4;
-  Surface.HitTest := False;
-  Surface.Visible := Selected;
-  if Divider then
-  begin
-    Surface := TRectangle.Create(Button);
-    Surface.Parent := Button;
-    Surface.Align := TAlignLayout.Bottom;
-    Surface.Height := 1;
-    Surface.Fill.Color := $FF414141;
-    Surface.Stroke.Kind := TBrushKind.None;
-    Surface.HitTest := False;
-  end;
+  Result := FSettings.SystemKey(Index);
 end;
 
 procedure TFormMain.BuildSystems;
@@ -1832,26 +1188,28 @@ begin
 end;
 
 procedure TFormMain.SystemCheckChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  if (FWorker <> nil) and not FWorker.Finished then
+    Exit;
+  FCheckedSystems.AddOrSetValue(SystemKey(TControl(Sender).Tag), TCheckBox(Sender).IsChecked);
+  UpdateSelectionCount;
+end;
+
+procedure TFormMain.SelectAllSystemsChanged(Sender: TObject);
 var
-  i: Integer;
+  I: Integer;
   A: TJSONArray;
 begin
   if FRefreshing or (FConfig = nil) then
     Exit;
   if (FWorker <> nil) and not FWorker.Finished then
     Exit;
-  if Sender = SelectAllSystems then
-  begin
-    A := FConfig.Root.GetValue<TJSONArray>('Systems');
-    for i := 0 to A.Count - 1 do
-      FCheckedSystems.AddOrSetValue(SystemKey(i), SelectAllSystems.IsChecked);
-    UpdateRowSelection;
-  end
-  else
-  begin
-    FCheckedSystems.AddOrSetValue(SystemKey(TControl(Sender).Tag), TCheckBox(Sender).IsChecked);
-    UpdateSelectionCount;
-  end;
+  A := FConfig.Root.GetValue<TJSONArray>('Systems');
+  for I := 0 to A.Count - 1 do
+    FCheckedSystems.AddOrSetValue(SystemKey(I), SelectAllSystems.IsChecked);
+  UpdateRowSelection;
 end;
 
 procedure TFormMain.SearchChanged(Sender: TObject);
@@ -1881,13 +1239,11 @@ begin
   InspectorTitle.Text := SystemTitle(FSelected);
   ImageFile := PlatformArtwork(WritableBase, JInt(FConfig.SystemAt(FSelected), 'SystemId'), 'photo');
   PictureBoxPhoto.Visible := ImageFile <> '';
-  PictureBoxPhotoFrame.Visible := ImageFile <> '';
   if ImageFile <> '' then
   try
     PictureBoxPhoto.Bitmap.LoadFromFile(ImageFile)
   except
-    PictureBoxPhoto.Visible := False;
-    PictureBoxPhotoFrame.Visible := False
+    PictureBoxPhoto.Visible := False
   end;
   InspectorID.Text := 'ScreenScraper ID: ' + JStr(FConfig.SystemAt(FSelected), 'SystemId', '—');
   E := FConfig.EffectiveSystem(FSelected);
@@ -1935,8 +1291,7 @@ end;
 procedure TFormMain.OpenPlatformLibraryClick(Sender: TObject);
 var
   Window: TFormGameLibrary;
-  Config, RunConfig: TJSONObject;
-  Rom: string;
+  Config: TJSONObject;
 begin
   if (FWorker <> nil) and not FWorker.Finished then
     Exit;
@@ -1944,15 +1299,21 @@ begin
     Exit;
   Window := nil;
   Config := FConfig.EffectiveSystem(FSelected);
-  Rom := '';
   try
     try
       ResolveFrontendPaths(Config, JValue(FConfig.Root, 'FrontEnd') as TJSONObject, FCatalog);
       Window := TFormGameLibrary.Create(Self);
       Window.StyleBook := StyleBookWinUI3;
+      Window.OnCreateScrapeWorker :=
+        function(Rom: string): TScrapeWorker
+        begin
+          SaveConfig;
+          // The index refers to the complete config, independent of checkboxes.
+          Result := TScrapeWorker.Create(FConfig.Root, FConfig.Credentials,
+            WritableBase, FSelected, False, 1, Rom);
+        end;
       Window.LoadPlatform(Config, SystemTitle(FSelected));
       Window.ShowModal;
-      Rom := Window.RequestedRom;
     except
       on E: Exception do
         TDialogServiceSync.ShowMessage(E.Message);
@@ -1961,20 +1322,6 @@ begin
     Window.Free;
     Config.Free
   end;
-  if Rom = '' then
-    Exit;
-  SaveConfig;
-  FreeAndNil(FWorker);
-  // The selected platform index refers to the complete config, independent of checkboxes.
-  RunConfig := FConfig.Root.Clone as TJSONObject;
-  try
-    FWorker := TScrapeWorker.Create(RunConfig, FConfig.Credentials, WritableBase,
-      FSelected, False, 1, Rom);
-  finally
-    RunConfig.Free
-  end;
-  BeginScrapeDisplay;
-  FWorker.Start;
 end;
 
 procedure TFormMain.SelectSystem(Sender: TObject);
@@ -1992,62 +1339,17 @@ begin
 end;
 
 function TFormMain.BindingObject(var Path: string; WriteAccess: Boolean): TJSONObject;
-var
-  A: TJSONArray;
-  Group: string;
-  Bit: Integer;
 begin
-  if WriteAccess and not Path.StartsWith('@') and not Path.StartsWith('!') then
-  begin
-    Group := Path.Split(['.'])[0];
-    Bit := 0;
-    if Group = 'GameList' then
-      Bit := 1
-    else if Group = 'GamesAndRoms' then
-      Bit := 2
-    else if Group = 'MetaData' then
-      Bit := 4
-    else if Group = 'Media' then
-    begin
-      Group := 'Medias';
-      Bit := 8;
-    end
-    else if Group = 'Miscellaneous' then
-      Bit := 16;
-    if Bit <> 0 then
-      EnsureGroup(Group, Bit);
-  end;
-  Result := FConfig.SystemAt(FSelected);
-  if Path.StartsWith('@') then
-  begin
-    Delete(Path, 1, 1);
-    Exit(FConfig.Root);
-  end;
-  if Path.StartsWith('!') then
-  begin
-    Delete(Path, 1, 1);
-    Exit(FConfig.Credentials);
-  end;
-  if Path.StartsWith('Media.') then
-  begin
-    Delete(Path, 1, 6);
-    if not WriteAccess and (FSelected >= 0) and (JInt(Result, 'Overriden') and 8 = 0) then
-      Result := FConfig.SystemAt(-1);
-    A := Result.GetValue<TJSONArray>('Medias');
-    if (FMedia < 0) or (FMedia >= A.Count) then
-      Exit(nil);
-    Result := A.Items[FMedia] as TJSONObject;
-  end;
+  Result := FSettings.BindingObject(FSelected, FMedia, Path, WriteAccess);
 end;
 
 procedure TFormMain.RefreshSettings;
 var
-  i, j, N: Integer;
+  i, j: Integer;
   C: TComponent;
   Path, Text: string;
   Spec: TArray<string>;
   Obj, Effective: TJSONObject;
-  V, Item: TJSONValue;
 begin
   FRefreshing := True;
   Effective := FConfig.EffectiveSystem(FSelected);
@@ -2066,62 +1368,7 @@ begin
         Continue;
       if (Obj = FConfig.SystemAt(FSelected)) and not Path.StartsWith('Overriden') then
         Obj := Effective;
-      V := JValue(Obj, Path);
-      Text := JStr(Obj, Path);
-      N := JInt(Obj, Path);
-      if (Length(Spec) > 2) and (Spec[1] = 'array') and (Spec[2] = '') then
-        Spec[2] := '|';
-      if (Length(Spec) > 1) and (Spec[1] = 'array') then
-      begin
-        Text := '';
-        if V is TJSONArray then
-          for Item in TJSONArray(V) do
-          begin
-            if Text <> '' then
-              Text := Text + Spec[2];
-            Text := Text + Item.Value;
-          end;
-      end;
-      if C is TEdit then
-        TEdit(C).Text := Text
-      else if C is TSwitch then
-        TSwitch(C).IsChecked := JBool(Obj, Path)
-      else if C is TCheckBox then
-      begin
-        if (Length(Spec) > 1) and (Spec[1] = 'bit') then
-          TCheckBox(C).IsChecked := (N and StrToInt(Spec[2])) <> 0
-        else
-          TCheckBox(C).IsChecked := JBool(Obj, Path);
-      end
-      else if C is TRadioButton then
-      begin
-        if Length(Spec) > 2 then
-          if Spec[1] = 'radio-bool' then
-            TRadioButton(C).IsChecked := SameText(Text, Spec[2])
-          else
-            TRadioButton(C).IsChecked := N = StrToInt(Spec[2]);
-      end
-      else if C is TComboBox then
-      begin
-        if (Length(Spec) > 1) and (Spec[1] = 'rating') then
-          N := (N - 40) div 5;
-        if (Length(Spec) > 1) and (Spec[1] = 'text') then
-          N := TComboBox(C).Items.IndexOf(Text);
-        if C = RollingButtonCacheTTL then
-        begin
-          while RollingButtonCacheTTL.Items.Count > 17 do
-            RollingButtonCacheTTL.Items.Delete(17);
-          if N >= UnlimitedCacheDays then
-            N := 16
-          else if N >= 16 then
-          begin
-            RollingButtonCacheTTL.Tag := N;
-            RollingButtonCacheTTL.Items.Add(N.ToString + ' days');
-            N := 17;
-          end;
-        end;
-        TComboBox(C).ItemIndex := N;
-      end;
+      ApplySettingValue(TControl(C), Obj, Path, Spec, RollingButtonCacheTTL);
     end;
     for j := 0 to RollingButtonSystemSelect.Items.Count - 1 do
       if NativeInt(RollingButtonSystemSelect.Items.Objects[j]) = JInt(FConfig.SystemAt(FSelected), 'SystemId') then
@@ -2173,7 +1420,7 @@ begin
     MediaXMLField.Text := SK.Locale.L('Поле XML: —');
     if JValue(Effective, 'Medias') is TJSONArray then
     begin
-      Text := SK.Data.MediaNode(TJSONArray(JValue(Effective, 'Medias')), FMedia);
+      Text := SK.Metadata.MediaNode(TJSONArray(JValue(Effective, 'Medias')), FMedia);
       if Text <> '' then
         MediaXMLField.Text := SK.Locale.L('Поле XML: ') + Text;
     end;
@@ -2197,201 +1444,144 @@ begin
 end;
 
 procedure TFormMain.SettingChanged(Sender: TObject);
+begin
+  if not FRefreshing and (FConfig <> nil) then
+    StoreSettingValue(TControl(Sender), True);
+end;
+
+procedure TFormMain.UILanguageChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  SetLocale(UILocaleCode(UILanguage.ItemIndex));
+  JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
+  FRefreshing := True;
+  try
+    ApplyLocale(Self)
+  finally
+    FRefreshing := False
+  end;
+  FPreviewKey := '';
+  BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+  PageTabChanged(nil);
+end;
+
+procedure TFormMain.CredentialsChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  if not StoreSettingValue(TControl(Sender), True) then
+    Exit;
+  AccountConnectionState.Text := SK.Locale.L('Не проверено');
+  ServiceState.Text := SK.Locale.L('Не проверено');
+  AccountStatusDot.Fill.Color := $FF888888;
+  AccountThreadsValue.Text := '—';
+  AccountQuotaValue.Text := '—';
+  LabelQuotaValue.Text := '—';
+  LabelQuotaValue.Hint := '';
+  LabelThreadAvailable.Text := SK.Locale.L('Нажмите «Проверить подключение»');
+end;
+
+procedure TFormMain.PlatformSelectionChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) or (FSelected < 0) or
+    (RollingButtonSystemSelect.ItemIndex < 0) then
+    Exit;
+  ConfigurePlatform(FConfig.SystemAt(FSelected), FConfig.SystemAt(-1), FCatalog,
+    JInt(FConfig.Root, 'FrontEnd.Type'),
+    TArray<Integer>.Create(NativeInt(RollingButtonSystemSelect.Items.Objects[RollingButtonSystemSelect.ItemIndex])),
+    JStr(FConfig.SystemAt(FSelected), 'GamesAndRoms.Path'));
+  BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.MediaSettingsChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  if not StoreSettingValue(TControl(Sender), True) then
+    Exit;
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.MediaKindChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  if not StoreSettingValue(TControl(Sender), True) then
+    Exit;
+  FSettings.UpdateMediaOutput(FSelected, FMedia);
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.FrontendChanged(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  if not StoreSettingValue(TControl(Sender), True) then
+    Exit;
+  ApplyFrontendDefaults(FConfig.Root, True);
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.SettingValueChanging(Sender: TObject);
+begin
+  if FRefreshing or (FConfig = nil) then
+    Exit;
+  // Keep the edited value before selection changes or Save can refresh the UI.
+  // Dependent controls and previews are updated only when the edit is committed.
+  StoreSettingValue(TControl(Sender), False);
+end;
+
+function TFormMain.StoreSettingValue(Control: TControl; Validate: Boolean): Boolean;
 var
-  C: TControl;
-  Path, Text: string;
+  Path: string;
   Spec: TArray<string>;
   Obj: TJSONObject;
   Value: TJSONValue;
   A: TJSONArray;
-  S: string;
-  N, Bit: Integer;
 begin
-  if FRefreshing or (FConfig = nil) then
-    Exit;
-  C := TControl(Sender);
-  if C = UILanguage then
-  begin
-    SetLocale(UILocaleCode(UILanguage.ItemIndex));
-    JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
-    FRefreshing := True;
-    try
-      ApplyLocale(Self)
-    finally
-      FRefreshing := False
-    end;
-    FPreviewKey := '';
-    BuildSystems;
-    BuildMedia;
-    RefreshSettings;
-    PageTabChanged(nil);
-    Exit;
-  end;
-  if (C = EditLogin) or (C = EditPassword) then
-  begin
-    AccountConnectionState.Text := SK.Locale.L('Не проверено');
-    ServiceState.Text := SK.Locale.L('Не проверено');
-    AccountStatusDot.Fill.Color := $FF888888;
-    AccountThreadsValue.Text := '—';
-    AccountQuotaValue.Text := '—';
-    LabelQuotaValue.Text := '—';
-    LabelQuotaValue.Hint := '';
-    LabelThreadAvailable.Text := SK.Locale.L('Нажмите «Проверить подключение»');
-  end;
-  if C = RollingButtonSystemSelect then
-  begin
-    if (FSelected >= 0) and (RollingButtonSystemSelect.ItemIndex >= 0) then
-    begin
-      ConfigurePlatform(FConfig.SystemAt(FSelected), FConfig.SystemAt(-1), FCatalog,
-        JInt(FConfig.Root, 'FrontEnd.Type'),
-        TArray<Integer>.Create(NativeInt(RollingButtonSystemSelect.Items.Objects[RollingButtonSystemSelect.ItemIndex])),
-        JStr(FConfig.SystemAt(FSelected), 'GamesAndRoms.Path'));
-      BuildSystems;
-      BuildMedia;
-      RefreshSettings;
-    end;
-    Exit;
-  end;
-  Spec := C.Hint.Split(['|']);
+  Result := False;
+  Spec := Control.Hint.Split(['|']);
   if (Length(Spec) = 0) or (Spec[0] = '') then
     Exit;
   if (Length(Spec) > 2) and (Spec[1] = 'array') and (Spec[2] = '') then
     Spec[2] := '|';
   Path := Spec[0];
-  Obj := BindingObject(Path, True);
+  Obj := BindingObject(Path, False);
   if Obj = nil then
     Exit;
-  Value := nil;
-  if C is TEdit then
+  if (Length(Spec) > 1) and (Spec[1] = 'systems') then
   begin
-    Text := TEdit(C).Text;
-    if (Length(Spec) > 1) and (Spec[1] = 'array') then
+    if not FSettings.ParseSecondarySystems(FSelected, FCatalog, TEdit(Control).Text, A) then
     begin
-      A := TJSONArray.Create;
-      for S in Text.Split([Spec[2][1]]) do
-        if S.Trim <> '' then
-          A.Add(S.Trim);
-      if C = EditSecondarySystems then
-      begin
-        Value := TJSONArray.Create;
-        for S in Text.Split([',']) do
-          if S.Trim <> '' then
-          begin
-            if not TryStrToInt(S.Trim, N) or (N <= 0) or (CatalogSystem(FCatalog, N) = nil) then
-            begin
-              Value.Free;
-              A.Free;
-              ShowMessage(SK.Locale.L('Введите действительные ID систем через запятую.'));
-              Exit
-            end;
-            if N <> JInt(FConfig.SystemAt(FSelected), 'SystemId') then
-              TJSONArray(Value).Add(N);
-          end;
-        A.Free;
-      end
-      else
-        Value := A;
-    end
-    else if JValue(Obj, Path) is TJSONNumber then
-    begin
-      if not TryStrToInt(Text, N) or (N < 0) then
-        Exit;
-      Value := TJSONNumber.Create(N);
-    end
-    else
-      Value := TJSONString.Create(Text);
-  end
-  else if C is TSwitch then
-    Value := TJSONBool.Create(TSwitch(C).IsChecked)
-  else if C is TCheckBox then
-  begin
-    if (Length(Spec) > 1) and (Spec[1] = 'bit') then
-    begin
-      N := JInt(Obj, Path);
-      Bit := StrToInt(Spec[2]);
-      if TCheckBox(C).IsChecked then
-        N := N or Bit
-      else
-        N := N and not Bit;
-      Value := TJSONNumber.Create(N);
-    end
-    else
-      Value := TJSONBool.Create(TCheckBox(C).IsChecked);
-  end
-  else if C is TRadioButton then
-  begin
-    if TRadioButton(C).IsChecked and (Length(Spec) > 2) then
-      if Spec[1] = 'radio-bool' then
-        Value := TJSONBool.Create(Spec[2] = 'true')
-      else
-        Value := TJSONNumber.Create(StrToInt(Spec[2]));
-  end
-  else if C is TComboBox then
-  begin
-    N := TComboBox(C).ItemIndex;
-    if N < 0 then
+      if Validate then
+        ShowMessage(SK.Locale.L('Введите действительные ID систем через запятую.'));
       Exit;
-    if (Length(Spec) > 1) and (Spec[1] = 'text') then
-      Value := TJSONString.Create(TComboBox(C).Items[N])
-    else
-    begin
-      if (Length(Spec) > 1) and (Spec[1] = 'rating') then
-        N := N * 5 + 40;
-      if C = RollingButtonCacheTTL then
-      begin
-        if N = 16 then
-          N := UnlimitedCacheDays
-        else if N = 17 then
-          N := RollingButtonCacheTTL.Tag;
-      end;
-      Value := TJSONNumber.Create(N);
     end;
-  end;
-  if Value <> nil then
-    JSet(Obj, Path, Value);
-  if (FSelected >= 0) and (Path <> 'Overriden') and not C.Hint.StartsWith('@') and not C.Hint.StartsWith('!') then
-  begin
-    N := JInt(FConfig.SystemAt(FSelected), 'Overriden');
-    Bit := 0;
-    if C.Hint.StartsWith('GameList.') then
-      Bit := 1;
-    if C.Hint.StartsWith('GamesAndRoms.') then
-      Bit := 2;
-    if C.Hint.StartsWith('MetaData.') then
-      Bit := 4;
-    if C.Hint.StartsWith('Media.') then
-      Bit := 8;
-    if C.Hint.StartsWith('Miscellaneous.') then
-      Bit := 16;
-    JSet(FConfig.SystemAt(FSelected), 'Overriden', TJSONNumber.Create(N or Bit));
-  end;
-  if (C = RollingButtonMediaTypeSelector) or (C = RollingButtonImageSelector) then
-  begin
-    A := TJSONArray.Create;
-    try
-      for N := 0 to TJSONArray(JValue(FConfig.SystemAt(FSelected), 'Medias')).Count - 1 do
-        if N <> FMedia then
-          A.AddElement(TJSONArray(JValue(FConfig.SystemAt(FSelected), 'Medias')).Items[N].Clone as TJSONValue);
-      JSet(Obj, 'OutputFolder', TJSONString.Create(DefaultMediaFolder(JInt(FConfig.Root, 'FrontEnd.Type'),
-            JInt(Obj, 'Type'), JInt(Obj, 'Image'), A)));
-    finally
-      A.Free
-    end;
-  end;
-  if C = RollingButtonFrontEnd then
-  begin
-    ApplyFrontendDefaults(FConfig.Root, True);
-    BuildMedia;
-    RefreshSettings;
+    Value := A;
+  end
+  else
+    Value := ReadSettingValue(Control, Obj, Path, Spec, RollingButtonCacheTTL);
+  if Value = nil then
     Exit;
-  end;
-  if (C = RollingButtonMediaTypeSelector) or (C = RollingButtonImageSelector) or
-    (C = RollingButtonInternalMixSelector) or (C = RadioButtonNodeLink) or (C = RadioButtonNoLink) or
-    (C = EditMediaOutputFolder) or (C = CheckBoxAnonymous) or (C = EditUserProvidedMix) or
-    (C = EditResizeWidth) or (C = EditResizeHeight) or (C = CheckBoxKeepImageRatio) or (C = CheckBoxResizeWidth) or (C = CheckBoxResizeHeight) or (Path = 'Overriden') then
-  begin
-    BuildMedia;
-    RefreshSettings;
+  try
+    Path := Spec[0];
+    Obj := BindingObject(Path, True);
+    if Obj = nil then
+      Exit;
+    JSet(Obj, Path, Value);
+    Value := nil;
+    FSettings.MarkOverride(FSelected, Spec[0]);
+    Result := True;
+  finally
+    Value.Free;
   end;
 end;
 
@@ -2486,7 +1676,7 @@ end;
 
 procedure TFormMain.ValidateAccount;
 var
-  Credentials, ArtworkCredentials, ArtworkSettings: TJSONObject;
+  Credentials, ArtworkSettings: TJSONObject;
   Base: string;
 begin
   if FAccountBusy then
@@ -2507,94 +1697,37 @@ begin
   LabelQuotaValue.Hint := '';
   Credentials := FConfig.Credentials.Clone as TJSONObject;
   JSet(Credentials, 'anonymous', TJSONBool.Create(JBool(FConfig.Root, 'Anonymous')));
-  ArtworkCredentials := Credentials.Clone as TJSONObject;
   ArtworkSettings := FConfig.SystemAt(-1).Clone as TJSONObject;
   Base := WritableBase;
   FAccountTask := TTask.Run(
     procedure
     var
-      API: TScreenScraper;
-      User, Catalog: TJSONObject;
-      MessageText, ThreadsText, QuotaText: string;
-      Verified, Anonymous: Boolean;
-      ArtworkCount: Integer;
+      Connection: TAccountConnection;
     begin
-      Anonymous := JBool(Credentials, 'anonymous');
-      API := TScreenScraper.Create(Credentials, Base + NativePath('Cache\api'));
-      Credentials.Free;
-      Catalog := nil;
-      Verified := False;
-      ThreadsText := '—';
-      QuotaText := '—';
       try
-        try
-          if not Anonymous then
+        Connection := CheckAccountConnection(Credentials, ArtworkSettings, Base,
+          procedure(Done, Total: Integer)
           begin
-            User := API.Authenticate;
-            try
-              if JValue(User, 'response.ssuser') = nil then
-                raise EScreenScraper.Create('No user information returned');
-              Verified := True;
-              ThreadsText := JStr(User, 'response.ssuser.maxthreads', '—');
-              QuotaText := JStr(User, 'response.ssuser.requeststoday', '—') + ' / ' + JStr(User, 'response.ssuser.maxrequestsperday', '—');
-              MessageText := SK.Locale.L('Авторизация выполнена');
-            finally
-              User.Free
-            end;
-          end;
-          try
-            Catalog := API.Systems;
-            if JValue(Catalog, 'response') is TJSONObject then
-            begin
-              if Anonymous then
-              begin
-                Verified := True;
-                ThreadsText := '1';
-                QuotaText := SK.Locale.L('Без аккаунта');
-                MessageText := SK.Locale.L('Анонимное подключение выполнено')
-              end;
-              WriteJSON(Base + NativePath('Resources\systems.json'), JValue(Catalog, 'response'));
-              try
-                ArtworkCount := RefreshPlatformArtwork(JValue(Catalog, 'response') as TJSONObject,
-                  ArtworkSettings, ArtworkCredentials, Base, False, nil,
-                  procedure(Done, Total: Integer)
-                  begin
-                    if (Done mod 8 = 0) or (Done = Total) then
-                      TThread.Queue(nil, TThreadProcedure(
-                        procedure
-                        begin
-                          ServiceState.Text := SK.Locale.L('Изображения платформ: %d / %d', [Done, Total])
-                        end));
-                  end);
-                MessageText := MessageText + SK.Locale.L(' — изображений платформ: %d', [ArtworkCount]);
-              except
-                on E: Exception do
-                  MessageText := MessageText + SK.Locale.L(' — изображения платформ недоступны');
-              end;
-            end;
-          except
-            on E: Exception do
-              MessageText := MessageText + SK.Locale.L(' — каталог систем недоступен');
-          end;
-        except
-          on E: Exception do
-            MessageText := E.Message;
-        end;
+            if (Done mod 8 = 0) or (Done = Total) then
+              TThread.Queue(nil, TThreadProcedure(
+                procedure
+                begin
+                  ServiceState.Text := SK.Locale.L('Изображения платформ: %d / %d', [Done, Total]);
+                end));
+          end);
       finally
-        API.Free;
-        Catalog.Free;
-        ArtworkCredentials.Free;
+        Credentials.Free;
         ArtworkSettings.Free;
       end;
       System.Classes.TThread.Queue(nil, TThreadProcedure(
         procedure
         begin
-          LabelThreadAvailable.Text := MessageText;
-          AccountThreadsValue.Text := ThreadsText;
-          AccountQuotaValue.Text := QuotaText;
-          LabelQuotaValue.Text := QuotaText;
+          LabelThreadAvailable.Text := Connection.MessageText;
+          AccountThreadsValue.Text := Connection.ThreadsText;
+          AccountQuotaValue.Text := Connection.QuotaText;
+          LabelQuotaValue.Text := Connection.QuotaText;
           LabelQuotaValue.Hint := SK.Locale.L('Запросы сегодня / суточный лимит ScreenScraper');
-          if Verified then
+          if Connection.Verified then
           begin
             AccountConnectionState.Text := SK.Locale.L('Подключено');
             ServiceState.Text := SK.Locale.L('Подключено');
@@ -2674,21 +1807,8 @@ begin
 end;
 
 procedure TFormMain.EnsureGroup(const Group: string; Bit: Integer);
-var
-  Sys: TJSONObject;
-  Path: string;
 begin
-  if FSelected < 0 then
-    Exit;
-  Sys := FConfig.SystemAt(FSelected);
-  if JInt(Sys, 'Overriden') and Bit = 0 then
-  begin
-    Path := JStr(Sys, 'GamesAndRoms.Path');
-    JSet(Sys, Group, JValue(FConfig.SystemAt(-1), Group).Clone as TJSONValue);
-    if Group = 'GamesAndRoms' then
-      JSet(Sys, 'GamesAndRoms.Path', TJSONString.Create(Path));
-    JSet(Sys, 'Overriden', TJSONNumber.Create(JInt(Sys, 'Overriden') or Bit));
-  end;
+  FSettings.EnsureGroup(FSelected, Group, Bit);
 end;
 
 procedure TFormMain.PreviewMedia;
@@ -2739,20 +1859,12 @@ begin
 end;
 
 function TFormMain.PrepareRequiredMedia: Integer;
-var
-  V: TJSONValue;
 begin
-  Result := 0;
-  if JInt(FConfig.Root, 'FrontEnd.Type') <> 0 then
-    Exit;
-  Inc(Result, EnsureRecalboxMedia(FConfig.SystemAt(-1)));
-  for V in FConfig.Root.GetValue<TJSONArray>('Systems') do
-    if JInt(V, 'Overriden') and 8 <> 0 then
-      Inc(Result, EnsureRecalboxMedia(V as TJSONObject));
+  Result := FSettings.PrepareRequiredMedia;
   if Result > 0 then
   begin
     BuildMedia;
-    RefreshSettings
+    RefreshSettings;
   end;
 end;
 
@@ -2821,329 +1933,328 @@ begin
     end);
 end;
 
-procedure TFormMain.ActionClick(Sender: TObject);
-var
-  Name: string;
-  A, B: TJSONArray;
-  O: TJSONObject;
-  i, j, Target, Required: Integer;
-  Combo: TComboBox;
-  Setup: TFormSetup;
+procedure TFormMain.ImportConfigButtonClick(Sender: TObject);
 begin
-  Name := TComponent(Sender).Name;
-  if FCacheBusy or FAccountBusy then
+  if not CanExecuteAction then
     Exit;
-  if (FWorker <> nil) and not FWorker.Finished and (Sender <> ButtonScrap) then
-    Exit;
-  if Sender = ImportConfigButton then
+  OpenDialog.Filter := SK.Locale.L('Открыть конфигурацию|*.json');
+  OpenDialog.InitialDir := FConfig.DialogFolder('ConfigFolder', '');
+  OpenDialog.FileName := '';
+  if OpenDialog.Execute then
   begin
-    OpenDialog.Filter := SK.Locale.L('Открыть конфигурацию|*.json');
-    OpenDialog.InitialDir := FConfig.DialogFolder('ConfigFolder', '');
-    OpenDialog.FileName := '';
-    if OpenDialog.Execute then
-    begin
-      FConfig.Load(OpenDialog.FileName);
-      FConfig.RememberFolder('ConfigFolder', ExtractFilePath(OpenDialog.FileName));
-      SetLocale(JStr(FConfig.Root, 'Culture', CurrentLocale));
-      JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
-      FRefreshing := True;
-      try
-        ApplyLocale(Self)
-      finally
-        FRefreshing := False
-      end;
-      FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
-      FSelected := -1;
-      FMedia := 0;
-      FillCatalog;
-      BuildSystems;
-      BuildMedia;
-      RefreshSettings;
+    FConfig.Load(OpenDialog.FileName);
+    FConfig.RememberFolder('ConfigFolder', ExtractFilePath(OpenDialog.FileName));
+    SetLocale(JStr(FConfig.Root, 'Culture', CurrentLocale));
+    JSet(FConfig.Root, 'Culture', TJSONString.Create(CurrentLocale));
+    FRefreshing := True;
+    try
+      ApplyLocale(Self)
+    finally
+      FRefreshing := False
     end;
-    Exit;
+    FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
+    FSelected := -1;
+    FMedia := 0;
+    FillCatalog;
+    BuildSystems;
+    BuildMedia;
+    RefreshSettings;
   end;
-  if Sender = ExportConfigButton then
+end;
+
+procedure TFormMain.ExportConfigButtonClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  SaveDialog.Filter := SK.Locale.L('Сохранить конфигурацию|*.json');
+  SaveDialog.InitialDir := FConfig.DialogFolder('ConfigFolder', '');
+  SaveDialog.FileName := ConfigFileName;
+  SaveDialog.DefaultExt := 'json';
+  if SaveDialog.Execute then
   begin
-    SaveDialog.Filter := SK.Locale.L('Сохранить конфигурацию|*.json');
-    SaveDialog.InitialDir := FConfig.DialogFolder('ConfigFolder', '');
-    SaveDialog.FileName := 'skraper.config.json';
-    SaveDialog.DefaultExt := 'json';
-    if SaveDialog.Execute then
+    FConfig.RememberFolder('ConfigFolder', ExtractFilePath(SaveDialog.FileName));
+    WriteJSON(SaveDialog.FileName, FConfig.Root);
+  end;
+end;
+
+procedure TFormMain.ButtonRunWizardClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  RunWizard;
+end;
+
+procedure TFormMain.ButtonTestAccountClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  ValidateAccount;
+end;
+
+procedure TFormMain.ButtonScrapClick(Sender: TObject);
+var
+  O: TJSONObject;
+  Required: Integer;
+begin
+  if not CanExecuteAction(True) then
+    Exit;
+  if FWorker <> nil then
+  begin
+    if not FWorker.Finished then
     begin
-      FConfig.RememberFolder('ConfigFolder', ExtractFilePath(SaveDialog.FileName));
-      WriteJSON(SaveDialog.FileName, FConfig.Root);
-    end;
-    Exit;
-  end;
-  if Sender = ButtonRunWizard then
-  begin
-    RunWizard;
-    Exit;
-  end;
-  if Sender = ButtonTestAccount then
-  begin
-    ValidateAccount;
-    Exit;
-  end;
-  if Sender = ButtonScrap then
-  begin
-    if FWorker <> nil then
-    begin
-      if not FWorker.Finished then
-      begin
-        FWorker.Terminate;
-        IconScrap.Visible := False;
-        IconStop.Visible := False;
-        ButtonScrap.Text := SK.Locale.L('Остановка…');
-        Exit;
-      end;
-      FreeAndNil(FWorker);
-      PanelLeftPan.Enabled := True;
-      ImportConfigButton.Enabled := True;
-      ExportConfigButton.Enabled := True;
-      RefreshSettings;
-      ProgressBarScrappingGames.Value := 0;
-      ProgressBarScrapingSystems.Value := 0;
-      LabelScrapingGameCount.Text := 'Games';
-      LabelScrapingSystemCount.Text := 'System';
-      ButtonScrap.Text := SK.Locale.L('Остановить');
-      IconScrap.Visible := False;
-      IconStop.Visible := False;
-      ShowPage(0);
-      UpdateSelectionCount;
+      FWorker.Terminate;
+      ButtonScrap.Text := SK.Locale.L('Остановка…');
       Exit;
     end;
-    Required := PrepareRequiredMedia;
-    SaveConfig;
-    FreeAndNil(FSettingsSnapshot);
-    FreeAndNil(FCredentialSnapshot);
-    O := CreateRunConfig;
+    FreeAndNil(FWorker);
+    PanelLeftPan.Enabled := True;
+    ImportConfigButton.Enabled := True;
+    ExportConfigButton.Enabled := True;
+    RefreshSettings;
+    ProgressBarScrappingGames.Value := 0;
+    LabelScrapingGameCount.Text := 'Games';
+    ButtonScrap.Text := SK.Locale.L('Остановить');
+    ShowPage(0);
+    UpdateSelectionCount;
+    Exit;
+  end;
+  Required := PrepareRequiredMedia;
+  SaveConfig;
+  FSettings.DiscardSnapshot;
+  O := CreateRunConfig;
+  try
+    if O.GetValue<TJSONArray>('Systems').Count = 0 then
+      Exit;
+    FWorker := TScrapeWorker.Create(O, FConfig.Credentials, WritableBase, -1);
+  finally
+    O.Free
+  end;
+  BeginScrapeDisplay;
+  if Required > 0 then
+    FastColoredTextBoxLogging.Lines.Add(SK.Locale.L('Добавлено обязательных медиа Recalbox: %d', [Required]));
+  ButtonScrap.Text := SK.Locale.L('Остановить');
+  FWorker.Start;
+end;
+
+procedure TFormMain.ButtonAddSystemClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  AddSystem;
+end;
+
+procedure TFormMain.ButtonRemoveSystemClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  if FSelected < 0 then
+    Exit;
+  FConfig.Root.GetValue<TJSONArray>('Systems').Remove(FSelected).Free;
+  FSelected := -1;
+  BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.ButtonSourceFolderClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  Browse(EditSourceFolder);
+  BuildSystems;
+end;
+
+procedure TFormMain.ButtonDestinationFolderClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  SaveDialog.Filter := SK.Locale.L('Файл списка игр|*.xml;*.dat;*.zip');
+  SaveDialog.InitialDir := FConfig.DialogFolder('GamelistFolder', EditDestinationFolder.Text);
+  if not EditDestinationFolder.Text.Contains('%') then
+    SaveDialog.FileName := EditDestinationFolder.Text
+  else
+    SaveDialog.FileName := 'gamelist.xml';
+  if SaveDialog.Execute then
+  begin
+    EditDestinationFolder.Text := SaveDialog.FileName;
+    FConfig.RememberFolder('GamelistFolder', ExtractFilePath(SaveDialog.FileName));
+  end;
+end;
+
+procedure TFormMain.ButtonMediaOutputFolderClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  Browse(EditMediaOutputFolder);
+end;
+
+procedure TFormMain.ButtonFrontEndPathClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  Browse(EditFrontEndPath);
+end;
+
+procedure TFormMain.ButtonUserProvidedMixClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  Browse(EditUserProvidedMix, True);
+end;
+
+procedure TFormMain.ButtonWebClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  OpenExternalURL(ScreenScraperWebsite);
+end;
+
+procedure TFormMain.ButtonRefreshUserMixClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  RefreshMediaPreview;
+end;
+
+procedure TFormMain.ButtonMediaMoveLeftClick(Sender: TObject);
+begin
+  MoveMedia(-1, False);
+end;
+
+procedure TFormMain.ButtonMediaMoveRightClick(Sender: TObject);
+begin
+  MoveMedia(1, False);
+end;
+
+procedure TFormMain.ButtonAddMediaClick(Sender: TObject);
+var
+  A: TJSONArray;
+begin
+  if not CanExecuteAction then
+    Exit;
+  EnsureGroup('Medias', 8);
+  A := FConfig.SystemAt(FSelected).GetValue<TJSONArray>('Medias');
+  A.AddElement(DefaultMedia(JInt(FConfig.Root, 'FrontEnd.Type'), A));
+  FMedia := A.Count - 1;
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.ButtonDeleteMediaClick(Sender: TObject);
+var
+  A: TJSONArray;
+begin
+  if not CanExecuteAction then
+    Exit;
+  EnsureGroup('Medias', 8);
+  A := FConfig.SystemAt(FSelected).GetValue<TJSONArray>('Medias');
+  if (FMedia >= 0) and (FMedia < A.Count) then
+    A.Remove(FMedia).Free;
+  FMedia := Max(0, A.Count - 1);
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.ButtonDeleteAllClick(Sender: TObject);
+var
+  A: TJSONArray;
+begin
+  if not CanExecuteAction then
+    Exit;
+  EnsureGroup('Medias', 8);
+  A := FConfig.SystemAt(FSelected).GetValue<TJSONArray>('Medias');
+  while A.Count > 0 do
+    A.Remove(0).Free;
+  FMedia := 0;
+  BuildMedia;
+  RefreshSettings;
+end;
+
+procedure TFormMain.ButtonCopyFromMainClick(Sender: TObject);
+var
+  O: TJSONObject;
+  Setup: TFormSetup;
+begin
+  if not CanExecuteAction then
+    Exit;
+  Setup := TFormSetup.Create(nil);
+  try
+    Setup.StyleBook := StyleBookWinUI3;
+    O := Setup.ExecuteMedia(FConfig, FCatalog, FSelected);
+    if O <> nil then
     try
-      if O.GetValue<TJSONArray>('Systems').Count = 0 then
-        Exit;
-      FWorker := TScrapeWorker.Create(O, FConfig.Credentials, WritableBase, -1);
+      EnsureGroup('Medias', 8);
+      AppendSystemMedia(FConfig.SystemAt(FSelected), O);
+      BuildMedia;
+      RefreshSettings;
     finally
       O.Free
     end;
-    BeginScrapeDisplay;
-    if Required > 0 then
-      FastColoredTextBoxLogging.Lines.Add(SK.Locale.L('Добавлено обязательных медиа Recalbox: %d', [Required]));
-    ButtonScrap.Text := SK.Locale.L('Остановить');
-    IconScrap.Visible := False;
-    IconStop.Visible := False;
-    FWorker.Start;
-    Exit;
+  finally
+    Setup.Free
   end;
-  if (Sender = ButtonAddSystem) then
-  begin
-    AddSystem;
+end;
+
+procedure TFormMain.RaisedButtonClearAllCachesClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
     Exit;
+  CleanCache(True, True);
+end;
+
+procedure TFormMain.RaisedButtonClearGameInformationCacheClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  CleanCache(True, False);
+end;
+
+procedure TFormMain.RaisedButtonClearMediaCacheClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  CleanCache(False, True);
+end;
+
+procedure TFormMain.RaisedButtonResetConfigClick(Sender: TObject);
+begin
+  if not CanExecuteAction then
+    Exit;
+  if TDialogServiceSync.MessageDialog(SK.Locale.L('Сбросить настройки выбранной системы? Для области «Все системы» будут восстановлены настройки платформ из каталога.'), TMsgDlgType.mtConfirmation, [TMsgDlgBtn.mbYes, TMsgDlgBtn.mbNo], TMsgDlgBtn.mbNo, 0) <> mrYes then
+    Exit;
+  FConfig.ResetSystemSettings(FSelected, FCatalog);
+  BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+end;
+
+function TFormMain.CanExecuteAction(AllowRunningWorker: Boolean): Boolean;
+begin
+  Result := not (FCacheBusy or FAccountBusy) and
+    (AllowRunningWorker or (FWorker = nil) or FWorker.Finished);
+end;
+
+procedure TFormMain.RefreshMediaPreview;
+begin
+  FPreviewKey := '';
+  BuildMedia;
+  RefreshSettings;
+  try
+    PreviewMedia;
+  except
+    on E: Exception do
+      ShowMessage(E.Message);
   end;
-  if Sender = ButtonRemoveSystem then
+end;
+
+procedure TFormMain.MoveMedia(Direction: Integer; ToEdge: Boolean);
+begin
+  if not CanExecuteAction then
+    Exit;
+  if FSettings.MoveMedia(FSelected, FMedia, Direction, ToEdge) then
   begin
-    if FSelected < 0 then
-      Exit;
-    FConfig.Root.GetValue<TJSONArray>('Systems').Remove(FSelected).Free;
-    FSelected := -1;
-    BuildSystems;
     BuildMedia;
     RefreshSettings;
-    Exit;
-  end;
-  if Sender = ButtonSourceFolder then
-  begin
-    Browse(EditSourceFolder);
-    BuildSystems;
-    Exit;
-  end;
-  if Sender = ButtonDestinationFolder then
-  begin
-    SaveDialog.Filter := SK.Locale.L('Файл списка игр|*.xml;*.dat;*.zip');
-    SaveDialog.InitialDir := FConfig.DialogFolder('GamelistFolder', EditDestinationFolder.Text);
-    if not EditDestinationFolder.Text.Contains('%') then
-      SaveDialog.FileName := EditDestinationFolder.Text
-    else
-      SaveDialog.FileName := 'gamelist.xml';
-    if SaveDialog.Execute then
-    begin
-      EditDestinationFolder.Text := SaveDialog.FileName;
-      FConfig.RememberFolder('GamelistFolder', ExtractFilePath(SaveDialog.FileName));
-    end;
-    Exit;
-  end;
-  if Sender = ButtonMediaOutputFolder then
-  begin
-    Browse(EditMediaOutputFolder);
-    Exit;
-  end;
-  if Sender = ButtonFrontEndPath then
-  begin
-    Browse(EditFrontEndPath);
-    Exit;
-  end;
-  if Sender = ButtonUserProvidedMix then
-  begin
-    Browse(EditUserProvidedMix, True);
-    Exit;
-  end;
-  if Sender = ButtonWeb then
-  begin
-    OpenExternalURL(ScreenScraperWebsite);
-    Exit;
-  end;
-  if Sender = ButtonDiscord then
-  begin
-    OpenExternalURL(ScreenScraperDiscordURL);
-    Exit;
-  end;
-  if (Sender = ButtonCycleMediaSamples) or (Sender = ButtonRefreshUserMix) then
-  begin
-    if Sender = ButtonCycleMediaSamples then
-    begin
-      FSample := (FSample + 1) mod 6;
-      JSet(FConfig.Root, 'SampleSet', TJSONNumber.Create(FSample));
-    end;
-    FPreviewKey := '';
-    BuildMedia;
-    RefreshSettings;
-    try
-      PreviewMedia;
-    except
-      on E: Exception do
-        ShowMessage(E.Message);
-    end;
-    Exit;
-  end;
-  if (Sender = ButtonMediaMoveLeft) or (Sender = ButtonMediaMoveRight) or
-    (Sender = ButtonMediaMoveToLeft) or (Sender = ButtonMediaMoveToRight) or
-    (Sender = ButtonAddMedia) or (Sender = ButtonDeleteMedia) or (Sender = ButtonDeleteAll) then
-    EnsureGroup('Medias', 8);
-  A := FConfig.SystemAt(FSelected).GetValue<TJSONArray>('Medias');
-  if (Sender = ButtonMediaMoveLeft) or (Sender = ButtonMediaMoveRight) or (Sender = ButtonMediaMoveToLeft) or (Sender = ButtonMediaMoveToRight) then
-  begin
-    if (FMedia < 0) or (FMedia >= A.Count) then
-      Exit;
-    Target := FMedia;
-    if Sender = ButtonMediaMoveLeft then
-      Dec(Target);
-    if Sender = ButtonMediaMoveRight then
-      Inc(Target);
-    if Sender = ButtonMediaMoveToLeft then
-      Target := 0;
-    if Sender = ButtonMediaMoveToRight then
-      Target := A.Count - 1;
-    Target := EnsureRange(Target, 0, A.Count - 1);
-    B := TJSONArray.Create;
-    for i := 0 to A.Count - 1 do
-    begin
-      j := i;
-      if i = Target then
-        j := FMedia
-      else if (Target < FMedia) and (i > Target) and (i <= FMedia) then
-        j := i - 1
-      else if (Target > FMedia) and (i >= FMedia) and (i < Target) then
-        j := i + 1;
-      B.AddElement(A.Items[j].Clone as TJSONValue);
-    end;
-    JSet(FConfig.SystemAt(FSelected), 'Medias', B);
-    FMedia := Target;
-    BuildMedia;
-    RefreshSettings;
-    Exit;
-  end;
-  if (Sender = ButtonMediaLeft) or (Sender = ButtonMediaRight) then
-  begin
-    if FEffective <> nil then
-      A := FEffective.GetValue<TJSONArray>('Medias');
-    if Sender = ButtonMediaLeft then
-      i := -1
-    else
-      i := 1;
-    FMedia := EnsureRange(FMedia + i, 0, Max(0, A.Count - 1));
-    BuildMedia;
-    RefreshSettings;
-    PanelMediaOuter.ViewportPosition := PointF(0, FMedia * 76);
-    Exit;
-  end;
-  if Sender = ButtonAddMedia then
-  begin
-    A.AddElement(DefaultMedia(JInt(FConfig.Root, 'FrontEnd.Type'), A));
-    FMedia := A.Count - 1;
-    BuildMedia;
-    RefreshSettings;
-    Exit;
-  end;
-  if Sender = ButtonDeleteMedia then
-  begin
-    if (FMedia >= 0) and (FMedia < A.Count) then
-      A.Remove(FMedia).Free;
-    FMedia := Max(0, A.Count - 1);
-    BuildMedia;
-    RefreshSettings;
-    Exit;
-  end;
-  if Sender = ButtonDeleteAll then
-  begin
-    while A.Count > 0 do
-      A.Remove(0).Free;
-    FMedia := 0;
-    BuildMedia;
-    RefreshSettings;
-    Exit;
-  end;
-  if Sender = ButtonCopyFromMain then
-  begin
-    Setup := TFormSetup.Create(nil);
-    try
-      Setup.StyleBook := StyleBookWinUI3;
-      O := Setup.ExecuteMedia(FConfig, FCatalog, FSelected);
-      if O <> nil then
-      try
-        EnsureGroup('Medias', 8);
-        AppendSystemMedia(FConfig.SystemAt(FSelected), O);
-        BuildMedia;
-        RefreshSettings;
-      finally
-        O.Free
-      end;
-    finally
-      Setup.Free
-    end;
-    Exit;
-  end;
-  if Name.Contains('Clear') and Name.Contains('Cache') then
-  begin
-    CleanCache(not Name.Contains('Media'), not Name.Contains('GameInformation'));
-    Exit;
-  end;
-  if Sender = RaisedButtonResetConfig then
-  begin
-    if TDialogServiceSync.MessageDialog(SK.Locale.L('Сбросить настройки выбранной системы? Для области «Все системы» будут восстановлены настройки платформ из каталога.'), TMsgDlgType.mtConfirmation, [TMsgDlgBtn.mbYes, TMsgDlgBtn.mbNo], TMsgDlgBtn.mbNo, 0) <> mrYes then
-      Exit;
-    FConfig.ResetSystemSettings(FSelected, FCatalog);
-    BuildSystems;
-    BuildMedia;
-    RefreshSettings;
-    Exit;
-  end;
-  Combo := nil;
-  if Name.Contains('Method') then
-    Combo := RollingButtonMethod;
-  if Name.Contains('HTTPTries') then
-    Combo := RollingButtonHTTPTries;
-  if Name.Contains('CacheTTL') then
-    Combo := RollingButtonCacheTTL;
-  if Name.Contains('Classification') then
-    Combo := RollingButtonClassification;
-  if Name.Contains('MediaType') then
-    Combo := RollingButtonMediaTypeSelector;
-  if Combo <> nil then
-  begin
-    i := 1;
-    if Name.EndsWith('Left') then
-      i := -1;
-    Combo.ItemIndex := (Combo.ItemIndex + i + Combo.Items.Count) mod Combo.Items.Count;
-    Exit;
   end;
 end;
 
@@ -3167,331 +2278,15 @@ begin
 end;
 
 procedure TFormMain.BeginScrapeDisplay;
-var
-  i: Integer;
-  S: TScrapeStatus;
 begin
   ShowPage(1);
-  PanelSettings.Enabled := False;
-  PanelLeftPan.Enabled := False;
-  ButtonAddSystem.Enabled := False;
-  ButtonRemoveSystem.Enabled := False;
-  ButtonRunWizard.Enabled := False;
-  ConfigureSystem.Enabled := False;
-  OpenPlatformLibrary.Enabled := False;
-  ConfigureAll.Enabled := False;
-  ImportConfigButton.Enabled := False;
-  ExportConfigButton.Enabled := False;
-  FFullLogReset := True;
-  FastColoredTextBoxLogging.Lines.Clear;
-  for i := 0 to 2 do
-    FPreviewRevisions[i] := 0;
-  PictureBoxScrapSample1.Bitmap.Clear(0);
-  PictureBoxScrapSample2.Bitmap.Clear(0);
-  PictureBoxScrapSample3.Bitmap.Clear(0);
-  FDisplayedSystemID := '';
-  RecentMediaNote.Text := SK.Locale.L('Изображения появятся после загрузки');
-  ProgressBarMediaFoundPercent.Value := 0;
-  LabelMediaCoverage.Text := '0.0%';
-  MediaCoverageDetail.Text := SK.Locale.L('Найдено 0 из 0 запрошенных медиа');
-  IconScrap.Visible := False;
-  IconStop.Visible := False;
-  ButtonScrap.Text := SK.Locale.L('Остановить');
-  StartScraping.Enabled := False;
-  SelectAllSystems.Enabled := False;
-  ButtonScrap.Enabled := True;
-  S := Default(TScrapeStatus);
-  S.Started := Now;
-  S.Running := True;
-  S.Stage := 'Starting';
-  ApplyScrapeStatus(S);
-end;
-
-function StageText(const Stage: string): string;
-begin
-  Result := Stage;
-  if Stage = 'Starting' then
-    Result := SK.Locale.L('Запуск')
-  else if Stage = 'Downloading media' then
-    Result := SK.Locale.L('Загрузка медиа')
-  else if Stage = 'Preparing media' then
-    Result := SK.Locale.L('Подготовка медиа')
-  else if Stage = 'Hashing ROM' then
-    Result := SK.Locale.L('Расчёт хеша ROM')
-  else if Stage = 'Composing mix' then
-    Result := SK.Locale.L('Создание Mix')
-  else if Stage = 'Requesting metadata' then
-    Result := SK.Locale.L('Получение метаданных')
-  else if Stage = 'Saving game list' then
-    Result := SK.Locale.L('Запись списка игр')
-  else if Stage = 'Authenticating' then
-    Result := SK.Locale.L('Авторизация')
-  else if Stage = 'Scanning ROMs' then
-    Result := SK.Locale.L('Поиск файлов ROM')
-  else if Stage = 'Cancelled' then
-    Result := SK.Locale.L('Отменено')
-  else if Stage = 'Stopped' then
-    Result := SK.Locale.L('Остановлено')
-  else if Stage = 'Completed' then
-    Result := SK.Locale.L('Завершено')
-  else if Stage = 'Completed with errors' then
-    Result := SK.Locale.L('Завершено с ошибками');
+  FLogPresenter.Reset;
+  FScrapePresenter.BeginScrape;
 end;
 
 procedure TFormMain.ApplyScrapeStatus(const S: TScrapeStatus);
-var
-  Seconds, Remaining, i, j: Integer;
-  EndTime: TDateTime;
-  Images: array[0..2] of TImage;
-  Stream: TBytesStream;
-  Preview: FMX.Graphics.TBitmap;
-  EngineLabel: TLabel;
-  EngineIcon: FMX.Objects.TPath;
-  EngineDetail: TLabel;
-  Obj: TFmxObject;
-  EngineRow, TextColumn, MediaRow, StatsColumn: TLayout;
 begin
-  ScrapeLogChanged(nil);
-  Images[0] := PictureBoxScrapSample1;
-  Images[1] := PictureBoxScrapSample2;
-  Images[2] := PictureBoxScrapSample3;
-  for i := 0 to 2 do
-    if (S.PreviewRevision[i] > FPreviewRevisions[i]) and (Length(S.PreviewData[i]) > 0) then
-    begin
-      Stream := TBytesStream.Create(S.PreviewData[i]);
-      Preview := FMX.Graphics.TBitmap.Create;
-      try
-        try
-          Preview.LoadFromStream(Stream);
-          Images[i].Bitmap.Assign(Preview);
-          Images[i].Hint := S.PreviewSource[i];
-        except
-          on E: Exception do
-            FastColoredTextBoxLogging.Lines.Add('Preview: ' + E.Message);
-        end;
-        FPreviewRevisions[i] := S.PreviewRevision[i];
-      finally
-        Preview.Free;
-        Stream.Free
-      end;
-    end;
-  LabelEngineState.Visible := Length(S.Engines) = 0;
-  LabelEngineFile.Visible := Length(S.Engines) = 0;
-  LabelEngineMedia.Visible := Length(S.Engines) = 0;
-  ProgressEngine.Visible := Length(S.Engines) = 0;
-  if FEngineLabels.Count <> Length(S.Engines) then
-  begin
-    FEngineLabels.Clear;
-    FEngineProgress.Clear;
-    FEngineRows.Clear;
-    for i := 0 to High(S.Engines) do
-    begin
-      EngineRow := TLayout.Create(nil);
-      FEngineRows.Add(EngineRow);
-      EngineRow.Parent := PanelScrapingEngines;
-      EngineRow.Height := 80;
-      EngineRow.Position.Y := i * 80;
-      EngineRow.Align := TAlignLayout.Top;
-      EngineRow.Padding.Right := 8;
-      EngineRow.HitTest := False;
-      TextColumn := TLayout.Create(EngineRow);
-      TextColumn.Parent := EngineRow;
-      TextColumn.Align := TAlignLayout.Client;
-      TextColumn.Padding.Bottom := 8;
-      TextColumn.HitTest := False;
-      EngineLabel := TLabel.Create(EngineRow);
-      FEngineLabels.Add(EngineLabel);
-      EngineLabel.Parent := TextColumn;
-      EngineLabel.Align := TAlignLayout.Top;
-      EngineLabel.Height := 24;
-      EngineLabel.StyledSettings := [];
-      EngineLabel.TextSettings.FontColor := $FFF3F3F3;
-      EngineLabel.TextSettings.Font.Size := 14;
-      EngineLabel.TextSettings.Font.Style := [TFontStyle.fsBold];
-      EngineLabel.TextSettings.WordWrap := True;
-      EngineIcon := FMX.Objects.TPath.Create(EngineLabel);
-      EngineIcon.Parent := EngineRow;
-      EngineIcon.Align := TAlignLayout.Left;
-      EngineIcon.Width := 28;
-      EngineIcon.Margins.Rect := RectF(0, 16, 12, 36);
-      EngineIcon.Data.Assign(NavScrapingIcon.Data);
-      EngineIcon.Fill.Color := $FF60CDFF;
-      EngineIcon.Stroke.Kind := TBrushKind.None;
-      EngineIcon.WrapMode := TPathWrapMode.Fit;
-      EngineIcon.HitTest := False;
-      EngineDetail := TLabel.Create(EngineLabel);
-      EngineDetail.Parent := TextColumn;
-      EngineDetail.StyleName := 'enginephase';
-      EngineDetail.Tag := i;
-      EngineDetail.Align := TAlignLayout.Bottom;
-      EngineDetail.Height := 24;
-      EngineDetail.Opacity := 0.65;
-      EngineDetail.TextSettings.Trimming := TTextTrimming.Character;
-      MediaRow := TLayout.Create(EngineRow);
-      MediaRow.Parent := TextColumn;
-      MediaRow.Align := TAlignLayout.Client;
-      MediaRow.HitTest := False;
-      StatsColumn := TLayout.Create(EngineRow);
-      StatsColumn.Parent := MediaRow;
-      StatsColumn.Align := TAlignLayout.Right;
-      StatsColumn.Width := 164;
-      StatsColumn.Margins.Left := 8;
-      StatsColumn.HitTest := False;
-      EngineDetail := TLabel.Create(EngineLabel);
-      EngineDetail.Parent := StatsColumn;
-      EngineDetail.StyleName := 'enginepercent';
-      EngineDetail.Tag := i;
-      EngineDetail.Align := TAlignLayout.Right;
-      EngineDetail.Width := 40;
-      EngineDetail.Margins.Left := 8;
-      EngineDetail.TextSettings.HorzAlign := TTextAlign.Trailing;
-      FEngineProgress.Add(TProgressBar.Create(EngineLabel));
-      FEngineProgress[i].Parent := StatsColumn;
-      FEngineProgress[i].Align := TAlignLayout.Client;
-      FEngineProgress[i].Width := 116;
-      FEngineProgress[i].Margins.Rect := RectF(0, 9, 0, 9);
-      EngineDetail := TLabel.Create(EngineLabel);
-      EngineDetail.Parent := MediaRow;
-      EngineDetail.StyleName := 'enginefile';
-      EngineDetail.Tag := i;
-      EngineDetail.Align := TAlignLayout.Client;
-      EngineDetail.Opacity := 0.8;
-      EngineDetail.TextSettings.Trimming := TTextTrimming.Character;
-    end;
-  end;
-  for i := 0 to High(S.Engines) do
-  begin
-    FEngineProgress[i].Max := Max(1, S.Engines[i].MediaTotal);
-    FEngineProgress[i].Value := S.Engines[i].CurrentMedia;
-    FEngineLabels[i].Text := Format(SK.Locale.L('Поток %d'), [i + 1]);
-    for j := 0 to FEngineLabels[i].ComponentCount - 1 do
-    begin
-      Obj := FEngineLabels[i].Components[j] as TFmxObject;
-      if (Obj is TLabel) and (TLabel(Obj).Tag = i) then
-      begin
-        if Obj.StyleName = 'enginefile' then
-          TLabel(Obj).Text := S.Engines[i].FileName
-        else if Obj.StyleName = 'enginephase' then
-          TLabel(Obj).Text := Format(SK.Locale.L('%s · %d из %d'), [StageText(S.Engines[i].Stage), S.Engines[i].CurrentMedia, S.Engines[i].MediaTotal])
-        else if Obj.StyleName = 'enginepercent' then
-          TLabel(Obj).Text := Format('%.0f%%', [100.0 * S.Engines[i].CurrentMedia / Max(1, S.Engines[i].MediaTotal)]);
-      end;
-    end;
-  end;
-  LabelEngineState.Text := StageText(S.Stage);
-  LabelEngineFile.Text := S.CurrentFile;
-  LabelEngineMedia.Text := Format(SK.Locale.L('Медиа %d / %d'), [S.CurrentMedia, S.MediaTotal]);
-  ProgressEngine.Max := Max(1, S.MediaTotal);
-  ProgressEngine.Value := S.CurrentMedia;
-  ProgressBarMediaFoundPercent.Max := Max(1, S.MediaRequested);
-  ProgressBarMediaFoundPercent.Value := S.MediaFound;
-  MediaCoverageDetail.Text := Format(SK.Locale.L('Найдено %d из %d запрошенных медиа'), [S.MediaFound, S.MediaRequested]);
-  LabelMediaCoverage.Text := Format('%.1f%%', [100.0 * S.MediaFound / Max(1, S.MediaRequested)]);
-  LabelScrapedGamesValue.Text := S.Found.ToString;
-  LabelGameNotFoundValue.Text := S.Missing.ToString;
-  LabelErrorsValue.Text := S.Errors.ToString;
-  if S.Errors > 0 then
-    LabelErrorsValue.TextSettings.FontColor := $FFF0B455
-  else
-    LabelErrorsValue.TextSettings.FontColor := $FFF0B455;
-  ScrapeStateBadge.Fill.Color := $FF60CDFF;
-  if S.Finished then
-  begin
-    if S.Cancelled then
-      ScrapeStateText.Text := SK.Locale.L('Остановлено')
-    else if S.Errors > 0 then
-    begin
-      ScrapeStateText.Text := SK.Locale.L('Есть ошибки');
-      ScrapeStateBadge.Fill.Color := $FFF0B455
-    end
-    else
-      ScrapeStateText.Text := SK.Locale.L('Завершено');
-  end
-  else if S.Running then
-    ScrapeStateText.Text := SK.Locale.L('Выполняется')
-  else
-    ScrapeStateText.Text := SK.Locale.L('Ожидание');
-  LabelDownloadedMediaValue.Text := S.Downloaded.ToString;
-  LabelSavedMediaValue.Text := S.Saved.ToString;
-  if S.QuotaText <> '' then
-  begin
-    LabelQuotaValue.Text := S.QuotaText;
-    AccountQuotaValue.Text := S.QuotaText;
-    LabelQuotaValue.Hint := SK.Locale.L('Запросы сегодня / суточный лимит ScreenScraper. Обновлено: ') +
-      FormatDateTime('dd.mm hh:nn:ss', S.QuotaUpdated);
-  end;
-  LabelCachedValue.Text := S.Cached.ToString;
-  LabelRequestsValue.Text := S.Requests.ToString;
-  LabelFavoriteGamesValue.Text := S.Favorites.ToString;
-  LabelHiddenGamesValue.Text := S.Hidden.ToString;
-  if S.Finished and (S.FinishedAt > 0) then
-    EndTime := S.FinishedAt
-  else
-    EndTime := Now;
-  if S.Started > 0 then
-    Seconds := SecondsBetween(EndTime, S.Started)
-  else
-    Seconds := 0;
-  LabelElapsedValue.Text := Format(SK.Locale.L('Прошло %.2d:%.2d:%.2d'), [Seconds div 3600, (Seconds div 60) mod 60, Seconds mod 60]);
-  ProgressBarScrappingGames.Max := Max(1, S.Total);
-  ProgressBarScrappingGames.Value := S.Completed;
-  ProgressBarScrapingSystems.Max := Max(1, S.SystemsTotal);
-  ProgressBarScrapingSystems.Value := S.SystemsCompleted;
-  LabelScrapingSystemCount.Text := S.SystemsCompleted.ToString + ' / ' + S.SystemsTotal.ToString;
-  LabelEstimatedTimeValue.Text := '--:--:--';
-  if S.Finished then
-    LabelEstimatedTimeValue.Text := '00:00:00'
-  else if S.Completed > 0 then
-  begin
-    Remaining := Round(Seconds * (S.Total - S.Completed) / Max(1, S.Completed));
-    LabelEstimatedTimeValue.Text := Format('%.2d:%.2d:%.2d', [Remaining div 3600, (Remaining div 60) mod 60, Remaining mod 60]);
-  end;
-  LabelEstimatedTimeValue.Text := SK.Locale.L('Осталось примерно ') + LabelEstimatedTimeValue.Text;
-  LabelScrapingGameCount.Text := Format(SK.Locale.L('%d из %d игр'), [S.Completed, S.Total]);
-  FScrapeSubtitle := Format(SK.Locale.L('%s · система %d из %d'), [S.CurrentSystem, Min(S.SystemsTotal, S.SystemsCompleted + Ord(not S.Finished)), S.SystemsTotal]);
-  if PageTabControl.TabIndex = 1 then
-    PageSubtitle.Text := FScrapeSubtitle;
-  LabelSystemName.Text := S.CurrentSystem;
-  ScrapePercent.Text := Format('%.0f%%', [100.0 * S.Completed / Max(1, S.Total)]);
-  ScrapeSummary.Text := Format(SK.Locale.L('ScreenScraper · %d потоков · %d запросов · %d из кэша · %d загружено'),
-    [Length(S.Engines), S.Requests, S.Cached, S.Downloaded]);
-  if not PictureBoxScrapSample1.Bitmap.IsEmpty then
-    RecentMediaNote.Text := System.IOUtils.TPath.GetFileNameWithoutExtension(S.CurrentFile);
-  if PageTabControl.TabIndex = 3 then
-    SyncFullLog;
-  if S.Finished then
-  begin
-    IconScrap.Visible := False;
-    IconStop.Visible := False;
-    PanelSettings.Enabled := True;
-    PanelLeftPan.Enabled := True;
-    ImportConfigButton.Enabled := True;
-    ExportConfigButton.Enabled := True;
-    SelectAllSystems.Enabled := True;
-    UpdateSelectionCount;
-    ButtonAddSystem.Enabled := True;
-    ButtonRunWizard.Enabled := True;
-    ConfigureAll.Enabled := True;
-    UpdateInspector;
-    ButtonScrap.Enabled := True;
-    ButtonScrap.Text := SK.Locale.L('В библиотеку');
-    if S.Cancelled then
-      ScrapeSummary.Text := SK.Locale.L('Остановлено · ') + ScrapeSummary.Text
-    else if S.Errors > 0 then
-      ScrapeSummary.Text := SK.Locale.L('Завершено с ошибками · ') + ScrapeSummary.Text
-    else
-      ScrapeSummary.Text := SK.Locale.L('Завершено · ') + ScrapeSummary.Text;
-  end;
-end;
-
-procedure ReplaceObject(Target, Source: TJSONObject);
-var
-  Pair: TJSONPair;
-begin
-  while Target.Count > 0 do
-    Target.RemovePair(Target.Pairs[0].JsonString.Value).Free;
-  for Pair in Source do
-    Target.AddPair(Pair.JsonString.Value, Pair.JsonValue.Clone as TJSONValue);
+  FScrapePresenter.ApplyStatus(S);
 end;
 
 procedure TFormMain.ShowPage(Page: Integer);
@@ -3505,60 +2300,8 @@ begin
 end;
 
 procedure TFormMain.SyncFullLog;
-var
-  Source: TStrings;
-  Count, First, I, SelectionStart, SelectionLength: Integer;
-  OldViewport: TPointF;
-  Reset, FollowTail: Boolean;
 begin
-  Source := FastColoredTextBoxLogging.Lines;
-  Count := Source.Count;
-  Reset := FFullLogReset or (Count < FFullLogCount);
-  if not Reset and (FFullLogCount > 0) then
-    Reset := Source[FFullLogCount - 1] <> FFullLogTail;
-  // Never touch the memo for a status tick that contains no new lines.
-  // This also leaves its active wheel animation and selection undisturbed.
-  if not Reset and (Count = FFullLogCount) then
-    Exit;
-  OldViewport := FullLog.ViewportPosition;
-  FollowTail := Reset or (OldViewport.Y + FullLog.ViewportSize.Height >= FullLog.ContentSize.Height - 2);
-  SelectionStart := FullLog.SelStart;
-  SelectionLength := FullLog.SelLength;
-  First := FFullLogCount;
-  if Reset then
-  begin
-    First := 0;
-    SelectionStart := 0;
-    SelectionLength := 0;
-  end;
-  FullLog.BeginUpdate;
-  try
-    FullLog.Lines.BeginUpdate;
-    try
-      if Reset then
-        FullLog.Lines.Clear;
-      for I := First to Count - 1 do
-        FullLog.Lines.Add(Source[I]);
-    finally
-      FullLog.Lines.EndUpdate;
-    end;
-  finally
-    FullLog.EndUpdate;
-  end;
-  FullLog.SelStart := SelectionStart;
-  FullLog.SelLength := SelectionLength;
-  // Memo layout may reveal its caret while processing LinesChanged. Restore the
-  // reader's viewport after layout, and follow new output only from the bottom.
-  if FollowTail then
-    FullLog.ViewportPosition := PointF(OldViewport.X,
-      Max(0, FullLog.ContentSize.Height - FullLog.ViewportSize.Height))
-  else
-    FullLog.ViewportPosition := OldViewport;
-  FFullLogCount := Count;
-  FFullLogTail := '';
-  if Count > 0 then
-    FFullLogTail := Source[Count - 1];
-  FFullLogReset := False;
+  FLogPresenter.SyncFullLog;
 end;
 
 procedure TFormMain.PageTabChanged(Sender: TObject);
@@ -3614,17 +2357,13 @@ begin
     1:
       begin
         PageTitle.Text := SK.Locale.L('Скраппинг');
-        PageSubtitle.Text := FScrapeSubtitle
+        PageSubtitle.Text := FScrapePresenter.Subtitle
       end;
     2:
       begin
         PageTitle.Text := SK.Locale.L('Настройки');
         PageSubtitle.Text := SK.Locale.L('Параметры скраппинга и сохранения файлов');
-        if FSettingsSnapshot = nil then
-        begin
-          FSettingsSnapshot := FConfig.Root.Clone as TJSONObject;
-          FCredentialSnapshot := FConfig.Credentials.Clone as TJSONObject;
-        end;
+        FSettings.BeginEdit;
       end;
     3:
       begin
@@ -3635,114 +2374,141 @@ begin
   end;
 end;
 
-procedure TFormMain.ShellAction(Sender: TObject);
-var
-  Page: Integer;
+function TFormMain.CanOpenSettings: Boolean;
 begin
-  Page := TControl(Sender).Tag;
-  if FCacheBusy then
-    Exit;
-  if (Page in [2, 4, 5, 6, 8, 9, 10]) and (FWorker <> nil) and not FWorker.Finished then
+  Result := not FCacheBusy;
+  if Result and (FWorker <> nil) and not FWorker.Finished then
   begin
     ShowPage(1);
-    Exit
+    Result := False;
   end;
-  case Page of
-    0..3:
-      ShowPage(Page);
-    4:
-      begin
-        ShowPage(2);
-        SettingsTabControl.ActiveTab := TabAccount
-      end;
-    5:
-      begin
-        ShowPage(2);
-        SettingsTabControl.ActiveTab := TabSource
-      end;
-    6:
-      begin
-        FSelected := -1;
-        FMedia := 0;
-        BuildSystems;
-        BuildMedia;
-        RefreshSettings;
-        ShowPage(2);
-      end;
-    7:
-      begin
-        if (FWorker <> nil) and FWorker.Finished then
-          FreeAndNil(FWorker);
-        if FWorker <> nil then
-        begin
-          ShowPage(1);
-          Exit
-        end;
-        ActionClick(ButtonScrap);
-      end;
-    8:
-      ActionClick(RaisedButtonResetConfig);
-    9:
-      begin
-        if FSettingsSnapshot <> nil then
-        begin
-          ReplaceObject(FConfig.Root, FSettingsSnapshot);
-          ReplaceObject(FConfig.Credentials, FCredentialSnapshot);
-          SetLocale(JStr(FConfig.Root, 'Culture', 'ru'));
-          FRefreshing := True;
-          try
-            ApplyLocale(Self)
-          finally
-            FRefreshing := False
-          end;
-          FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
-        end;
-        FreeAndNil(FSettingsSnapshot);
-        FreeAndNil(FCredentialSnapshot);
-        FSelected := -1;
-        FMedia := 0;
-        BuildSystems;
-        BuildMedia;
-        RefreshSettings;
-        ShowPage(0);
-      end;
-    10:
-      begin
-        SaveConfig;
-        FreeAndNil(FSettingsSnapshot);
-        FreeAndNil(FCredentialSnapshot);
-        BuildSystems;
-        UpdateInspector;
-        ShowPage(0);
-      end;
-    11:
-      begin
-        SaveDialog.Filter := SK.Locale.L('Текстовый журнал|*.txt');
-        SaveDialog.DefaultExt := 'txt';
-        SaveDialog.FileName := 'skraper-log.txt';
-        SaveDialog.InitialDir := FConfig.DialogFolder('LogFolder', '');
-        if SaveDialog.Execute then
-        begin
-          FConfig.RememberFolder('LogFolder', ExtractFilePath(SaveDialog.FileName));
-          FastColoredTextBoxLogging.Lines.SaveToFile(SaveDialog.FileName, TEncoding.UTF8);
-        end;
-      end;
+end;
+
+procedure TFormMain.NavLibraryClick(Sender: TObject);
+begin
+  if not FCacheBusy then
+    ShowPage(0);
+end;
+
+procedure TFormMain.NavScrapingClick(Sender: TObject);
+begin
+  if not FCacheBusy then
+    ShowPage(1);
+end;
+
+procedure TFormMain.NavSettingsClick(Sender: TObject);
+begin
+  if CanOpenSettings then
+    ShowPage(2);
+end;
+
+procedure TFormMain.NavLogClick(Sender: TObject);
+begin
+  if not FCacheBusy then
+    ShowPage(3);
+end;
+
+procedure TFormMain.NavAccountClick(Sender: TObject);
+begin
+  if not CanOpenSettings then
+    Exit;
+  ShowPage(2);
+  SettingsTabControl.ActiveTab := TabAccount;
+end;
+
+procedure TFormMain.ConfigureSystemClick(Sender: TObject);
+begin
+  if not CanOpenSettings then
+    Exit;
+  ShowPage(2);
+  SettingsTabControl.ActiveTab := TabSource;
+end;
+
+procedure TFormMain.ConfigureAllClick(Sender: TObject);
+begin
+  if not CanOpenSettings then
+    Exit;
+  FSelected := -1;
+  FMedia := 0;
+  BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+  ShowPage(2);
+end;
+
+procedure TFormMain.StartScrapingClick(Sender: TObject);
+begin
+  if FCacheBusy then
+    Exit;
+  if (FWorker <> nil) and FWorker.Finished then
+    FreeAndNil(FWorker);
+  if FWorker <> nil then
+  begin
+    ShowPage(1);
+    Exit;
+  end;
+  ButtonScrapClick(ButtonScrap);
+end;
+
+procedure TFormMain.ResetSettingsClick(Sender: TObject);
+begin
+  if CanOpenSettings then
+    RaisedButtonResetConfigClick(Sender);
+end;
+
+procedure TFormMain.CancelSettingsClick(Sender: TObject);
+begin
+  if not CanOpenSettings then
+    Exit;
+  if FSettings.Rollback then
+  begin
+    SetLocale(JStr(FConfig.Root, 'Culture', 'ru'));
+    FRefreshing := True;
+    try
+      ApplyLocale(Self)
+    finally
+      FRefreshing := False
+    end;
+    FSample := EnsureRange(JInt(FConfig.Root, 'SampleSet'), 0, 5);
+  end;
+  FSettings.DiscardSnapshot;
+  FSelected := -1;
+  FMedia := 0;
+  BuildSystems;
+  BuildMedia;
+  RefreshSettings;
+  ShowPage(0);
+end;
+
+procedure TFormMain.SaveSettingsClick(Sender: TObject);
+begin
+  if not CanOpenSettings then
+    Exit;
+  SaveConfig;
+  FSettings.DiscardSnapshot;
+  BuildSystems;
+  UpdateInspector;
+  ShowPage(0);
+end;
+
+procedure TFormMain.ExportLogClick(Sender: TObject);
+begin
+  if FCacheBusy then
+    Exit;
+  SaveDialog.Filter := SK.Locale.L('Текстовый журнал|*.txt');
+  SaveDialog.DefaultExt := 'txt';
+  SaveDialog.FileName := ExportLogFileName;
+  SaveDialog.InitialDir := FConfig.DialogFolder('LogFolder', '');
+  if SaveDialog.Execute then
+  begin
+    FConfig.RememberFolder('LogFolder', ExtractFilePath(SaveDialog.FileName));
+    FastColoredTextBoxLogging.Lines.SaveToFile(SaveDialog.FileName, TEncoding.UTF8);
   end;
 end;
 
 function TFormMain.CreateRunConfig: TJSONObject;
-var
-  i: Integer;
-  Selected: TJSONArray;
-  Source: TJSONArray;
 begin
-  Result := FConfig.Root.Clone as TJSONObject;
-  Selected := TJSONArray.Create;
-  Source := FConfig.Root.GetValue<TJSONArray>('Systems');
-  for i := 0 to Source.Count - 1 do
-    if FCheckedSystems.ContainsKey(SystemKey(i)) and FCheckedSystems[SystemKey(i)] then
-      Selected.AddElement(Source.Items[i].Clone as TJSONValue);
-  JSet(Result, 'Systems', Selected);
+  Result := FSettings.CreateRunConfig(FCheckedSystems);
 end;
 
 procedure TFormMain.InspectorChanged(Sender: TObject);
@@ -3797,94 +2563,10 @@ begin
 end;
 
 procedure TFormMain.ScrapeLogChanged(Sender: TObject);
-var
-  i: Integer;
-  Item: TListBoxItem;
-  Caption: TLabel;
-  Icon: FMX.Objects.TPath;
-  Rule: TRectangle;
-  MessageText, Stamp, Lower: string;
-  Template: TPathData;
-  Color: TAlphaColor;
 begin
-  if (csDestroying in ComponentState) or (ScrapeEventList = nil) then
+  if (csDestroying in ComponentState) or (FLogPresenter = nil) then
     Exit;
-  MessageText := '';
-  if FastColoredTextBoxLogging.Lines.Count > 0 then
-    MessageText := FastColoredTextBoxLogging.Lines[FastColoredTextBoxLogging.Lines.Count - 1];
-  if (FDisplayedLogCount = FastColoredTextBoxLogging.Lines.Count) and (FDisplayedLogTail = MessageText) then
-    Exit;
-  FDisplayedLogCount := FastColoredTextBoxLogging.Lines.Count;
-  FDisplayedLogTail := MessageText;
-  ScrapeEventList.BeginUpdate;
-  try
-    ScrapeEventList.Clear;
-    for i := Max(0, FastColoredTextBoxLogging.Lines.Count - MaxVisibleLogEntries) to FastColoredTextBoxLogging.Lines.Count - 1 do
-    begin
-      MessageText := FastColoredTextBoxLogging.Lines[i];
-      Stamp := '';
-      if (Length(MessageText) >= 10) and (MessageText[3] = ':') and (MessageText[6] = ':') then
-      begin
-        Stamp := Copy(MessageText, 1, 8);
-        Delete(MessageText, 1, 10)
-      end;
-      Lower := MessageText.ToLower;
-      Template := FLogInfoData;
-      Color := $FF60CDFF;
-      if Lower.Contains('error') or Lower.Contains('ошиб') or Lower.Contains('not found') then
-      begin
-        Template := FLogErrorData;
-        Color := $FFF0B455
-      end
-      else if Lower.Contains('completed') or Lower.Contains('saved') or Lower.Contains('получены') or Lower.Contains('сохран') then
-      begin
-        Template := FLogSuccessData;
-        Color := $FF6CCB5F
-      end;
-      Item := TListBoxItem.Create(ScrapeEventList);
-      Item.Parent := ScrapeEventList;
-      Item.Height := 36;
-      Item.Text := '';
-      Icon := FMX.Objects.TPath.Create(Item);
-      Icon.Parent := Item;
-      Icon.Align := TAlignLayout.Left;
-      Icon.Width := 20;
-      Icon.Margins.Rect := RectF(0, 8, 16, 8);
-      Icon.Data.Assign(Template);
-      Icon.Fill.Color := Color;
-      Icon.Stroke.Kind := TBrushKind.None;
-      Icon.WrapMode := TPathWrapMode.Fit;
-      Icon.HitTest := False;
-      Caption := TLabel.Create(Item);
-      Caption.Parent := Item;
-      Caption.Align := TAlignLayout.Left;
-      Caption.Width := 80;
-      Caption.Text := Stamp;
-      Caption.Opacity := 0.72;
-      Caption.HitTest := False;
-      Caption := TLabel.Create(Item);
-      Caption.Parent := Item;
-      Caption.Align := TAlignLayout.Client;
-      Caption.Margins.Rect := RectF(12, 0, 16, 0);
-      Caption.Text := MessageText;
-      Caption.TextSettings.WordWrap := False;
-      Caption.TextSettings.Trimming := TTextTrimming.Character;
-      Caption.HitTest := False;
-      Item.Hint := MessageText;
-      Item.ShowHint := True;
-      Rule := TRectangle.Create(Item);
-      Rule.Parent := Item;
-      Rule.Align := TAlignLayout.Bottom;
-      Rule.Height := 1;
-      Rule.Fill.Color := $FF414141;
-      Rule.Stroke.Kind := TBrushKind.None;
-      Rule.HitTest := False;
-    end;
-  finally
-    ScrapeEventList.EndUpdate
-  end;
-  if ScrapeEventList.Count > 0 then
-    ScrapeEventList.ScrollToItem(ScrapeEventList.ListItems[ScrapeEventList.Count - 1]);
+  FLogPresenter.RefreshEvents;
 end;
 
 procedure TFormMain.ToggleGameFilters(Sender: TObject);
