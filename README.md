@@ -20,6 +20,10 @@ Platform library:
 
 ![RetroScraper platform library](media/1.png)
 
-Metadata and media update scenarios:
+Scrapping process:
 
-![RetroScraper scenarios](media/3.png)
+![RetroScraper scrapping](media/2.png)
+
+Platform editing:
+
+![RetroScraper editing](media/5.png)
