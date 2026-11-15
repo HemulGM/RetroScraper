@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Classes, System.JSON, System.IOUtils, System.Hash,
   System.Generics.Collections, System.SyncObjs, System.Zip, System.StrUtils,
   SK.Scrape.Types, Xml.XMLDoc, Xml.XMLIntf, SK.Platform, SK.Json,
-  SK.ScreenScraper, SK.Storage;
+  SK.ScreenScraper, SK.Storage, SK.Scenarios;
 
 type
   TEngineStatus = SK.Scrape.Types.TEngineStatus;
@@ -17,6 +17,7 @@ type
 
   TScrapeWorker = class(TThread)
   private
+    FScenario: TScenarioRequest;
     FConfig, FCredentials, FSystemCatalog: TJSONObject;
     FBase, FCacheBase, FWorkBase: string;
     FTargetRom: string;
@@ -43,6 +44,7 @@ type
     FProduced: TDictionary<string, Boolean>;
     FCleanupRoots: TDictionary<string, Boolean>;
     procedure PrepareTargetSystem(Sys: TJSONObject);
+    function FilterNewInputs(Sys: TJSONObject; const Files: TArray<string>): TArray<string>;
     procedure CaptureQuota(User: TJSONObject);
     procedure RefreshQuota;
     procedure LockResource(Lock: TObject);
@@ -139,6 +141,7 @@ begin
   FLock := TObject.Create;
   if (Config = nil) or (Credentials = nil) then
     raise EArgumentNilException.Create('Worker configuration and credentials are required');
+  FScenario := TScenarioRequest.FromConfig(Config);
   FConfig := Config.Clone as TJSONObject;
   FCredentials := Credentials.Clone as TJSONObject;
   JSet(FCredentials, 'anonymous', TJSONBool.Create(JBool(Config, 'Anonymous', JBool(Credentials, 'anonymous'))));
@@ -589,7 +592,7 @@ var
     CacheLock := SharedResourceLock('download|' + PathKey(FileName));
     LockResource(CacheLock);
     try
-      if (FCacheBase <> '') and ValidMedia then
+      if (FCacheBase <> '') and not (FScenario.Active and (FScenario.Mode = scmForce)) and ValidMedia then
         Exit;
       for Attempt := 0 to 1 do
       begin
@@ -763,6 +766,8 @@ begin
     for MediaIndex := 0 to TJSONArray(Configs).Count - 1 do
     begin
       C := TJSONArray(Configs).Items[MediaIndex];
+      if FScenario.Active and (MediaNode(TJSONArray(Configs), MediaIndex) <> FScenario.Field) then
+        Continue;
       LastSourceKey := '';
       TMonitor.Enter(FLock);
       try
@@ -1222,6 +1227,8 @@ begin
           end;
           Game := JValue(Response, 'response.jeu') as TJSONObject;
           Item := DescribeGame(Game, Sys, FileName);
+          if FScenario.Active then
+            JSet(Item, 'exclude', TJSONBool.Create(False));
           JSet(Item, 'size', TJSONNumber.Create(Size));
           JSet(Item, 'crc', TJSONString.Create(CRC));
           JSet(Item, 'md5', TJSONString.Create(MD5));
@@ -1256,7 +1263,8 @@ begin
               LockResource(OutputLock);
               try
                 FPreviewFiles.Clear;
-                FetchMedia(Game, Sys, FileName, Node);
+                if not FScenario.Active or ScenarioMediaField(FScenario.Field) then
+                  FetchMedia(Game, Sys, FileName, Node);
                 if (FPreviewFiles.Count > 0) and (TThread.GetTickCount64 >= FNextPreviewTick) then
                 begin
                   PublishImage(FPreviewFiles[Random(FPreviewFiles.Count)]);
@@ -1464,6 +1472,11 @@ var
 
 begin
   Files := FScanned[THashSHA2.GetHashString(Sys.ToJSON)];
+  if (JBool(Sys, 'GameList.OnlyNew') or FScenario.Active) and (Length(Files) = 0) then
+  begin
+    Log('No games need updating; existing gamelist preserved.');
+    Exit;
+  end;
   TMonitor.Enter(FLock);
   try
     FStatus.CurrentSystem := TPath.GetFileName(JStr(Sys, 'GamesAndRoms.Path'));
@@ -1567,7 +1580,8 @@ begin
       finally
         TMonitor.Exit(FLock)
       end;
-      SaveMediaIndex(Sys, Writer.Document, (FTargetRom = '') and (FStatus.Errors = StartErrors));
+      SaveMediaIndex(Sys, Writer.Document, not FScenario.Active and (FTargetRom = '') and
+        not JBool(Sys, 'GameList.OnlyNew') and (FStatus.Errors = StartErrors));
       if (FTargetRom = '') and JBool(Sys, 'Miscellaneous.SaveFCRCMissing') then
         Missing.SaveToFile(ChangeFileExt(JStr(Sys, 'GameList.OutputFile'), '.Missing.FCRC.txt'), TEncoding.UTF8);
       Log('Gamelist saved.');
@@ -1667,21 +1681,66 @@ end;
 
 procedure TScrapeWorker.PrepareTargetSystem(Sys: TJSONObject);
 begin
-  if FTargetRom = '' then
+  if FScenario.Active then
+  begin
+    FScenario.PrepareSystem(Sys);
     Exit;
-  if not (TFile.Exists(FTargetRom) or TDirectory.Exists(FTargetRom)) then
-    raise Exception.Create(SK.Locale.L('ROM выбранной игры не найден'));
-  if not IsPathWithin(FTargetRom, JStr(Sys, 'GamesAndRoms.Path')) then
-    raise Exception.Create(SK.Locale.L('ROM находится вне папки выбранной платформы'));
+  end;
+  JSet(Sys, 'GameList.OnlyNew', TJSONBool.Create((FTargetRom = '') and JBool(FConfig, 'OnlyNew')));
+  if (FTargetRom = '') and not JBool(Sys, 'GameList.OnlyNew') then
+    Exit;
+  if FTargetRom <> '' then
+  begin
+    if not (TFile.Exists(FTargetRom) or TDirectory.Exists(FTargetRom)) then
+      raise Exception.Create(SK.Locale.L('ROM выбранной игры не найден'));
+    if not IsPathWithin(FTargetRom, JStr(Sys, 'GamesAndRoms.Path')) then
+      raise Exception.Create(SK.Locale.L('ROM находится вне папки выбранной платформы'));
+  end;
   if JInt(Sys, 'GameList.Type', 1) = 0 then
   begin
     JSet(Sys, 'GameList.Type', TJSONNumber.Create(1));
     JSet(Sys, 'GameList.OutputFile', TJSONString.Create(TPlatformPath.Combine(JStr(Sys, 'GamesAndRoms.Path'), 'gamelist.xml')));
   end;
   JSet(Sys, 'GameList.Behavior', TJSONNumber.Create(2));
-  JSet(Sys, 'GameList.Folders', TJSONNumber.Create(0));
+  if FTargetRom <> '' then
+    JSet(Sys, 'GameList.Folders', TJSONNumber.Create(0));
   JSet(Sys, 'GameList.PreserveMissingMedia', TJSONBool.Create(True));
   JSet(Sys, 'GameList.PreserveHeader', TJSONBool.Create(True));
+end;
+
+function TScrapeWorker.FilterNewInputs(Sys: TJSONObject; const Files: TArray<string>): TArray<string>;
+var
+  Existing: TGameListWriter;
+  FileName: string;
+  Count: Integer;
+begin
+  Result := Files;
+  if not JBool(Sys, 'GameList.OnlyNew') and not FScenario.Active then
+    Exit;
+  Existing := TGameListWriter.Create(Sys);
+  try
+    SetLength(Result, Length(Files));
+    Count := 0;
+    for FileName in Files do
+    begin
+      if Terminated then
+        raise EAbort.Create('Cancelled');
+      if (FScenario.Active and Existing.NeedsScenarioUpdate(FileName)) or
+        (not FScenario.Active and not Existing.ContainsGame(FileName)) then
+      begin
+        Result[Count] := FileName;
+        Inc(Count);
+      end;
+    end;
+    SetLength(Result, Count);
+    if FScenario.Active then
+      Log(Format('Scenario %s (%s): %d games to update, %d skipped.',
+        [FScenario.ID, FScenario.Field, Count, Length(Files) - Count]))
+    else
+      Log(Format('Only new: %d new games, %d already listed.', [Count, Length(Files) - Count]));
+  finally
+    Existing.Free;
+  end;
 end;
 
 procedure TScrapeWorker.Execute;
@@ -1773,6 +1832,7 @@ begin
               begin
                 Result := Terminated
               end);
+          InputFiles := FilterNewInputs(Sys, InputFiles);
           FScanned.AddOrSetValue(THashSHA2.GetHashString(Sys.ToJSON), InputFiles);
           TMonitor.Enter(FLock);
           try

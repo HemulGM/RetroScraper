@@ -6,6 +6,7 @@
 /OSX64/
 /OSXARM64/
 /dist/
+/releases/
 /__history/
 /__recovery/
 **/__history/
@@ -39,3 +40,4 @@ __pycache__/
 *.pyc
 /sources/Tests/*
 /sources/Tools/*
+/codex-work/*

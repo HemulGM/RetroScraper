@@ -162,7 +162,7 @@ type
 constructor TPlatformAliasIndex.Create(Catalog: TJSONObject; const Field: string);
 var
   S: TJSONValue;
-  Name, Alias: string;
+  Names, Name, Alias: string;
   IDs: TList<Integer>;
   I, J, ID, Parent: Integer;
 begin
@@ -176,8 +176,14 @@ begin
   begin
     if not SelectablePlatform(S) then
       Continue;
+    Names := JStr(S, 'noms.' + Field);
+    // Local folder aliases must survive ScreenScraper catalog refreshes.
+    if JInt(S, 'id') = 75 then
+      Names := Names + ',system16,system18';
+    if JInt(S, 'id') = 302 then
+      Names := Names + ',j2me,J2ME,java';
     // Match SystemObject.Convert: replace slashes before decoding HTML entities.
-    for Name in TNetEncoding.HTML.Decode(JStr(S, 'noms.' + Field).Replace('/', '-')).Split([',']) do
+    for Name in TNetEncoding.HTML.Decode(Names.Replace('/', '-')).Split([',']) do
     begin
       Alias := Name.Trim;
       if Alias = '' then
@@ -444,8 +450,9 @@ begin
     Unique.Sorted := True;
     Unique.Duplicates := dupIgnore;
     Unique.Add('zip');
+    Unique.Add('7z');
     if Frontend in [2, 3, 4] then
-      for Ext in ['7z', 'rar', 'gz', 'xz', 'tar'] do
+      for Ext in ['rar', 'gz', 'xz', 'tar'] do
         Unique.Add(Ext);
     for I in IDs do
     begin

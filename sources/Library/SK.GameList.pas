@@ -4,24 +4,28 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections,
-  Xml.XMLIntf;
+  Xml.XMLIntf, SK.Scenarios;
 
 type
   TGameListWriter = class
   private
+    FScenario: TScenarioRequest;
     FDoc: IXMLDocument;
     FRoot: IXMLNode;
     FFile, FRomRoot, FPlatform: string;
     FKind, FBehavior, FSystemID: Integer;
-    FOptimize, FPreserveMissingMedia, FPreserveHeader: Boolean;
+    FOptimize, FPreserveMissingMedia, FPreserveHeader, FOnlyNew: Boolean;
     FFolderMode: Integer;
     FFolderSources: TObjectDictionary<string, TStringList>;
     FIndex: TDictionary<string, IXMLNode>;
+    procedure AddScenarioField(Item: TJSONObject);
     function NodeKey(Node: IXMLNode): string;
     function NormalizeKey(const Value: string): string;
   public
     constructor Create(Config: TJSONObject);
     destructor Destroy; override;
+    function ContainsGame(const FileName: string): Boolean;
+    function NeedsScenarioUpdate(const FileName: string): Boolean;
     procedure Add(Item: TJSONObject);
     procedure Save(Cancel: TFunc<Boolean> = nil);
     function PrepareFolders(Cancel: TFunc<Boolean> = nil): TArray<string>;
@@ -32,7 +36,7 @@ implementation
 
 uses
   SK.Xml, System.IOUtils, System.StrUtils, System.RegularExpressions,
-  System.DateUtils, System.Zip, System.NetEncoding, System.Hash, Xml.XMLDoc,
+  System.DateUtils, System.Zip, System.NetEncoding, System.Hash, Xml.XMLDoc, System.Variants,
   SK.Artwork.Folders, SK.Consts, SK.Input, SK.Json, SK.Storage, SK.Platform,
   SK.Output;
 
@@ -44,6 +48,7 @@ var
   Zip: TZipFile;
 begin
   inherited Create;
+  FScenario := TScenarioRequest.FromConfig(Config);
   FIndex := TDictionary<string, IXMLNode>.Create;
   FFolderSources := TObjectDictionary<string, TStringList>.Create([doOwnsValues]);
   FSystemID := JInt(Config, 'SystemId');
@@ -53,6 +58,20 @@ begin
   FKind := JInt(Config, 'GameList.Type', 1);
   FBehavior := JInt(Config, 'GameList.Behavior');
   FPreserveHeader := JBool(Config, 'GameList.PreserveHeader');
+  FOnlyNew := JBool(Config, 'GameList.OnlyNew');
+  if FScenario.Active then
+  begin
+    FBehavior := 2;
+    FPreserveHeader := True;
+    FOnlyNew := False;
+    FFolderMode := 0;
+  end;
+  if FOnlyNew then
+  begin
+    // An incremental run must merge even when replacement is configured.
+    FBehavior := 2;
+    FPreserveHeader := True;
+  end;
   FOptimize := JBool(Config, 'GameList.Optimize');
   FPreserveMissingMedia := JBool(Config, 'GameList.PreserveMissingMedia');
   FFile := ResolveOutput(JStr(Config, 'GameList.OutputFile', 'gamelist.xml'), FRomRoot, FRomRoot);
@@ -137,6 +156,144 @@ begin
   end;
 end;
 
+function TGameListWriter.ContainsGame(const FileName: string): Boolean;
+var
+  Node: IXMLNode;
+begin
+  Result := FIndex.TryGetValue(NormalizeKey(FileName), Node);
+  if Result then
+    if FKind = 2 then
+      Result := Node.NodeName = 'Game'
+    else
+      Result := Node.NodeName = 'game';
+end;
+
+function TGameListWriter.NeedsScenarioUpdate(const FileName: string): Boolean;
+var
+  Node, FieldNode: IXMLNode;
+  FieldName, Value: string;
+  I: Integer;
+
+  function HasFile(const Path: string): Boolean;
+  var
+    FullName: string;
+  begin
+    FullName := NativePath(Path);
+    if FullName.Trim = '' then
+      Exit(False);
+    if not TPath.IsPathRooted(FullName) then
+      FullName := TPlatformPath.Combine(FRomRoot, FullName);
+    Result := TFile.Exists(FullName) and (TFile.GetSize(FullName) > 0);
+  end;
+
+begin
+  Result := True;
+  if not FScenario.Active or (FScenario.Mode = scmForce) then
+    Exit;
+  if not FIndex.TryGetValue(NormalizeKey(FileName), Node) then
+    Exit;
+  FieldName := ScenarioXmlField(FScenario.Field, FKind);
+  if FieldName = '@name' then
+    Exit(not Node.HasAttribute('name') or (VarToStr(Node.Attributes['name']).Trim = ''));
+  FieldNode := Node.ChildNodes.FindNode(FieldName);
+  if FieldNode = nil then
+    Exit;
+  if FScenario.Field = 'maps' then
+  begin
+    if FieldNode.ChildNodes.Count = 0 then
+      Exit;
+    for I := 0 to FieldNode.ChildNodes.Count - 1 do
+      if not HasFile(VarToStr(FieldNode.ChildNodes[I].Attributes['path'])) then
+        Exit;
+    Exit(False);
+  end;
+  Value := FieldNode.Text.Trim;
+  if ScenarioMediaField(FScenario.Field) then
+    Result := not HasFile(Value)
+  else
+    Result := Value = '';
+end;
+
+procedure TGameListWriter.AddScenarioField(Item: TJSONObject);
+var
+  Node, FieldNode, MapNode, RomNode: IXMLNode;
+  Key, FieldName, SourceField, Value: string;
+  Maps, Map: TJSONValue;
+begin
+  if not NeedsScenarioUpdate(JStr(Item, 'path')) then
+    Exit;
+  SourceField := FScenario.Field;
+  if SourceField = 'hash' then
+    SourceField := 'crc';
+  Maps := JValue(Item, SourceField);
+  if Maps = nil then
+    Exit;
+  Value := Maps.Value;
+  if FScenario.Field = 'maps' then
+  begin
+    if not (Maps is TJSONArray) or (TJSONArray(Maps).Count = 0) then
+      Exit;
+  end
+  else if Value.Trim = '' then
+    Exit; // An unavailable response must never erase an existing value.
+  Key := JStr(Item, 'path');
+  if not FIndex.TryGetValue(NormalizeKey(Key), Node) then
+  begin
+    if FKind = 2 then
+    begin
+      Node := FRoot.AddChild('Game');
+      SetXmlChildText(Node, 'ApplicationPath', Key);
+      SetXmlChildText(Node, 'ID', TGUID.NewGuid.ToString.Trim(['{', '}']));
+    end
+    else
+    begin
+      Node := FRoot.AddChild('game');
+      Key := './' + ExtractRelativePath(IncludeTrailingPathDelimiter(FRomRoot), Key).Replace('\', '/');
+      if FKind = 3 then
+      begin
+        RomNode := Node.AddChild('rom');
+        RomNode.Attributes['name'] := Key;
+      end
+      else
+        SetXmlChildText(Node, 'path', Key);
+    end;
+    FIndex.Add(NormalizeKey(JStr(Item, 'path')), Node);
+  end;
+  FieldName := ScenarioXmlField(FScenario.Field, FKind);
+  if FieldName = '@name' then
+  begin
+    Node.Attributes['name'] := Value;
+    Exit;
+  end;
+  if FScenario.Field = 'maps' then
+  begin
+    FieldNode := Node.ChildNodes.FindNode(FieldName);
+    if FieldNode = nil then
+      FieldNode := Node.AddChild(FieldName);
+    FieldNode.ChildNodes.Clear;
+    for Map in TJSONArray(Maps) do
+    begin
+      MapNode := FieldNode.AddChild('map');
+      Value := JStr(Map, 'path');
+      if TPath.IsPathRooted(Value) then
+        Value := './' + ExtractRelativePath(IncludeTrailingPathDelimiter(FRomRoot), Value).Replace('\', '/');
+      MapNode.Attributes['path'] := Value;
+      MapNode.Attributes['title'] := JStr(Map, 'title');
+    end;
+    Exit;
+  end;
+  if (FKind = 1) and ScenarioMediaField(FScenario.Field) and TPath.IsPathRooted(Value) then
+    Value := './' + ExtractRelativePath(IncludeTrailingPathDelimiter(FRomRoot), Value).Replace('\', '/');
+  if FScenario.Field = 'releasedate' then
+    if FKind = 3 then
+      Value := Copy(Value, 1, 4)
+    else if (FKind = 2) and (Length(Value) >= 8) then
+      Value := Copy(Value, 1, 4) + '-' + Copy(Value, 5, 2) + '-' + Copy(Value, 7, 2) + 'T00:00:00';
+  if (FKind = 2) and (FScenario.Field = 'rating') then
+    Value := FloatToStr(StrToFloatDef(Value, 0, TFormatSettings.Invariant) * 5, TFormatSettings.Invariant);
+  SetXmlChildText(Node, FieldName, Value);
+end;
+
 procedure TGameListWriter.Add(Item: TJSONObject);
 var
   Node, R, MapNode, Additional: IXMLNode;
@@ -149,6 +306,13 @@ var
   OldFavorite, OldHidden, HasAdditional: Boolean;
 begin
   if FKind = 0 then
+    Exit;
+  if FScenario.Active then
+  begin
+    AddScenarioField(Item);
+    Exit;
+  end;
+  if FOnlyNew and ContainsGame(JStr(Item, 'path')) then
     Exit;
   Key := JStr(Item, 'path');
   if FKind <> 2 then
@@ -318,6 +482,8 @@ begin
       if Assigned(Cancel) and Cancel() then
         raise EAbort.Create('Cancelled');
       Key := './' + ExtractRelativePath(IncludeTrailingPathDelimiter(FRomRoot), Pair.Key).Replace('\', '/');
+      if FOnlyNew and FIndex.ContainsKey(NormalizeKey(Key)) then
+        Continue;
       if not FIndex.TryGetValue(NormalizeKey(Key), Node) then
       begin
         Node := FRoot.AddChild('folder');

@@ -1,11 +1,11 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{20D01D9C-5547-488B-B36D-51CEB84DD4A9}</ProjectGuid>
         <ProjectVersion>20.4</ProjectVersion>
         <FrameworkType>FMX</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Config Condition="'$(Config)'==''">Release</Config>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>2790547</TargetedPlatforms>
         <AppType>Application</AppType>
         <MainSource>RetroScraper.dpr</MainSource>
@@ -111,7 +111,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <DCC_UnitSearchPath>sources\App;sources\UI;sources\Scraping;sources\Library;sources\Catalog;sources\Settings;sources\Media;sources\Services;sources\Common;sources\Tests;dependencies\Delphi7z;dependencies\HGM;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>sources\App;sources\UI;sources\Scraping;sources\Library;sources\Catalog;sources\Settings;sources\Media;sources\Services;sources\Common;sources\Tests;dependencies\Delphi7z;dependencies\HGM;dependencies\Player;dependencies\Player\pcm;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_IncludePath>sources\Common;sources\Services;$(DCC_IncludePath)</DCC_IncludePath>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
@@ -376,6 +376,7 @@
         <DCCReference Include="sources\Common\SK.Core.pas"/>
         <DCCReference Include="sources\Scraping\SK.Input.pas"/>
         <DCCReference Include="sources\Scraping\SK.Output.pas"/>
+        <DCCReference Include="sources\Scraping\SK.Scenarios.pas"/>
         <DCCReference Include="sources\Library\SK.Metadata.pas"/>
         <DCCReference Include="sources\Library\SK.GameList.pas"/>
         <DCCReference Include="sources\Library\SK.Data.pas"/>
@@ -420,6 +421,9 @@
         <DCCReference Include="dependencies\Delphi7z\Z7.Archive.Filters.pas"/>
         <DCCReference Include="dependencies\Delphi7z\Z7.Archive.Lzma.pas"/>
         <DCCReference Include="dependencies\Delphi7z\Z7.Archive.pas"/>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_1</Key>
             <CfgParent>Base</CfgParent>

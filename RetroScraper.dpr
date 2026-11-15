@@ -18,6 +18,7 @@ uses
   SK.Core in 'sources\Common\SK.Core.pas',
   SK.Input in 'sources\Scraping\SK.Input.pas',
   SK.Output in 'sources\Scraping\SK.Output.pas',
+  SK.Scenarios in 'sources\Scraping\SK.Scenarios.pas',
   SK.Metadata in 'sources\Library\SK.Metadata.pas',
   SK.GameList in 'sources\Library\SK.GameList.pas',
   SK.Data in 'sources\Library\SK.Data.pas',

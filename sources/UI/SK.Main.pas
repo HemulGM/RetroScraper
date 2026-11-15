@@ -27,6 +27,16 @@ type
     ScreenTabControl: TTabControl;
     TabWorkspace, TabSetup, TabPlatformLibrary, TabMediaSelection: TTabItem;
     WorkspaceLayout, SetupHost, PlatformLibraryHost, MediaSelectionHost: TLayout;
+    ButtonScenarios: TButton;
+    PathScenariosIcon: FMX.Objects.TPath;
+    TabItemScenarios: TTabItem;
+    LayoutScenarioPage, LayoutScenarioBody, LayoutScenarioOptions,
+      LayoutScenarioPlatforms, LayoutScenarioActions: TLayout;
+    ComboBoxScenario, ComboBoxScenarioField, ComboBoxScenarioMode: TComboBox;
+    ListBoxScenarioPlatforms: TListBox;
+    LabelScenarioDescription, LabelScenarioPlatforms, LabelScenarioField,
+      LabelScenarioMode, LabelScenarioHelp, LabelScenarioSelection: TLabel;
+    ButtonScenarioStart, ButtonScenarioSelectAll, ButtonScenarioSelectNone: TButton;
     NavigationService: TLayout;
     InspectorFolderLine: TLayout;
     InspectorOverrideLine: TLayout;
@@ -101,7 +111,6 @@ type
     UILanguage: TComboBox;
     CheckBoxAnonymous: TCheckBox;
     CacheStatusLabel: TLabel;
-    OpenPlatformLibrary: TButton;
     LibrarySearchLayout: TLayout;
     LibraryActionLayout: TLayout;
     LibraryCommandsLayout: TLayout;
@@ -226,11 +235,9 @@ type
     NavigationEdge: TRectangle;
     ServiceDivider: TRectangle;
     ConfigureSystemAccentIcon: FMX.Objects.TPath;
-    ConfigureAllAccentIcon: FMX.Objects.TPath;
     OpenFullLogAccentIcon: FMX.Objects.TPath;
     InspectorSettingsDivider: TRectangle;
     InspectorProviderDivider: TRectangle;
-    LibraryHeaderDivider: TRectangle;
     LibraryCheckColumnDivider: TRectangle;
     LibraryPathColumnDivider: TRectangle;
     LibrarySettingsColumnDivider: TRectangle;
@@ -309,7 +316,7 @@ type
     InspectorProvider: TLabel;
     LibraryFooter: TLayout;
     SelectedSystemCount: TLabel;
-    ConfigureAll: TButton;
+    CheckBoxOnlyNew: TCheckBox;
     StartScraping: TButton;
     StartScrapingIcon: FMX.Objects.TPath;
     ScopeLabel: TLabel;
@@ -357,6 +364,11 @@ type
     LabelScrapingGameCount: TLabel;
     PictureBoxPhoto: TImage;
     ButtonScrap: TButton;
+    LayoutSourceGridRow, LayoutSourceGridRowFirst, LayoutSourceGridRowSecond: TLayout;
+    LayoutGamelistGridRow, LayoutGamelistGridRowFirst, LayoutGamelistGridRowSecond: TLayout;
+    LayoutFiltersGridRow, LayoutFiltersGridRowFirst, LayoutFiltersGridRowSecond: TLayout;
+    LayoutMetadataGridRow, LayoutMetadataGridRowFirst, LayoutMetadataGridRowSecond: TLayout;
+    LayoutMiscGridRow, LayoutMiscGridRowFirst, LayoutMiscGridRowSecond: TLayout;
     PanelSettings: TLayout;
     SettingsTabControl: TTabControl;
     TabGameList: TTabItem;
@@ -480,7 +492,7 @@ type
     ButtonDeleteAll: TButton;
     ButtonMediaMoveLeft: TButton;
     LabelScrapedMediaList: TLabel;
-    PanelMediaOuter: TVertScrollBox;
+    PanelMediaOuter: TLayout;
     PanelMediaInner: TLayout;
     ButtonRefreshUserMix: TButton;
     ButtonAddMedia: TButton;
@@ -610,6 +622,11 @@ type
     ResizeHeightUnit: TLabel;
     Layout2: TLayout;
     ButtonWeb: TButton;
+    OpenPlatformLibrary: TButton;
+    procedure ScenariosClick(Sender: TObject);
+    procedure ScenarioChanged(Sender: TObject);
+    procedure ScenarioSelectionClick(Sender: TObject);
+    procedure ScenarioStartClick(Sender: TObject);
     procedure OpenPlatformLibraryClick(Sender: TObject);
     procedure PageTabChanged(Sender: TObject);
     procedure NavLibraryClick(Sender: TObject);
@@ -618,7 +635,6 @@ type
     procedure NavLogClick(Sender: TObject);
     procedure NavAccountClick(Sender: TObject);
     procedure ConfigureSystemClick(Sender: TObject);
-    procedure ConfigureAllClick(Sender: TObject);
     procedure StartScrapingClick(Sender: TObject);
     procedure ResetSettingsClick(Sender: TObject);
     procedure CancelSettingsClick(Sender: TObject);
@@ -633,6 +649,7 @@ type
     procedure InspectorBrowseClick(Sender: TObject);
     procedure InspectorGlobalChanged(Sender: TObject);
     procedure ScrapeLogChanged(Sender: TObject);
+    procedure SettingsLayoutChanged(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -678,6 +695,8 @@ type
     FSetupMode: TSetupScreenMode;
     FSetupTarget, FLibrarySystemIndex: Integer;
     FCheckedSystems: TDictionary<string, Boolean>;
+    FScenarioChecked: TDictionary<string, Boolean>;
+    FRefreshingScenario: Boolean;
     FSettings: TSettingsSession;
     FScrapePresenter: TScrapePresenter;
     FLogPresenter: TLogPresenter;
@@ -689,12 +708,17 @@ type
     FCatalog: TJSONObject;
     FAccountTask, FCacheTask: ITask;
     FStartupWizardShown: Boolean;
+    FPlatformUpdatePending: Boolean;
+    FUpdatingSettingsLayout: Boolean;
     FPreviewKey, FPreviewActiveKey: string;
     FPreviewFuture: IFuture<TMediaPreviewResult>;
     FPreviewPending: Boolean;
     FFolderCountFuture: IFuture<TFolderItemCount>;
     FFolderCountRequestedPath, FFolderCountActivePath: string;
     FFolderCountPending: Boolean;
+    procedure RefreshScenarioPlatforms;
+    procedure RefreshScenarioFields;
+    procedure UpdateScenarioState;
     procedure OpenSetupScreen(Mode: TSetupScreenMode);
     procedure SetupCompleted(Sender: TObject);
     procedure LibraryReturned(Sender: TObject);
@@ -716,8 +740,10 @@ type
     procedure BuildMedia;
     procedure SelectSystem(Sender: TObject);
     procedure SelectMedia(Sender: TObject);
+    procedure InitializeSettingBindings;
     function BindingObject(var Path: string; WriteAccess: Boolean): TJSONObject;
     procedure ValidateAccount;
+    procedure CheckPlatformUpdates;
     procedure AddSystem;
     procedure RunWizard;
     procedure Browse(Edit: TEdit; IsFile: Boolean = False);
@@ -730,6 +756,7 @@ type
     function PrepareRequiredMedia: Integer;
   public
     function CreateRunConfig: TJSONObject;
+    function CreateScenarioRunConfig: TJSONObject;
     procedure BeginScrapeDisplay;
     procedure ApplyScrapeStatus(const S: TScrapeStatus);
   end;
@@ -746,7 +773,7 @@ uses
   SK.Storage, SK.Json, SK.Platform, FMX.DialogService.Sync, FMX.DialogService,
   System.DateUtils, System.Math, System.Hash, System.IOUtils, System.Variants,
   SK.UI.Settings, SK.Services.Catalog, SK.UI.Controls, SK.Consts,
-  FMX.BehaviorManager, SK.Artwork;
+  FMX.BehaviorManager, SK.Artwork, SK.Scenarios;
 
 {$R *.fmx}
 
@@ -801,10 +828,200 @@ begin
   end;
 end;
 
+procedure TFormMain.SettingsLayoutChanged(Sender: TObject);
+const
+  ColumnGap = 16;
+  MinimumColumnWidth = 640;
+
+  function ContentHeight(Container: TControl): Single;
+  var
+    Child: TFmxObject;
+    Control: TControl;
+  begin
+    Result := Container.Padding.Top + Container.Padding.Bottom;
+    for Child in Container.Children do
+      if Child is TControl then
+      begin
+        Control := TControl(Child);
+        if Control.Visible and (Control.Align in [TAlignLayout.Top, TAlignLayout.Bottom]) then
+          Result := Result + Control.Height + Control.Margins.Top + Control.Margins.Bottom;
+      end;
+  end;
+
+  procedure LayoutRow(Row, FirstCell, SecondCell: TLayout; MinimumWidth: Single);
+  var
+    FirstHeight, SecondHeight: Single;
+  begin
+    FirstHeight := ContentHeight(FirstCell);
+    SecondHeight := ContentHeight(SecondCell);
+    Row.Visible := (FirstHeight > 0) or (SecondHeight > 0);
+    if not Row.Visible then
+      Exit;
+    if Row.ParentControl.Width >= MinimumWidth * 2 + ColumnGap then
+    begin
+      FirstCell.Align := TAlignLayout.Left;
+      FirstCell.Margins.Right := ColumnGap;
+      FirstCell.Width := (Row.ParentControl.Width - ColumnGap) / 2;
+      Row.Height := Max(FirstHeight, SecondHeight);
+    end
+    else
+    begin
+      FirstCell.Align := TAlignLayout.Top;
+      FirstCell.Margins.Right := 0;
+      FirstCell.Height := FirstHeight;
+      Row.Height := FirstHeight + SecondHeight;
+    end;
+  end;
+
+begin
+  if FUpdatingSettingsLayout or (csLoading in ComponentState) or
+    (csDestroying in ComponentState) or (FConfig = nil) then
+    Exit;
+  FUpdatingSettingsLayout := True;
+  try
+    LayoutRow(LayoutSourceGridRow, LayoutSourceGridRowFirst, LayoutSourceGridRowSecond, MinimumColumnWidth);
+    LayoutRow(LayoutGamelistGridRow, LayoutGamelistGridRowFirst, LayoutGamelistGridRowSecond, MinimumColumnWidth);
+    LayoutRow(LayoutFiltersGridRow, LayoutFiltersGridRowFirst, LayoutFiltersGridRowSecond, 980);
+    LayoutRow(LayoutMetadataGridRow, LayoutMetadataGridRowFirst, LayoutMetadataGridRowSecond, MinimumColumnWidth);
+    LayoutRow(LayoutMiscGridRow, LayoutMiscGridRowFirst, LayoutMiscGridRowSecond, MinimumColumnWidth);
+    PanelScrollSourceInner.Height := ContentHeight(PanelScrollSourceInner) + 12;
+    PanelScrollGamelistInner.Height := ContentHeight(PanelScrollGamelistInner) + 12;
+    PanelScrollMetadataInner.Height := ContentHeight(PanelScrollMetadataInner) + 12;
+    PanelScrollMiscInner.Height := ContentHeight(PanelScrollMiscInner) + 12;
+    // Include the client-aligned list as well as the heading and footer actions.
+    PanelScrapedMediaSelector.Width := EnsureRange(PanelScrollMediaInner.Width * 0.3, 292.0, 380.0);
+    MediaBodyLayout.Height := Max(ContentHeight(PanelScrapedMediaSelector) +
+      PanelMediaInner.Height + PanelMediaOuter.Padding.Top + PanelMediaOuter.Padding.Bottom +
+      PanelMediaOuter.Margins.Top + PanelMediaOuter.Margins.Bottom,
+      ContentHeight(MediaEditorLayout));
+    PanelScrollMediaInner.Height := ContentHeight(PanelScrollMediaInner) + 12;
+  finally
+    FUpdatingSettingsLayout := False;
+  end;
+end;
+
+procedure TFormMain.InitializeSettingBindings;
+begin
+  // TagString is runtime metadata, not a published FMX property.
+  // Keep setting paths separate from translated user-facing Hint values.
+  CheckBoxGameRomsSpecificConfig.TagString := 'Overriden|bit|2';
+  RollingButtonFrontEnd.TagString := '@FrontEnd.Type';
+  EditFrontEndHost.TagString := '@FrontEnd.NetworkHost';
+  CheckBoxKillFrontEnd.TagString := '@FrontEnd.Kill';
+  EditFrontEndPath.TagString := '@FrontEnd.HomePath';
+  EditSourceFolder.TagString := 'GamesAndRoms.Path';
+  EditLaunchBoxPlatform.TagString := 'GamesAndRoms.Platform';
+  EditGamesAndRomsExtensions.TagString := 'GamesAndRoms.FileExtensions|array|,';
+  CheckBoxGameListSpecificConfig.TagString := 'Overriden|bit|1';
+  RollingButtonGamelist.TagString := 'GameList.Type';
+  RollingButtonGamelistBehavior.TagString := 'GameList.Behavior';
+  CheckBoxOptimizeGameFile.TagString := 'GameList.Optimize';
+  EditDestinationFolder.TagString := 'GameList.OutputFile';
+  RollingButtonProcessFolders.TagString := 'GameList.Folders';
+  CheckBoxFavoriteRating.TagString := 'GameList.AutoFavoriteRating';
+  RollingButtonAutoFavoriteRating.TagString := 'GameList.AutoFavoriteRatingPercent|rating';
+  CheckBoxFavoriteContainingWords.TagString := 'GameList.AutoFavoriteWords';
+  EditFavoriteContainingWords.TagString := 'GameList.AutoFavoriteWordList|array||';
+  CheckBoxAutoFavoriteTopStaff.TagString := 'GameList.AutoFavoriteTopStaff';
+  CheckBoxHideNonScraped.TagString := 'GameList.AutoHideUnscraped';
+  CheckBoxHideContainingWords.TagString := 'GameList.AutoHideWords';
+  EditHideContainingWords.TagString := 'GameList.AutoHideWordList|array||';
+  CheckBoxAutoHiddenExtention.TagString := 'GameList.AutoHideExtension';
+  EditAutoHiddenExtentions.TagString := 'GameList.AutoHideExtensions|array|,';
+  CheckBoxExcludeNonScraped.TagString := 'GameList.AutoExcludeUnscraped';
+  CheckBoxExcludeContainingWords.TagString := 'GameList.AutoExcludeWords';
+  EditExcludeContainingWords.TagString := 'GameList.AutoExcludeWordList|array||';
+  CheckBoxAutoHideAlternate.TagString := 'GameList.AutoHideSelection|bit|8';
+  CheckBoxAutoHideUnlicensed.TagString := 'GameList.AutoHideSelection|bit|256';
+  CheckBoxAutoHidePrototype.TagString := 'GameList.AutoHideSelection|bit|512';
+  CheckBoxAutoHideBeta.TagString := 'GameList.AutoHideSelection|bit|2';
+  CheckBoxAutoHideHack.TagString := 'GameList.AutoHideSelection|bit|64';
+  CheckBoxAutoHideSupport.TagString := 'GameList.AutoHideSelection|bit|1024';
+  CheckBoxAutoHideClone.TagString := 'GameList.AutoHideSelection|bit|32';
+  CheckBoxAutoHideBest.TagString := 'GameList.AutoHideSelection|bit|16';
+  CheckBoxAutoHideTranslation.TagString := 'GameList.AutoHideSelection|bit|128';
+  CheckBoxAutoHideDemo.TagString := 'GameList.AutoHideSelection|bit|4';
+  CheckBoxAutoHideRegions.TagString := 'GameList.AutoHideSelection|bit|1';
+  EditAutoHideRegions.TagString := 'GameList.AutoHideRegions|array|,';
+  CheckBoxAutoExcludeHack.TagString := 'GameList.AutoExcludeSelection|bit|64';
+  CheckBoxAutoExcludePrototype.TagString := 'GameList.AutoExcludeSelection|bit|512';
+  CheckBoxAutoExcludeClone.TagString := 'GameList.AutoExcludeSelection|bit|32';
+  CheckBoxAutoExcludeBest.TagString := 'GameList.AutoExcludeSelection|bit|16';
+  CheckBoxAutoExcludeTranslation.TagString := 'GameList.AutoExcludeSelection|bit|128';
+  CheckBoxAutoExcludeAlternate.TagString := 'GameList.AutoExcludeSelection|bit|8';
+  CheckBoxAutoExcludeDemo.TagString := 'GameList.AutoExcludeSelection|bit|4';
+  CheckBoxAutoExcludeBeta.TagString := 'GameList.AutoExcludeSelection|bit|2';
+  CheckBoxAutoExcludeUnlicensed.TagString := 'GameList.AutoExcludeSelection|bit|256';
+  CheckBoxAutoExcludeSupport.TagString := 'GameList.AutoExcludeSelection|bit|1024';
+  CheckBoxAutoExcludeRegions.TagString := 'GameList.AutoExcludeSelection|bit|1';
+  EditAutoExcludeRegions.TagString := 'GameList.AutoExcludeRegions|array|,';
+  CheckBoxMetadataSpecificConfig.TagString := 'Overriden|bit|4';
+  RadioBoxNameCaseAsIs.TagString := 'MetaData.NameCase|radio|0';
+  RadioBoxNameCaseLower.TagString := 'MetaData.NameCase|radio|2';
+  RadioBoxNameCaseUpper.TagString := 'MetaData.NameCase|radio|1';
+  RadioBoxDescriptionCaseAsIs.TagString := 'MetaData.DescriptionCase|radio|0';
+  RadioBoxDescriptionCaseLower.TagString := 'MetaData.DescriptionCase|radio|2';
+  RadioBoxDescriptionCaseUpper.TagString := 'MetaData.DescriptionCase|radio|1';
+  RadioBoxGenreCaseAsIs.TagString := 'MetaData.GenreCase|radio|0';
+  RadioBoxGenreCaseLower.TagString := 'MetaData.GenreCase|radio|2';
+  RadioBoxGenreCaseUpper.TagString := 'MetaData.GenreCase|radio|1';
+  CheckBoxMoveArticles.TagString := 'MetaData.MoveArticles';
+  CheckBoxUseFilenameRegions.TagString := 'MetaData.ExtractRegionFromFileName';
+  CheckBoxNameDecorationKeepUndecoratedFilename.TagString := 'MetaData.KeepUndecoratedFileName';
+  CheckBoxNameDecorationKeepFilenameDecoration.TagString := 'MetaData.KeepFileNameDecorations';
+  CheckBoxDoNotIncludeSynopsis.TagString := 'MetaData.NoSynopsis';
+  CheckBoxNameDecorationRegion.TagString := 'MetaData.NameDecorations|bit|1';
+  CheckBoxNameDecorationBest.TagString := 'MetaData.NameDecorations|bit|16';
+  CheckBoxNameDecorationTranslation.TagString := 'MetaData.NameDecorations|bit|128';
+  CheckBoxNameDecorationBeta.TagString := 'MetaData.NameDecorations|bit|2';
+  CheckBoxNameDecorationClone.TagString := 'MetaData.NameDecorations|bit|32';
+  CheckBoxNameDecorationUnlicensed.TagString := 'MetaData.NameDecorations|bit|256';
+  CheckBoxNameDecorationDemo.TagString := 'MetaData.NameDecorations|bit|4';
+  CheckBoxNameDecorationHack.TagString := 'MetaData.NameDecorations|bit|64';
+  CheckBoxNameDecorationPrototype.TagString := 'MetaData.NameDecorations|bit|512';
+  CheckBoxNameDecorationAlternate.TagString := 'MetaData.NameDecorations|bit|8';
+  CheckBoxNameDecorationSupport.TagString := 'MetaData.NameDecorations|bit|1024';
+  CheckBoxNameDecorationCloneType.TagString := 'MetaData.NameDecorations|bit|2048';
+  CheckBoxMediaSpecificConfig.TagString := 'Overriden|bit|8';
+  RollingButtonMediaTypeSelector.TagString := 'Media.Type';
+  RollingButtonInternalMixSelector.TagString := 'Media.InternalMix';
+  RollingButtonImageSelector.TagString := 'Media.Image';
+  EditUserProvidedMix.TagString := 'Media.LocalMixFile';
+  EditMediaOutputFolder.TagString := 'Media.OutputFolder';
+  RadioButtonNodeLink.TagString := 'Media.LinkToNode|radio-bool|true';
+  RadioButtonNoLink.TagString := 'Media.LinkToNode|radio-bool|false';
+  CheckBoxOptimizeMediaStorage.TagString := 'Media.Optimize';
+  CheckBoxMediaEmptyOutputFolder.TagString := 'Media.EmptyOutputFolder';
+  CheckBoxResizeWidth.TagString := 'Media.ResizeWidth';
+  EditResizeWidth.TagString := 'Media.ResizeWidthValue|integer|800';
+  CheckBoxKeepImageRatio.TagString := 'Media.KeepRatio';
+  CheckBoxResizeHeight.TagString := 'Media.ResizeHeight';
+  EditResizeHeight.TagString := 'Media.ResizeHeightValue|integer|600';
+  CheckBoxMiscellaneousSpecificConfig.TagString := 'Overriden|bit|16';
+  RollingButtonMethod.TagString := 'Miscellaneous.Method';
+  EditLanguages.TagString := 'Miscellaneous.Languages|array|,';
+  EditRegions.TagString := 'Miscellaneous.Regions|array|,';
+  CheckBoxRomRegionFirst.TagString := 'Miscellaneous.RomRegionFirst';
+  CheckBoxRegionStrictMode.TagString := 'Miscellaneous.StrictRegionList';
+  RollingButtonClassification.TagString := 'Miscellaneous.Classification|text';
+  CheckBoxSaveLogs.TagString := 'Miscellaneous.SaveLogs';
+  CheckBoxVerboseLogging.TagString := 'Miscellaneous.VerboseLogs';
+  CheckBoxSaveMissing.TagString := 'Miscellaneous.SaveFCRCMissing';
+  RollingButtonHTTPTries.TagString := 'Miscellaneous.HttpMaxRetries';
+  RollingButtonCacheTTL.TagString := 'Miscellaneous.CacheTTLInDays';
+  ReuseExistingMediaSwitch.TagString := 'Miscellaneous.ReuseExistingMedia';
+  CacheFolderEdit.TagString := '@CacheFolder';
+  CacheLimitEdit.TagString := '@CacheLimitGB|integer|10';
+  EditLogin.TagString := '!ssid';
+  EditPassword.TagString := '!sspassword';
+  CheckBoxAnonymous.TagString := '@Anonymous';
+end;
+
 procedure TFormMain.FormCreate(Sender: TObject);
 var
   I: Integer;
 begin
+  InitializeSettingBindings;
   // Memo keeps ScrollAnimation public; dropdown lists are created by FMX at runtime.
   for I := 0 to ComponentCount - 1 do
     if Components[I] is TMemo then
@@ -814,6 +1031,7 @@ begin
   Caption := AppBrand;
   AppTitle.Text := AppBrand;
   FCheckedSystems := TDictionary<string, Boolean>.Create;
+  FScenarioChecked := TDictionary<string, Boolean>.Create;
   FLogPresenter := TLogPresenter.Create(Self);
   FScrapePresenter := TScrapePresenter.Create(Self);
   FScrapePresenter.OnLogChanged :=
@@ -848,16 +1066,12 @@ begin
   FCatalog := ReadJSON(TPlatformPath.Combine(WritableBase, SystemsCatalogPath));
   if FCatalog = nil then
     FCatalog := ReadJSON(TPlatformPath.Combine(AppBase, SystemsCatalogPath));
+  MigratePlatformArtwork(FCatalog, FConfig.Base, CacheBase(FConfig.Root));
   FillCatalog;
-  EditLanguages.Hint := 'Miscellaneous.Languages|array|,';
-  EditRegions.Hint := 'Miscellaneous.Regions|array|,';
-  EditUserProvidedMix.Hint := 'Media.LocalMixFile';
   EditLanguages.OnChange := SettingChanged;
   EditRegions.OnChange := SettingChanged;
   EditUserProvidedMix.OnChange := MediaSettingsChanged;
-  RadioButtonNodeLink.Hint := 'Media.LinkToNode|radio-bool|true';
   RadioButtonNodeLink.OnChange := MediaSettingsChanged;
-  RadioButtonNoLink.Hint := 'Media.LinkToNode|radio-bool|false';
   RadioButtonNoLink.OnChange := MediaSettingsChanged;
   RollingButtonFrontEnd.Items.Text := 'Recalbox' + sLineBreak + 'RetroPie' + sLineBreak + 'LaunchBox' + sLineBreak + 'RetroBat' + sLineBreak + 'Generic';
   BuildSystems;
@@ -880,6 +1094,7 @@ begin
   FreeAndNil(FLibraryScreen);
   FLogPresenter.Free;
   FScrapePresenter.Free;
+  FScenarioChecked.Free;
   FCheckedSystems.Free;
   FSettings.Free;
   FWorker.Free;
@@ -897,7 +1112,27 @@ begin
     not FindCmdLineSwitch('directorytest') and not FindCmdLineSwitch('librarytest') and
     not FindCmdLineSwitch('paritytest') and not FindCmdLineSwitch('editvisibilitytest') and
     not FindCmdLineSwitch('wizardconcepttest') then
-    RunWizard;
+    RunWizard
+  else if JBool(FConfig.Root, 'IsConfigured') and not FindCmdLineSwitch('selftest') and
+    not FindCmdLineSwitch('directorytest') and not FindCmdLineSwitch('librarytest') and
+    not FindCmdLineSwitch('paritytest') and not FindCmdLineSwitch('editvisibilitytest') and
+    not FindCmdLineSwitch('wizardconcepttest') then
+    FPlatformUpdatePending := True;
+end;
+
+procedure TFormMain.CheckPlatformUpdates;
+begin
+  if not FPlatformUpdatePending or not Visible or
+    (ScreenTabControl.ActiveTab <> TabWorkspace) or not CanExecuteAction then
+    Exit;
+  FPlatformUpdatePending := False;
+  if not PlatformUpdateDue(FConfig.Base, TTimeZone.Local.ToUniversalTime(Now)) then
+    Exit;
+  // A refusal also starts a new two-week interval. Persist before showing the offer.
+  RecordPlatformUpdatePrompt(FConfig.Base, TTimeZone.Local.ToUniversalTime(Now));
+  if TDialogServiceSync.MessageDialog(SK.Locale.L('Обновить каталог и изображения платформ? Следующее предложение появится через две недели.'),
+    TMsgDlgType.mtConfirmation, [TMsgDlgBtn.mbYes, TMsgDlgBtn.mbNo], TMsgDlgBtn.mbNo, 0) = mrYes then
+    ValidateAccount;
 end;
 
 procedure TFormMain.RunWizard;
@@ -1145,7 +1380,7 @@ begin
       P.Stroke.Kind := TBrushKind.None;
       P.WrapMode := TPathWrapMode.Fit;
       P.HitTest := False;
-      ImageFile := PlatformArtwork(CacheWorkBase(FConfig.Root), JInt(Systems.Items[i], 'SystemId'), 'icon');
+      ImageFile := PlatformArtwork(FConfig.Base, JInt(Systems.Items[i], 'SystemId'), 'icon', FCatalog, CacheBase(FConfig.Root));
       if ImageFile <> '' then
       begin
         ArtworkImage := TImage.Create(B);
@@ -1331,7 +1566,7 @@ var
 begin
   OpenPlatformLibrary.Enabled := (FSelected >= 0) and ((FWorker = nil) or FWorker.Finished);
   InspectorTitle.Text := SystemTitle(FSelected);
-  ImageFile := PlatformArtwork(CacheWorkBase(FConfig.Root), JInt(FConfig.SystemAt(FSelected), 'SystemId'), 'photo');
+  ImageFile := PlatformArtwork(FConfig.Base, JInt(FConfig.SystemAt(FSelected), 'SystemId'), 'photo', FCatalog, CacheBase(FConfig.Root));
   PictureBoxPhoto.Visible := ImageFile <> '';
   if ImageFile <> '' then
   try
@@ -1462,7 +1697,7 @@ begin
       C := Components[i];
       if not (C is TControl) then
         Continue;
-      Spec := TControl(C).Hint.Split(['|']);
+      Spec := TControl(C).TagString.Split(['|']);
       if (Length(Spec) = 0) or (Spec[0] = '') then
         Continue;
       Path := Spec[0];
@@ -1496,12 +1731,10 @@ begin
     if PanelLaunchBoxPlatform.Visible then
     begin
       PanelGameFileExtensions.Height := 168;
-      PanelScrollSourceInner.Height := 644;
     end
     else
     begin
       PanelGameFileExtensions.Height := 108;
-      PanelScrollSourceInner.Height := 584;
     end;
     EditFrontEndHost.Enabled := RollingButtonFrontEnd.ItemIndex in [0, 1];
     SecondarySystemsRow.Visible := FSelected >= 0;
@@ -1540,6 +1773,7 @@ begin
     Effective.Free;
     FRefreshing := False;
   end;
+  SettingsLayoutChanged(nil);
   UpdateInspector;
   MediaSelectionTitle.Text := SK.Locale.L('Медиа');
   if PanelMediaDetails.Enabled then
@@ -1692,7 +1926,7 @@ var
   A: TJSONArray;
 begin
   Result := False;
-  Spec := Control.Hint.Split(['|']);
+  Spec := Control.TagString.Split(['|']);
   if (Length(Spec) = 0) or (Spec[0] = '') then
     Exit;
   if (Length(Spec) > 2) and (Spec[1] = 'array') and (Spec[2] = '') then
@@ -1738,8 +1972,39 @@ var
   P: FMX.Objects.TPath;
   A: TJSONArray;
   Title: string;
+  Row: TFmxObject;
+
+  procedure DetachEvents(ObjectToDetach: TFmxObject);
+  var
+    Child: TFmxObject;
+    Control: TControl;
+  begin
+    if ObjectToDetach is TControl then
+    begin
+      Control := TControl(ObjectToDetach);
+      Control.OnClick := nil;
+      Control.OnDblClick := nil;
+      Control.OnMouseDown := nil;
+      Control.OnMouseUp := nil;
+      Control.OnMouseMove := nil;
+      Control.TagObject := nil;
+      Control.Name := '';
+    end;
+    if ObjectToDetach.Children <> nil then
+      for Child in ObjectToDetach.Children do
+        DetachEvents(Child);
+  end;
+
 begin
-  PanelMediaInner.DeleteChildren;
+  while PanelMediaInner.ChildrenCount > 0 do
+  begin
+    Row := PanelMediaInner.Children[0];
+    if (Captured <> nil) and ((Captured.GetObject = Row) or Row.IsChild(Captured.GetObject)) then
+      SetCaptured(nil);
+    DetachEvents(Row);
+    Row.Parent := nil;
+    Row.Release;
+  end;
   FreeAndNil(FEffective);
   FEffective := FConfig.EffectiveSystem(FSelected);
   A := FEffective.GetValue<TJSONArray>('Medias');
@@ -1807,6 +2072,7 @@ begin
     L.TextSettings.Trimming := TTextTrimming.Character;
   end;
   PanelMediaInner.Height := Max(76, A.Count * 76);
+  SettingsLayoutChanged(nil);
 end;
 
 procedure TFormMain.SelectMedia(Sender: TObject);
@@ -2450,6 +2716,7 @@ var
   S: TScrapeStatus;
   Lines: TStringList;
 begin
+  CheckPlatformUpdates;
   PollFolderCount;
   PollMediaPreview;
   if FWorker = nil then
@@ -2475,6 +2742,7 @@ end;
 procedure TFormMain.ApplyScrapeStatus(const S: TScrapeStatus);
 begin
   FScrapePresenter.ApplyStatus(S);
+  UpdateScenarioState;
 end;
 
 procedure TFormMain.ShowPage(Page: Integer);
@@ -2497,7 +2765,7 @@ procedure TFormMain.PageTabChanged(Sender: TObject);
 var
   Page: Integer;
   ActiveButton: TButton;
-  Icons: array[0..3] of FMX.Objects.TPath;
+  Icons: array[0..4] of FMX.Objects.TPath;
   i: Integer;
 begin
   if (csLoading in ComponentState) or (csDestroying in ComponentState) or (FConfig = nil) then
@@ -2512,7 +2780,8 @@ begin
   Icons[1] := NavScrapingIcon;
   Icons[2] := NavSettingsIcon;
   Icons[3] := NavLogIcon;
-  for i := 0 to 3 do
+  Icons[4] := PathScenariosIcon;
+  for i := 0 to 4 do
     if i = Page then
       Icons[i].Fill.Color := $FF60CDFF
     else
@@ -2523,6 +2792,7 @@ begin
   NavScraping.IsPressed := Page = 1;
   NavSettings.IsPressed := Page = 2;
   NavLog.IsPressed := Page = 3;
+  ButtonScenarios.IsPressed := Page = 4;
   case Page of
     0:
       ActiveButton := NavLibrary;
@@ -2530,6 +2800,8 @@ begin
       ActiveButton := NavScraping;
     2:
       ActiveButton := NavSettings;
+    4:
+      ActiveButton := ButtonScenarios;
   else
     ActiveButton := NavLog;
   end;
@@ -2560,6 +2832,12 @@ begin
         PageSubtitle.Text := SK.Locale.L('События текущего сеанса скраппинга');
         SyncFullLog;
       end;
+    4:
+      begin
+        PageTitle.Text := SK.Locale.L('Сценарии');
+        PageSubtitle.Text := SK.Locale.L('Дополнительные задачи скраппинга');
+        UpdateScenarioState;
+      end;
   end;
 end;
 
@@ -2570,6 +2848,265 @@ begin
   begin
     ShowPage(1);
     Result := False;
+  end;
+end;
+
+procedure TFormMain.ScenariosClick(Sender: TObject);
+var
+  Definition: TScenarioDefinition;
+  Index: Integer;
+begin
+  if FCacheBusy then
+    Exit;
+  Index := ComboBoxScenario.ItemIndex;
+  ComboBoxScenario.Items.Clear;
+  for Definition in ScenarioDefinitions do
+    ComboBoxScenario.Items.Add(Definition.Title);
+  ComboBoxScenario.ItemIndex := Max(0, Index);
+  if ComboBoxScenarioMode.ItemIndex < 0 then
+    ComboBoxScenarioMode.ItemIndex := 1;
+  RefreshScenarioPlatforms;
+  ShowPage(4);
+end;
+
+procedure TFormMain.RefreshScenarioPlatforms;
+var
+  I: Integer;
+  Item: TListBoxItem;
+  CapturedObject: TFmxObject;
+begin
+  FRefreshingScenario := True;
+  ListBoxScenarioPlatforms.BeginUpdate;
+  try
+    if Captured <> nil then
+    begin
+      CapturedObject := Captured.GetObject;
+      while CapturedObject <> nil do
+      begin
+        if CapturedObject = ListBoxScenarioPlatforms then
+        begin
+          SetCaptured(nil);
+          Break;
+        end;
+        CapturedObject := CapturedObject.Parent;
+      end;
+    end;
+    for I := ListBoxScenarioPlatforms.Count - 1 downto 0 do
+    begin
+      Item := ListBoxScenarioPlatforms.ListItems[I];
+      Item.OnChangeCheck := nil;
+      Item.OnClick := nil;
+      Item.OnDblClick := nil;
+      Item.OnMouseDown := nil;
+      Item.OnMouseUp := nil;
+      Item.TagObject := nil;
+      Item.Name := '';
+      Item.Parent := nil;
+      Item.Release;
+    end;
+    for I := 0 to FConfig.Root.GetValue<TJSONArray>('Systems').Count - 1 do
+    begin
+      if not FScenarioChecked.ContainsKey(SystemKey(I)) then
+        FScenarioChecked.Add(SystemKey(I), True);
+      Item := TListBoxItem.Create(ListBoxScenarioPlatforms);
+      Item.Name := 'ListBoxItemScenarioPlatform' + I.ToString;
+      Item.Tag := I;
+      Item.TagString := SystemKey(I);
+      Item.Text := SystemTitle(I) + ' · ' + JStr(FConfig.SystemAt(I), 'GamesAndRoms.Path');
+      Item.Height := 48;
+      Item.IsChecked := FScenarioChecked[SystemKey(I)];
+      Item.Parent := ListBoxScenarioPlatforms;
+    end;
+  finally
+    ListBoxScenarioPlatforms.EndUpdate;
+    FRefreshingScenario := False;
+  end;
+  RefreshScenarioFields;
+end;
+
+procedure TFormMain.RefreshScenarioFields;
+var
+  Field, Previous: string;
+  I, Count: Integer;
+  Sys: TJSONObject;
+  Request: TScenarioRequest;
+  Supported: Boolean;
+begin
+  if FRefreshingScenario then
+    Exit;
+  FRefreshingScenario := True;
+  Previous := 'image';
+  if ComboBoxScenarioField.Selected <> nil then
+    Previous := ComboBoxScenarioField.Selected.Text;
+  try
+    ComboBoxScenarioField.Items.Clear;
+    Count := 0;
+    for I := 0 to ListBoxScenarioPlatforms.Count - 1 do
+      if ListBoxScenarioPlatforms.ListItems[I].IsChecked then
+        Inc(Count);
+    Request.ID := UpdateFieldScenarioID;
+    Request.Mode := scmMissing;
+    for Field in ScenarioFields do
+    begin
+      Request.Field := Field;
+      Supported := Count > 0;
+      for I := 0 to ListBoxScenarioPlatforms.Count - 1 do
+        if ListBoxScenarioPlatforms.ListItems[I].IsChecked then
+        begin
+          Sys := FConfig.EffectiveSystem(ListBoxScenarioPlatforms.ListItems[I].Tag);
+          try
+            if JInt(FConfig.Root, 'FrontEnd.Type') = 0 then
+              EnsureRecalboxMedia(Sys);
+            try
+              Request.PrepareSystem(Sys);
+            except
+              on E: EArgumentException do
+                Supported := False;
+            end;
+          finally
+            Sys.Free;
+          end;
+          if not Supported then
+            Break;
+        end;
+      if Supported then
+        ComboBoxScenarioField.Items.Add(Field);
+    end;
+    ComboBoxScenarioField.ItemIndex := ComboBoxScenarioField.Items.IndexOf(Previous);
+    if (ComboBoxScenarioField.ItemIndex < 0) and (ComboBoxScenarioField.Items.Count > 0) then
+      ComboBoxScenarioField.ItemIndex := 0;
+  finally
+    FRefreshingScenario := False;
+  end;
+  UpdateScenarioState;
+end;
+
+procedure TFormMain.ScenarioChanged(Sender: TObject);
+var
+  Item: TListBoxItem;
+begin
+  if FRefreshingScenario or (FConfig = nil) then
+    Exit;
+  if Sender is TListBoxItem then
+  begin
+    Item := TListBoxItem(Sender);
+    FScenarioChecked.AddOrSetValue(Item.TagString, Item.IsChecked);
+    RefreshScenarioFields;
+  end
+  else
+    UpdateScenarioState;
+end;
+
+procedure TFormMain.ScenarioSelectionClick(Sender: TObject);
+var
+  I: Integer;
+  Item: TListBoxItem;
+begin
+  FRefreshingScenario := True;
+  try
+    for I := 0 to ListBoxScenarioPlatforms.Count - 1 do
+    begin
+      Item := ListBoxScenarioPlatforms.ListItems[I];
+      Item.IsChecked := Sender = ButtonScenarioSelectAll;
+      FScenarioChecked.AddOrSetValue(Item.TagString, Item.IsChecked);
+    end;
+  finally
+    FRefreshingScenario := False;
+  end;
+  RefreshScenarioFields;
+end;
+
+procedure TFormMain.UpdateScenarioState;
+var
+  I, Count: Integer;
+  Busy: Boolean;
+begin
+  if FConfig = nil then
+    Exit;
+  Count := 0;
+  for I := 0 to ListBoxScenarioPlatforms.Count - 1 do
+    if ListBoxScenarioPlatforms.ListItems[I].IsChecked then
+      Inc(Count);
+  Busy := FCacheBusy or ((FWorker <> nil) and not FWorker.Finished);
+  LayoutScenarioBody.Enabled := not Busy;
+  ComboBoxScenario.Enabled := not Busy;
+  LabelScenarioSelection.Text := SK.Locale.L('Выбрано платформ: %d', [Count]);
+  ButtonScenarioStart.Enabled := not Busy and (Count > 0) and
+    (ComboBoxScenarioField.ItemIndex >= 0) and (ComboBoxScenarioMode.ItemIndex >= 0);
+  LabelScenarioDescription.Text := ScenarioDefinitions[0].Description;
+  if (Count > 0) and (ComboBoxScenarioField.Items.Count = 0) then
+    LabelScenarioHelp.Text := SK.Locale.L('Нет общих полей для выбранных платформ. Выберите платформы с одинаковым форматом XML и настройте источники медиа.')
+  else if ComboBoxScenarioMode.ItemIndex = 0 then
+    LabelScenarioHelp.Text := SK.Locale.L('Заново запросить данные и скачать выбранное медиа, даже если поле уже заполнено. Остальные поля XML сохраняются.')
+  else
+    LabelScenarioHelp.Text := SK.Locale.L('Заполняются пустые поля. Медиа докачивается, если ссылка пуста, файл отсутствует или имеет нулевой размер.');
+end;
+
+function TFormMain.CreateScenarioRunConfig: TJSONObject;
+var
+  Sys: TJSONObject;
+  Selected: TJSONArray;
+  I: Integer;
+  Request: TScenarioRequest;
+begin
+  if (ComboBoxScenario.ItemIndex < 0) or (ComboBoxScenarioField.ItemIndex < 0) or
+    (ComboBoxScenarioMode.ItemIndex < 0) then
+    raise EArgumentException.Create(SK.Locale.L('Выберите сценарий, поле и режим обновления.'));
+  Result := FConfig.Root.Clone as TJSONObject;
+  try
+    Request.ID := ScenarioDefinitions[ComboBoxScenario.ItemIndex].ID;
+    Request.Field := ComboBoxScenarioField.Selected.Text;
+    Request.Mode := TScenarioMode(ComboBoxScenarioMode.ItemIndex);
+    Request.Apply(Result);
+    Selected := TJSONArray.Create;
+    JSet(Result, 'Systems', Selected);
+    for I := 0 to ListBoxScenarioPlatforms.Count - 1 do
+      if ListBoxScenarioPlatforms.ListItems[I].IsChecked then
+      begin
+        if ListBoxScenarioPlatforms.ListItems[I].TagString <>
+          SystemKey(ListBoxScenarioPlatforms.ListItems[I].Tag) then
+          raise EArgumentException.Create(SK.Locale.L('Список платформ изменился. Откройте страницу сценариев повторно.'));
+        Sys := FConfig.EffectiveSystem(ListBoxScenarioPlatforms.ListItems[I].Tag);
+        Selected.AddElement(Sys);
+        // Freeze effective settings for this run without changing saved settings.
+        JSet(Sys, 'Overriden', TJSONNumber.Create(63));
+        if JInt(Result, 'FrontEnd.Type') = 0 then
+          EnsureRecalboxMedia(Sys);
+        ResolveFrontendPaths(Sys, JValue(Result, 'FrontEnd') as TJSONObject, FCatalog);
+        Request.PrepareSystem(Sys);
+      end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+procedure TFormMain.ScenarioStartClick(Sender: TObject);
+var
+  RunConfig: TJSONObject;
+  Request: TScenarioRequest;
+begin
+  if not CanExecuteAction then
+    Exit;
+  try
+    RunConfig := CreateScenarioRunConfig;
+    try
+      if RunConfig.GetValue<TJSONArray>('Systems').Count = 0 then
+        Exit;
+      Request := TScenarioRequest.FromConfig(RunConfig);
+      if FWorker <> nil then
+        FreeAndNil(FWorker);
+      FWorker := TScrapeWorker.Create(RunConfig, FConfig.Credentials, WritableBase, -1);
+      BeginScrapeDisplay;
+      FastColoredTextBoxLogging.Lines.Add(SK.Locale.L('Сценарий: %s · поле: %s',
+        [ComboBoxScenario.Selected.Text, Request.Field]));
+      FWorker.Start;
+    finally
+      RunConfig.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage(E.Message);
   end;
 end;
 
@@ -2611,18 +3148,6 @@ begin
     Exit;
   ShowPage(2);
   SettingsTabControl.ActiveTab := TabSource;
-end;
-
-procedure TFormMain.ConfigureAllClick(Sender: TObject);
-begin
-  if not CanOpenSettings then
-    Exit;
-  FSelected := -1;
-  FMedia := 0;
-  BuildSystems;
-  BuildMedia;
-  RefreshSettings;
-  ShowPage(2);
 end;
 
 procedure TFormMain.StartScrapingClick(Sender: TObject);
@@ -2699,6 +3224,7 @@ end;
 function TFormMain.CreateRunConfig: TJSONObject;
 begin
   Result := FSettings.CreateRunConfig(FCheckedSystems);
+  JSet(Result, 'OnlyNew', TJSONBool.Create(CheckBoxOnlyNew.IsChecked));
 end;
 
 procedure TFormMain.InspectorChanged(Sender: TObject);
@@ -2765,14 +3291,13 @@ begin
   PanelAutoExclude2.Visible := PanelAutoHide2.Visible;
   if PanelAutoHide2.Visible then
   begin
-    PanelScrollGamelistInner.Height := 1056;
     GameFiltersChevron.RotationAngle := 270;
   end
   else
   begin
-    PanelScrollGamelistInner.Height := 632;
     GameFiltersChevron.RotationAngle := 90;
   end;
+  SettingsLayoutChanged(nil);
 end;
 
 end.

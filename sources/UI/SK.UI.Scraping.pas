@@ -19,7 +19,7 @@ type
     PageSubtitle: TLabel;
     SelectAllSystems: TCheckBox;
     ConfigureSystem: TButton;
-    ConfigureAll: TButton;
+    CheckBoxOnlyNew: TCheckBox;
     StartScraping: TButton;
     ScrapePercent: TLabel;
     RecentMediaNote: TLabel;
@@ -92,7 +92,7 @@ begin
   FView.PageSubtitle := RequireComponent(View, 'PageSubtitle') as TLabel;
   FView.SelectAllSystems := RequireComponent(View, 'SelectAllSystems') as TCheckBox;
   FView.ConfigureSystem := RequireComponent(View, 'ConfigureSystem') as TButton;
-  FView.ConfigureAll := RequireComponent(View, 'ConfigureAll') as TButton;
+  FView.CheckBoxOnlyNew := RequireComponent(View, 'CheckBoxOnlyNew') as TCheckBox;
   FView.StartScraping := RequireComponent(View, 'StartScraping') as TButton;
   FView.ScrapePercent := RequireComponent(View, 'ScrapePercent') as TLabel;
   FView.RecentMediaNote := RequireComponent(View, 'RecentMediaNote') as TLabel;
@@ -150,7 +150,7 @@ begin
   FView.ButtonRunWizard.Enabled := False;
   FView.ConfigureSystem.Enabled := False;
   FView.OpenPlatformLibrary.Enabled := False;
-  FView.ConfigureAll.Enabled := False;
+  FView.CheckBoxOnlyNew.Enabled := False;
   FView.ImportConfigButton.Enabled := False;
   FView.ExportConfigButton.Enabled := False;
   FView.FastColoredTextBoxLogging.Lines.Clear;
@@ -164,6 +164,7 @@ begin
   FView.LabelMediaCoverage.Text := '0.0%';
   FView.MediaCoverageDetail.Text := SK.Locale.L('Найдено 0 из 0 запрошенных медиа');
   FView.ButtonScrap.Text := SK.Locale.L('Остановить');
+  FView.ButtonScrap.Hint := SK.Locale.L('hint.stop');
   FView.StartScraping.Enabled := False;
   FView.SelectAllSystems.Enabled := False;
   FView.ButtonScrap.Enabled := True;
@@ -430,11 +431,12 @@ begin
     FView.SelectAllSystems.Enabled := True;
     FView.ButtonAddSystem.Enabled := True;
     FView.ButtonRunWizard.Enabled := True;
-    FView.ConfigureAll.Enabled := True;
+    FView.CheckBoxOnlyNew.Enabled := True;
     FView.ButtonScrap.Enabled := True;
     if Assigned(OnFinished) then
       OnFinished;
     FView.ButtonScrap.Text := SK.Locale.L('В библиотеку');
+    FView.ButtonScrap.Hint := SK.Locale.L('hint.return_library');
     if S.Cancelled then
       FView.ScrapeSummary.Text := SK.Locale.L('Остановлено · ') + FView.ScrapeSummary.Text
     else if S.Errors > 0 then

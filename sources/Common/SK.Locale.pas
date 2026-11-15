@@ -167,12 +167,15 @@ begin
     C := Owner.Components[I];
     if C.Name = '' then
       Continue;
-    if not ((C is TLabel) or (C is TButton) or (C is TCheckBox) or (C is TRadioButton) or
-      (C is TTabItem) or (C is TEdit) or (C is TComboBox)) then
+    if not (C is TControl) then
       Continue;
     if not Originals.TryGetValue(C, Obj) then
     begin
       Obj := TJSONObject.Create;
+      // Keep the source key so language switches never translate a previous translation.
+      // Empty/dynamic hints (paths, quotas, log rows) remain owned by their presenters.
+      if TControl(C).Hint <> '' then
+        Obj.AddPair('Hint', TControl(C).Hint);
       if (C is TLabel) or (C is TButton) or (C is TCheckBox) or (C is TRadioButton) or (C is TTabItem) then
         Obj.AddPair('Text', GetStrProp(C, 'Text'));
       if C is TEdit then
@@ -188,6 +191,9 @@ begin
       Originals.Add(C, Obj);
       C.FreeNotification(Self);
     end;
+    V := Obj.GetValue('Hint');
+    if V <> nil then
+      TControl(C).Hint := L(V.Value);
     V := Obj.GetValue('Text');
     if V <> nil then
       SetStrProp(C, 'Text', L(V.Value));

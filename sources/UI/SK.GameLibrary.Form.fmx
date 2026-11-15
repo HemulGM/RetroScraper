@@ -291,6 +291,9 @@
             Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1080#1075#1088#1091
           end
           object SearchEdit: TEdit
+            Hint = 'hint.search'
+            ParentShowHint = False
+            ShowHint = True
             Touch.InteractiveGestures = [LongTap, DoubleTap]
             Align = Top
             Position.Y = 74.000000000000000000
@@ -362,7 +365,31 @@
             Size.Width = 897.000000000000000000
             Size.Height = 42.000000000000000000
             Size.PlatformDefault = False
-            object FieldsTabButton: TButton
+            object SpeedButtonOverviewTab: TSpeedButton
+              Align = Left
+              Size.Width = 100
+              Size.Height = 42
+              Size.PlatformDefault = False
+              StaysPressed = True
+              GroupName = 'GameLibraryTabs'
+              StyleLookup = 'buttonstyle_subtle'
+              Text = 'Обзор'
+              OnClick = OverviewTabClick
+              object RectangleOverviewTabLine: TRectangle
+                Align = Bottom
+                Size.Width = 80
+                Size.Height = 3
+                Size.PlatformDefault = False
+                Fill.Color = xFF60CDFF
+                Stroke.Kind = None
+                HitTest = False
+                Margins.Left = 10
+                Margins.Right = 10
+              end
+            end
+            object SpeedButtonFieldsTab: TSpeedButton
+              Position.X = 100.000000000000000000
+              GroupName = 'GameLibraryTabs'
               StaysPressed = True
               Align = Left
               Size.Width = 112.000000000000000000
@@ -385,10 +412,11 @@
                 Stroke.Kind = None
               end
             end
-            object XMLTabButton: TButton
+            object SpeedButtonXMLTab: TSpeedButton
+              GroupName = 'GameLibraryTabs'
               StaysPressed = True
               Align = Left
-              Position.X = 112.000000000000000000
+              Position.X = 212.000000000000000000
               Size.Width = 140.000000000000000000
               Size.Height = 42.000000000000000000
               Size.PlatformDefault = False
@@ -422,12 +450,703 @@
               897s
               563s
               897s
+              563s
+              897s
               563s)
+            object TabItemOverview: TTabItem
+              Text = 'Обзор'
+              IsSelected = True
+              Size.Width = 16
+              Size.Height = 16
+              Size.PlatformDefault = False
+              object VertScrollBoxOverview: TVertScrollBox
+                Align = Client
+                Size.Width = 897
+                Size.Height = 563
+                Size.PlatformDefault = False
+                Margins.Top = 16
+                ScrollAnimation = True
+                object LayoutOverviewContent: TLayout
+                  Align = Top
+                  Size.Width = 880
+                  Size.Height = 544
+                  Size.PlatformDefault = False
+                  Padding.Right = 12
+                  object LayoutOverviewTop: TLayout
+                    Align = Top
+                    Size.Width = 880
+                    Size.Height = 300
+                    Size.PlatformDefault = False
+                    object GridPanelLayoutOverviewTop: TGridPanelLayout
+                      Align = Top
+                      Size.Width = 880
+                      Size.Height = 288
+                      Size.PlatformDefault = False
+                      Margins.Bottom = 12
+                      ColumnCollection = <
+                        item
+                          Value = 50
+                        end
+                        item
+                          Value = 50
+                      end>
+                      RowCollection = <
+                        item
+                          Value = 100
+                      end>
+                      ControlCollection = <
+                        item
+                          Column = 0
+                          Row = 0
+                          Control = LayoutOverviewMedia
+                        end
+                        item
+                          Column = 1
+                          Row = 0
+                          Control = MemoOverviewDescription
+                      end>
+                      object LayoutOverviewMedia: TLayout
+                        Align = Client
+                        Size.Width = 420
+                        Size.Height = 360
+                        Size.PlatformDefault = False
+                        Margins.Right = 12
+                        object LayoutOverviewMediaTabs: TLayout
+                          Align = Bottom
+                          Size.Width = 420
+                          Size.Height = 42
+                          Size.PlatformDefault = False
+                          object SpeedButtonPicture: TSpeedButton
+                            Align = Left
+                            Size.Width = 96
+                            Size.Height = 42
+                            Size.PlatformDefault = False
+                            StaysPressed = True
+                            GroupName = 'GameLibraryMedia'
+                            StyleLookup = 'buttonstyle_subtle'
+                            Text = 'Picture'
+                            OnClick = OverviewMediaClick
+                            object RectanglePictureLine: TRectangle
+                              Align = Bottom
+                              Size.Width = 80
+                              Size.Height = 3
+                              Size.PlatformDefault = False
+                              Fill.Color = xFF60CDFF
+                              Stroke.Kind = None
+                              HitTest = False
+                              Margins.Left = 10
+                              Margins.Right = 10
+                            end
+                          end
+                          object SpeedButtonVideo: TSpeedButton
+                            Align = Left
+                            Size.Width = 96
+                            Size.Height = 42
+                            Size.PlatformDefault = False
+                            StaysPressed = True
+                            GroupName = 'GameLibraryMedia'
+                            StyleLookup = 'buttonstyle_subtle'
+                            Text = 'Video'
+                            OnClick = OverviewMediaClick
+                            object RectangleVideoLine: TRectangle
+                              Align = Bottom
+                              Size.Width = 80
+                              Size.Height = 3
+                              Size.PlatformDefault = False
+                              Fill.Color = xFF60CDFF
+                              Stroke.Kind = None
+                              HitTest = False
+                              Margins.Left = 10
+                              Margins.Right = 10
+                            end
+                          end
+                        end
+                        object LabelOverviewMediaStatus: TLabel
+                          Align = Top
+                          Size.Width = 420
+                          Size.Height = 34
+                          Size.PlatformDefault = False
+                          TextSettings.Trimming = Character
+                          TextSettings.WordWrap = False
+                          Opacity = 0.7
+                          Visible = False
+                        end
+                        object LayoutOverviewPicture: TLayout
+                          Align = Client
+                          Size.Width = 420
+                          Size.Height = 270
+                          Size.PlatformDefault = False
+                          object ImageOverviewPicture: TImage
+                            Align = Client
+                            Size.Width = 420
+                            Size.Height = 270
+                            Size.PlatformDefault = False
+                            WrapMode = Fit
+                            HitTest = False
+                          end
+                          object LayoutOverviewBoxOverlay: TLayout
+                            Align = Contents
+                            Size.Width = 420
+                            Size.Height = 270
+                            Size.PlatformDefault = False
+                            Padding.Left = 8
+                            Padding.Bottom = 8
+                            HitTest = False
+                            object LayoutOverviewBoxBottom: TLayout
+                              Align = Bottom
+                              Size.Width = 420
+                              Size.Height = 148
+                              Size.PlatformDefault = False
+                              object LayoutOverviewBox: TLayout
+                                Align = Left
+                                Size.Width = 100
+                                Size.Height = 148
+                                Size.PlatformDefault = False
+                                object ImageOverviewBox: TImage
+                                  Align = Client
+                                  Size.Width = 100
+                                  Size.Height = 148
+                                  Size.PlatformDefault = False
+                                  WrapMode = Fit
+                                  HitTest = False
+                                end
+                              end
+                            end
+                          end
+                        end
+                        object LayoutVideoStage: TLayout
+                          Align = Client
+                          Size.Width = 420
+                          Size.Height = 250
+                          Size.PlatformDefault = False
+                          HitTest = True
+                          Visible = False
+                          OnMouseEnter = VideoPointerChanged
+                          OnMouseLeave = VideoPointerChanged
+                          object LayoutVideoSurface: TLayout
+                            Align = Client
+                            Size.Width = 420
+                            Size.Height = 250
+                            Size.PlatformDefault = False
+                            HitTest = False
+                          end
+                          object LayoutVideoOverlay: TLayout
+                            Align = Contents
+                            Size.Width = 420
+                            Size.Height = 250
+                            Size.PlatformDefault = False
+                            HitTest = False
+                            object LayoutVideoTransport: TLayout
+                              Align = Bottom
+                              Size.Width = 420
+                              Size.Height = 48
+                              Size.PlatformDefault = False
+                              Visible = False
+                              Padding.Left = 8
+                              Padding.Right = 8
+                              Padding.Bottom = 5
+                              Padding.Top = 5
+                              object RectangleVideoTransportBackground: TRectangle
+                                Align = Contents
+                                Size.Width = 420
+                                Size.Height = 48
+                                Size.PlatformDefault = False
+                                Fill.Color = xD91B1E20
+                                Stroke.Kind = None
+                                HitTest = False
+                              end
+                              object LayoutVideoButtons: TLayout
+                                Align = Client
+                                Size.Width = 420
+                                Size.Height = 38
+                                Size.PlatformDefault = False
+                                object ButtonVideoPlayback: TButton
+                                  Align = Left
+                                  Size.Width = 40
+                                  Size.Height = 38
+                                  Size.PlatformDefault = False
+                                  Text = ''
+                                  Hint = 'Смотреть'
+                                  ParentShowHint = False
+                                  ShowHint = True
+                                  OnClick = VideoPlaybackClick
+                                  Margins.Right = 8
+                                  object LayoutVideoPlaybackIcon: TLayout
+                                    Align = Center
+                                    Size.Width = 20
+                                    Size.Height = 20
+                                    Size.PlatformDefault = False
+                                    HitTest = False
+                                    object PathVideoPlay: TPath
+                                      Align = Client
+                                      Data.Path = {
+                                      0E000000000000000000A040FDC1A840020000000000A040C746644002000000
+                                      546FDA400FD11E4002000000C2340541F706534001000000FA7EA54142602041
+                                      020000005906B24175022E41020000005906B241E7FB514102000000FA7EA541
+                                      849E5F4101000000C2340541849EA54102000000546FDA401225AC4102000000
+                                      0000A0406076A341020000000000A040D9CE9541010000000000A040FDC1A840
+                                      030000000000A040FDC1A840}
+                                      Size.Width = 20
+                                      Size.Height = 20
+                                      Size.PlatformDefault = False
+                                      Fill.Color = xFFF4F4F4
+                                      Stroke.Kind = None
+                                      HitTest = False
+                                      Visible = True
+                                    end
+                                    object PathVideoPause: TPath
+                                      Align = Client
+                                      Data.Path = {
+                                      2400000000000000F8DFB74000004040020000007CF298400000404002000000
+                                      F0BF7F40DD24724002000000F0BF7F400000984001000000F0BF7F4000009A41
+                                      02000000F0BF7F4064BBA141020000007CF298400000A84102000000F8DFB740
+                                      0000A84101000000FCEF13410000A84102000000CF6623410000A84102000000
+                                      07F02F4164BBA1410200000007F02F4100009A410100000007F02F4100009840
+                                      0200000007F02F41DD24724002000000CF6623410000404002000000FCEF1341
+                                      0000404001000000F8DFB7400000404003000000F8DFB7400000404000000000
+                                      07F06B4100004040020000003E795C41000040400200000007F04F41DD247240
+                                      0200000007F04F41000098400100000007F04F4100009A410200000007F04F41
+                                      64BBA141020000003E795C410000A8410200000007F06B410000A84101000000
+                                      03F891410000A8410200000068B399410000A8410200000003F89F4164BBA141
+                                      0200000003F89F4100009A410100000003F89F41000098400200000003F89F41
+                                      DD2472400200000068B39941000040400200000003F891410000404001000000
+                                      07F06B41000040400300000007F06B4100004040}
+                                      Size.Width = 20
+                                      Size.Height = 20
+                                      Size.PlatformDefault = False
+                                      Fill.Color = xFFF4F4F4
+                                      Stroke.Kind = None
+                                      HitTest = False
+                                      Visible = False
+                                    end
+                                  end
+                                end
+                                object LabelVideoTime: TLabel
+                                  Align = Right
+                                  Size.Width = 96
+                                  Size.Height = 32
+                                  Size.PlatformDefault = False
+                                  TextSettings.HorzAlign = Trailing
+                                  Margins.Left = 8
+                                end
+                                object TrackBarVideoSeek: TTrackBar
+                                  Align = Client
+                                  Size.Width = 420
+                                  Size.Height = 32
+                                  Size.PlatformDefault = False
+                                  OnChange = VideoSeekChanged
+                                end
+                              end
+                            end
+                          end
+                        end
+                      end
+                      object MemoOverviewDescription: TMemo
+                        WordWrap = True
+                        Align = Client
+                        Size.Width = 420
+                        Size.Height = 360
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        Margins.Bottom = 2
+                      end
+                    end
+                  end
+                  object GridPanelLayoutOverviewDetails: TGridPanelLayout
+                    Align = Top
+                    Size.Width = 880
+                    Size.Height = 204
+                    Size.PlatformDefault = False
+                    Position.Y = 300
+                    ColumnCollection = <
+                      item
+                        Value = 40
+                      end
+                      item
+                        Value = 23
+                      end
+                      item
+                        Value = 20
+                      end
+                      item
+                        Value = 17
+                    end>
+                    RowCollection = <
+                      item
+                        Value = 33.333333
+                      end
+                      item
+                        Value = 33.333333
+                      end
+                      item
+                        Value = 33.333334
+                    end>
+                    ControlCollection = <
+                      item
+                        Column = 0
+                        Row = 0
+                        Control = LayoutOverviewName
+                      end
+                      item
+                        Column = 1
+                        Row = 0
+                        Control = LayoutOverviewDate
+                      end
+                      item
+                        Column = 2
+                        Row = 0
+                        Control = LayoutOverviewPlayers
+                      end
+                      item
+                        Column = 3
+                        Row = 0
+                        Control = LayoutOverviewRating
+                      end
+                      item
+                        Column = 0
+                        Row = 1
+                        Control = LayoutOverviewPublisher
+                      end
+                      item
+                        Column = 1
+                        Row = 1
+                        Control = LayoutOverviewDeveloper
+                      end
+                      item
+                        Column = 2
+                        Row = 1
+                        Control = LayoutOverviewGenre
+                      end
+                      item
+                        Column = 3
+                        Row = 1
+                        Control = LayoutOverviewPlayCount
+                      end
+                      item
+                        Column = 0
+                        Row = 2
+                        Control = LayoutOverviewRom
+                      end
+                      item
+                        Column = 1
+                        Row = 2
+                        Control = LayoutOverviewRegion
+                      end
+                      item
+                        Column = 2
+                        Row = 2
+                        Control = LayoutOverviewLastPlayed
+                    end>
+                    object LayoutOverviewName: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewName: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Название'
+                      end
+                      object EditOverviewName: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewDate: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewDate: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Дата выпуска'
+                      end
+                      object EditOverviewDate: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewPlayers: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewPlayers: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Число игроков'
+                      end
+                      object EditOverviewPlayers: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewRating: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewRating: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Рейтинг'
+                      end
+                      object EditOverviewRating: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewPublisher: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewPublisher: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Издатель'
+                      end
+                      object EditOverviewPublisher: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewDeveloper: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewDeveloper: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Разработчик'
+                      end
+                      object EditOverviewDeveloper: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewGenre: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewGenre: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Жанр'
+                      end
+                      object EditOverviewGenre: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewPlayCount: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewPlayCount: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Запусков'
+                      end
+                      object EditOverviewPlayCount: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewRom: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewRom: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'ROM'
+                      end
+                      object EditOverviewRom: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = True
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewRegion: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewRegion: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Регион'
+                      end
+                      object EditOverviewRegion: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                    object LayoutOverviewLastPlayed: TLayout
+                      Align = Client
+                      Size.Width = 180
+                      Size.Height = 64
+                      Size.PlatformDefault = False
+                      Margins.Right = 8
+                      Margins.Bottom = 8
+                      object LabelOverviewLastPlayed: TLabel
+                        Align = Top
+                        Size.Width = 180
+                        Size.Height = 24
+                        Size.PlatformDefault = False
+                        Text = 'Последний запуск'
+                      end
+                      object EditOverviewLastPlayed: TEdit
+                        Align = Client
+                        Size.Width = 180
+                        Size.Height = 32
+                        Size.PlatformDefault = False
+                        ReadOnly = False
+                        OnChangeTracking = OverviewChanged
+                        TextPrompt = '—'
+                      end
+                    end
+                  end
+                  object LayoutOverviewFlags: TLayout
+                    Align = Top
+                    Size.Width = 880
+                    Size.Height = 40
+                    Size.PlatformDefault = False
+                    Position.Y = 504
+                    object CheckBoxOverviewFavorite: TCheckBox
+                      Align = Left
+                      Size.Width = 150
+                      Size.Height = 36
+                      Size.PlatformDefault = False
+                      Text = 'Избранное'
+                      HitTest = True
+                      CanFocus = True
+                      OnChange = OverviewChanged
+                    end
+                    object CheckBoxOverviewHidden: TCheckBox
+                      Align = Left
+                      Size.Width = 165
+                      Size.Height = 36
+                      Size.PlatformDefault = False
+                      Text = 'Скрытая игра'
+                      HitTest = True
+                      CanFocus = True
+                      OnChange = OverviewChanged
+                    end
+                    object CheckBoxOverviewKid: TCheckBox
+                      Align = Left
+                      Size.Width = 150
+                      Size.Height = 36
+                      Size.PlatformDefault = False
+                      Text = 'Для детей'
+                      HitTest = True
+                      CanFocus = True
+                      OnChange = OverviewChanged
+                    end
+                  end
+                end
+              end
+            end
             object FieldsTab: TTabItem
               CustomIcon = <
                 item
                 end>
-              IsSelected = True
+              IsSelected = False
               Size.Width = 16.000000000000000000
               Size.Height = 16.000000000000000000
               Size.PlatformDefault = False
@@ -507,6 +1226,9 @@
           Size.Height = 40.000000000000000000
           Size.PlatformDefault = False
           object TemplateInfo: TButton
+            Hint = 'hint.field_help'
+            ParentShowHint = False
+            ShowHint = True
             StyleName = 'fieldinfo'
             Align = Right
             Position.X = 138.000000000000000000
@@ -514,8 +1236,6 @@
             Size.Height = 40.000000000000000000
             Size.PlatformDefault = False
             StyleLookup = 'buttonstyle_subtle'
-            ParentShowHint = False
-            ShowHint = True
             object TemplateInfoIcon: TPath
               StyleName = 'fieldinfoicon'
               Align = Center
@@ -679,6 +1399,9 @@
           Size.PlatformDefault = False
           Visible = False
           object TemplateReplace: TButton
+            Hint = 'hint.replace_media'
+            ParentShowHint = False
+            ShowHint = True
             StyleName = 'fieldreplace'
             Align = Left
             Margins.Right = 8.000000000000000000
@@ -689,6 +1412,9 @@
             Text = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083#8230
           end
           object TemplateClear: TButton
+            Hint = 'hint.clear_media'
+            ParentShowHint = False
+            ShowHint = True
             StyleName = 'fieldclear'
             Align = Left
             Position.X = 166.000000000000000000

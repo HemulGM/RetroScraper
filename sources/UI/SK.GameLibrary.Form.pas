@@ -7,7 +7,7 @@ uses
   System.Generics.Collections, System.Types, System.UITypes, Xml.XMLIntf,
   FMX.Types, FMX.Forms, FMX.Controls, FMX.Controls.Presentation, FMX.Layouts,
   FMX.StdCtrls, FMX.Edit, FMX.ListBox, FMX.Memo, FMX.Memo.Types, FMX.ScrollBox,
-  FMX.Objects, FMX.TabControl, FMX.Dialogs, SK.GameLibrary, FMX.Graphics, SK.Engine;
+  FMX.Objects, FMX.TabControl, FMX.Dialogs, SK.GameLibrary, FMX.Graphics, SK.Engine, Player.FMX;
 
 type
   TGameFieldEditor = SK.UI.FieldEditor.TGameFieldEditor;
@@ -20,7 +20,36 @@ type
     TitleLabel, CountLabel, PlatformLabel, GameTitleLabel, GamePlatformLabel: TLabel;
     EditorPanel, TabActions: TLayout;
     CommandButtons: TGridPanelLayout;
-    FieldsTabButton, XMLTabButton: TButton;
+    SpeedButtonFieldsTab, SpeedButtonXMLTab, SpeedButtonOverviewTab: TSpeedButton;
+    RectangleOverviewTabLine: TRectangle;
+    TabItemOverview: TTabItem;
+    VertScrollBoxOverview: TVertScrollBox;
+    LayoutOverviewContent, LayoutOverviewTop, LayoutOverviewMedia: TLayout;
+    LayoutOverviewPicture, LayoutOverviewBox, LayoutVideoStage, LayoutVideoTransport: TLayout;
+    LayoutVideoSurface, LayoutVideoOverlay: TLayout;
+    RectangleVideoTransportBackground: TRectangle;
+    GridPanelLayoutOverviewTop, GridPanelLayoutOverviewDetails: TGridPanelLayout;
+    LayoutOverviewMediaTabs, LayoutOverviewFlags, LayoutVideoButtons: TLayout;
+    LayoutOverviewBoxOverlay, LayoutOverviewBoxBottom: TLayout;
+    LayoutOverviewName, LayoutOverviewDate, LayoutOverviewPlayers, LayoutOverviewRating: TLayout;
+    LayoutOverviewPublisher, LayoutOverviewDeveloper, LayoutOverviewGenre: TLayout;
+    LayoutOverviewRom, LayoutOverviewRegion, LayoutOverviewPlayCount, LayoutOverviewLastPlayed: TLayout;
+    LabelOverviewName, LabelOverviewDate, LabelOverviewPlayers, LabelOverviewRating: TLabel;
+    LabelOverviewPublisher, LabelOverviewDeveloper, LabelOverviewGenre: TLabel;
+    LabelOverviewRom, LabelOverviewRegion, LabelOverviewPlayCount, LabelOverviewLastPlayed: TLabel;
+    SpeedButtonPicture, SpeedButtonVideo: TSpeedButton;
+    RectanglePictureLine, RectangleVideoLine: TRectangle;
+    ImageOverviewPicture, ImageOverviewBox: TImage;
+    LabelOverviewMediaStatus, LabelVideoTime: TLabel;
+    MemoOverviewDescription: TMemo;
+    EditOverviewName, EditOverviewDate, EditOverviewPlayers, EditOverviewRating: TEdit;
+    EditOverviewPublisher, EditOverviewDeveloper, EditOverviewGenre: TEdit;
+    EditOverviewRom, EditOverviewRegion, EditOverviewPlayCount, EditOverviewLastPlayed: TEdit;
+    CheckBoxOverviewFavorite, CheckBoxOverviewHidden, CheckBoxOverviewKid: TCheckBox;
+    ButtonVideoPlayback: TButton;
+    LayoutVideoPlaybackIcon: TLayout;
+    PathVideoPlay, PathVideoPause: FMX.Objects.TPath;
+    TrackBarVideoSeek: TTrackBar;
     FieldsTabLine, XMLTabLine: TRectangle;
     HeaderIcon: FMX.Objects.TPath;
     FooterDivider, LibraryDivider: TRectangle;
@@ -43,6 +72,12 @@ type
     LibraryLoadTimer: TTimer;
     XMLMemo: TMemo;
     MediaDialog: TOpenDialog;
+    procedure OverviewChanged(Sender: TObject);
+    procedure VideoPointerChanged(Sender: TObject);
+    procedure OverviewTabClick(Sender: TObject);
+    procedure OverviewMediaClick(Sender: TObject);
+    procedure VideoPlaybackClick(Sender: TObject);
+    procedure VideoSeekChanged(Sender: TObject);
     procedure LibraryLoadTimerTimer(Sender: TObject);
     procedure GameListViewportChanged(Sender: TObject; const OldViewportPosition,
       NewViewportPosition: TPointF; const ContentSizeChanged: Boolean);
@@ -65,6 +100,9 @@ type
     procedure InfoClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
   private
+    FPlayer: TPlayerControl;
+    FVideoPath, FOpenedVideoPath: string;
+    FVideoSelected, FUpdatingVideo: Boolean;
     FOnReturn: TNotifyEvent;
     FLibrary: TGameLibrary;
     FLibraryLoad: IGameLibraryLoad;
@@ -83,6 +121,25 @@ type
     FFirstCover, FLastCover: Integer;
     FScrapeWorker: TScrapeWorker;
     FOnCreateScrapeWorker: TFunc<string, TScrapeWorker>;
+    procedure SyncTabs;
+    procedure ClearOverview;
+    procedure UpdateOverviewFields;
+    procedure SyncDraftXML;
+    function OverviewFieldName(Control: TComponent): string;
+    function OverviewDateValue(const Value, FieldName: string): string;
+    procedure SetOverviewMediaStatus(const Text: string);
+    procedure UpdatePlaybackButton;
+    procedure UpdateVideoOverlay;
+    procedure UpdateOverview;
+    procedure UpdateOverviewMedia;
+    procedure CloseOverviewVideo;
+    procedure PlayerChanged(Sender: TObject);
+    procedure PlayerError(Sender: TObject; const MessageText: string);
+    function OverviewValue(const Names: array of string): string;
+    function OverviewMediaPath(const Names: array of string): string;
+    procedure LoadOverviewImage(Image: TImage; const Names: array of string);
+    procedure ReleaseFieldEditors;
+    procedure ReleaseGameItems;
     procedure ReloadScrapedGame;
     procedure BuildGames;
     procedure FilterGames;
@@ -119,7 +176,7 @@ implementation
 uses
   System.IOUtils, SK.Main, System.StrUtils, Xml.XMLDoc, FMX.DialogService.Sync,
   SK.Platform, SK.Locale, System.Generics.Defaults, System.Math, HGM.FMX.Image, FMX.BehaviorManager,
-  SK.UI.Scraping;
+  SK.UI.Scraping, Player.Types, System.DateUtils, System.Variants, System.TypInfo;
 
 {$R *.fmx}
 
@@ -137,12 +194,24 @@ begin
   FVisibleGameItems := TList<TListBoxItem>.Create;
   FEditors := TList<TGameFieldEditor>.Create;
   FFields := TObjectList<TLibraryField>.Create(True);
+  FPlayer := TPlayerControl.Create(Self);
+  FPlayer.Name := 'PlayerControlOverview';
+  FPlayer.Parent := LayoutVideoSurface;
+  FPlayer.HitTest := False;
+  FPlayer.Align := TAlignLayout.Client;
+  FPlayer.OnPositionChanged := PlayerChanged;
+  FPlayer.OnError := PlayerError;
   ApplyLocale(Self);
   UpdateButtons;
 end;
 
 procedure TFormGameLibrary.FormDestroy(Sender: TObject);
 begin
+  FPlayer.OnPositionChanged := nil;
+  FPlayer.OnError := nil;
+  CloseOverviewVideo;
+  ImageOverviewPicture.Bitmap.RemoveCallback(ImageOverviewPicture);
+  ImageOverviewBox.Bitmap.RemoveCallback(ImageOverviewBox);
   FOnReturn := nil;
   LibraryLoadTimer.Enabled := False;
   if FLibraryLoad <> nil then
@@ -171,16 +240,20 @@ begin
   FLoading := True;
   try
     try
+      CloseOverviewVideo;
+      ImageOverviewPicture.Bitmap.RemoveCallback(ImageOverviewPicture);
+      ImageOverviewBox.Bitmap.RemoveCallback(ImageOverviewBox);
       FSelected := -1;
       FDirty := False;
       FXMLDirty := False;
       FDraft := nil;
-      FieldsContent.DeleteChildren;
+      ClearOverview;
+      ReleaseFieldEditors;
       FEditors.Clear;
       FFields.Clear;
       FGameItems.Clear;
       FVisibleGameItems.Clear;
-      GameList.Clear;
+      ReleaseGameItems;
       FreeAndNil(FLibrary);
       FBuildIndex := 0;
       FFirstCover := 0;
@@ -482,6 +555,7 @@ end;
 
 procedure TFormGameLibrary.LoadGame(Index: Integer);
 begin
+  CloseOverviewVideo;
   FSelected := Index;
   GameTitleLabel.Text := FLibrary.Title(Index);
   FDraft := FLibrary.Draft(Index);
@@ -489,12 +563,12 @@ begin
   FXMLDirty := False;
   FLoading := True;
   try
-    EditorTabs.ActiveTab := FieldsTab;
     XMLMemo.Text := FDraft.DocumentElement.XML;
   finally
     FLoading := False
   end;
   BuildFields;
+  UpdateOverview;
   UpdateButtons;
   StatusLabel.Text := FLibrary.Games[Index].RomPath;
 end;
@@ -548,7 +622,7 @@ begin
   FieldsScroll.ApplyStyleLookup;
   FieldsContent.BeginUpdate;
   try
-    FieldsContent.DeleteChildren;
+    ReleaseFieldEditors;
     FEditors.Clear;
     LibraryFields(FDraft.DocumentElement, FFields);
     FFields.Sort(TComparer<TLibraryField>.Construct(
@@ -570,12 +644,12 @@ begin
       Editor.BeginUpdate;
       try
         Editor.CaptionLabel.Text := FieldCaption(F.Caption);
-        Editor.CaptionLabel.Hint := F.Caption;
-        Editor.CaptionLabel.ShowHint := True;
         Editor.HelpText := F.Help(FLibrary.Kind);
+        Editor.CaptionLabel.Hint := Editor.HelpText;
+        Editor.CaptionLabel.ShowHint := Editor.HelpText <> '';
         Editor.InfoButton.Visible := Editor.HelpText <> '';
         Editor.InfoButton.Tag := I;
-        Editor.InfoButton.Hint := L('Формат и допустимые значения');
+        Editor.InfoButton.Hint := L('hint.field_help');
         Editor.InfoButton.OnClick := InfoClick;
         Editor.HelpLabel.Text := Editor.HelpText;
         Editor.HelpLabel.Visible := False;
@@ -675,6 +749,8 @@ begin
       GameTitleLabel.Text := Editor.Text
     else
       GameTitleLabel.Text := TPath.GetFileNameWithoutExtension(FLibrary.Games[FSelected].RomPath);
+  SyncDraftXML;
+  UpdateOverviewFields;
   ValidateEditor(Editor);
   if Editor.Field.IsMedia then
   begin
@@ -700,51 +776,634 @@ begin
   FDraft := ParseGameXML(XMLMemo.Text, FLibrary.Kind);
   FXMLDirty := False;
   BuildFields;
+  UpdateOverviewFields;
+  UpdateButtons;
+end;
+
+procedure TFormGameLibrary.SyncDraftXML;
+var
+  WasLoading: Boolean;
+begin
+  if (FDraft = nil) or FXMLDirty then
+    Exit;
+  WasLoading := FLoading;
+  FLoading := True;
+  try
+    XMLMemo.Text := FDraft.DocumentElement.XML;
+  finally
+    FLoading := WasLoading;
+  end;
+end;
+
+function TFormGameLibrary.OverviewFieldName(Control: TComponent): string;
+var
+  Names: TArray<string>;
+  Name: string;
+  Root: IXMLNode;
+begin
+  Result := '';
+  if Control = EditOverviewName then
+    Names := ['name', 'Title', '@name']
+  else if Control = MemoOverviewDescription then
+    Names := ['desc', 'Notes', 'description']
+  else if Control = EditOverviewDate then
+    Names := ['releasedate', 'ReleaseDate', 'year']
+  else if Control = EditOverviewPlayers then
+    Names := ['players', 'MaxPlayers']
+  else if Control = EditOverviewRating then
+    Names := ['rating', 'StarRatingFloat']
+  else if Control = EditOverviewPublisher then
+    Names := ['publisher', 'Publisher', 'manufacturer']
+  else if Control = EditOverviewDeveloper then
+    Names := ['developer', 'Developer']
+  else if Control = EditOverviewGenre then
+    Names := ['genre', 'Genre']
+  else if Control = EditOverviewRegion then
+    Names := ['region', 'Region']
+  else if Control = EditOverviewPlayCount then
+    Names := ['playcount', 'PlayCount']
+  else if Control = EditOverviewLastPlayed then
+    Names := ['lastplayed', 'LastPlayedDate']
+  else if Control = CheckBoxOverviewFavorite then
+    Names := ['favorite', 'Favorite']
+  else if Control = CheckBoxOverviewHidden then
+    Names := ['hidden', 'Hide']
+  else if Control = CheckBoxOverviewKid then
+    Names := ['kidgame'];
+  if Length(Names) = 0 then
+    Exit;
+  Root := FDraft.DocumentElement;
+  for Name in Names do
+    if Name.StartsWith('@') then
+    begin
+      if Root.HasAttribute(Name.Substring(1)) then
+        Exit(Name);
+    end
+    else if Root.ChildNodes.FindNode(Name) <> nil then
+      Exit(Name);
+  Result := Names[0];
+  if FLibrary.Kind = 2 then
+  begin
+    if Length(Names) > 1 then
+      Result := Names[1];
+  end
+  else if FLibrary.Kind = 3 then
+    if Control = EditOverviewName then
+      Result := '@name'
+    else if Control = MemoOverviewDescription then
+      Result := 'description'
+    else if Control = EditOverviewDate then
+      Result := 'year'
+    else if Control = EditOverviewPublisher then
+      Result := 'manufacturer';
+end;
+
+function TFormGameLibrary.OverviewDateValue(const Value, FieldName: string): string;
+var
+  Date: TDateTime;
+begin
+  Result := Value;
+  if SameText(FieldName, 'year') or (Value.Trim = '') then
+    Exit;
+  if TryStrToDate(Value, Date) then
+  begin
+    if FLibrary.Kind = 2 then
+      Result := FormatDateTime('yyyy-mm-dd', Date)
+    else
+      Result := FormatDateTime('yyyymmdd"T"hhnnss', Date);
+  end;
+  // Raw storage dates and incomplete/invalid input pass through to the normal validator.
+end;
+
+procedure TFormGameLibrary.OverviewChanged(Sender: TObject);
+var
+  Name, Value: string;
+  Node: IXMLNode;
+  Editor, MatchingEditor: TGameFieldEditor;
+  WasLoading: Boolean;
+begin
+  if FLoading or (FDraft = nil) or (FSelected < 0) then
+    Exit;
+  Name := OverviewFieldName(TComponent(Sender));
+  if Name = '' then
+    Exit;
+  if Sender is TEdit then
+    Value := TEdit(Sender).Text
+  else if Sender is TMemo then
+    Value := TMemo(Sender).Text
+  else if Sender is TCheckBox then
+    Value := LowerCase(BoolToStr(TCheckBox(Sender).IsChecked, True))
+  else
+    Exit;
+  if (Sender = EditOverviewDate) or (Sender = EditOverviewLastPlayed) then
+    Value := OverviewDateValue(Value, Name);
+  if Name.StartsWith('@') then
+    FDraft.DocumentElement.Attributes[Name.Substring(1)] := Value
+  else
+  begin
+    Node := FDraft.DocumentElement.ChildNodes.FindNode(Name);
+    if Node = nil then
+      Node := FDraft.DocumentElement.AddChild(Name);
+    Node.Text := Value;
+  end;
+  FDirty := True;
+  MatchingEditor := nil;
+  for Editor in FEditors do
+    if SameText(Editor.Field.Caption, Name) then
+    begin
+      MatchingEditor := Editor;
+      Break;
+    end;
+  if MatchingEditor = nil then
+    BuildFields
+  else
+  begin
+    WasLoading := FLoading;
+    FLoading := True;
+    try
+      MatchingEditor.Text := Value;
+    finally
+      FLoading := WasLoading;
+    end;
+    ValidateEditor(MatchingEditor);
+    UpdateFieldsHeight;
+  end;
+  if Sender = EditOverviewName then
+    if Value.Trim <> '' then
+      GameTitleLabel.Text := Value
+    else
+      GameTitleLabel.Text := TPath.GetFileNameWithoutExtension(FLibrary.Games[FSelected].RomPath);
+  SyncDraftXML;
+  UpdateButtons;
+end;
+
+procedure TFormGameLibrary.SyncTabs;
+begin
+  SpeedButtonOverviewTab.IsPressed := EditorTabs.ActiveTab = TabItemOverview;
+  SpeedButtonFieldsTab.IsPressed := EditorTabs.ActiveTab = FieldsTab;
+  SpeedButtonXMLTab.IsPressed := EditorTabs.ActiveTab = XMLTab;
+  RectangleOverviewTabLine.Visible := SpeedButtonOverviewTab.IsPressed;
+  FieldsTabLine.Visible := SpeedButtonFieldsTab.IsPressed;
+  XMLTabLine.Visible := SpeedButtonXMLTab.IsPressed;
+end;
+
+procedure TFormGameLibrary.OverviewTabClick(Sender: TObject);
+begin
+  EditorTabs.ActiveTab := TabItemOverview;
+  SyncTabs;
 end;
 
 procedure TFormGameLibrary.FieldsTabClick(Sender: TObject);
 begin
   EditorTabs.ActiveTab := FieldsTab;
-  FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
-  XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
+  SyncTabs;
 end;
 
 procedure TFormGameLibrary.XMLTabClick(Sender: TObject);
 begin
   EditorTabs.ActiveTab := XMLTab;
-  FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
-  XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
+  SyncTabs;
 end;
 
 procedure TFormGameLibrary.TabChanged(Sender: TObject);
 begin
-  FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
-  XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
+  SyncTabs;
+  if EditorTabs.ActiveTab <> TabItemOverview then
+    CloseOverviewVideo;
   if FLoading or (FDraft = nil) then
     Exit;
-  if EditorTabs.ActiveTab = XMLTab then
-  begin
-    FLoading := True;
-    try
-      XMLMemo.Text := FDraft.DocumentElement.XML
-    finally
-      FLoading := False
-    end;
-  end
-  else
   try
-    ApplyXML
+    if EditorTabs.ActiveTab = XMLTab then
+    begin
+      // Do not overwrite a still-unapplied XML draft on repeated selection.
+      if not FXMLDirty then
+      begin
+        FLoading := True;
+        try
+          XMLMemo.Text := FDraft.DocumentElement.XML;
+        finally
+          FLoading := False;
+        end;
+      end;
+    end
+    else
+    begin
+      ApplyXML;
+      if EditorTabs.ActiveTab = TabItemOverview then
+        UpdateOverview;
+    end;
   except
     on E: Exception do
     begin
       FLoading := True;
       try
-        EditorTabs.ActiveTab := XMLTab
+        EditorTabs.ActiveTab := XMLTab;
       finally
-        FLoading := False
+        FLoading := False;
+        SyncTabs;
       end;
       ReportError(E);
     end;
+  end;
+end;
+
+function TFormGameLibrary.OverviewValue(const Names: array of string): string;
+var
+  Name: string;
+  Node: IXMLNode;
+begin
+  Result := '';
+  if FDraft = nil then
+    Exit;
+  for Name in Names do
+  begin
+    if Name.StartsWith('@') then
+      Result := VarToStr(FDraft.DocumentElement.Attributes[Name.Substring(1)])
+    else
+    begin
+      Node := FDraft.DocumentElement.ChildNodes.FindNode(Name);
+      if Node <> nil then
+        Result := Node.Text;
+    end;
+    if Result.Trim <> '' then
+      Exit;
+  end;
+end;
+
+function TFormGameLibrary.OverviewMediaPath(const Names: array of string): string;
+var
+  Name, Value: string;
+begin
+  Result := '';
+  for Name in Names do
+  begin
+    Value := OverviewValue([Name]);
+    if Value.Trim = '' then
+      Continue;
+    try
+      Value := FLibrary.MediaPath(Value);
+      if TFile.Exists(Value) then
+        Exit(Value);
+    except
+      // Invalid references do not prevent the remaining metadata from displaying.
+    end;
+  end;
+end;
+
+procedure TFormGameLibrary.LoadOverviewImage(Image: TImage; const Names: array of string);
+var
+  Path: string;
+begin
+  Image.Bitmap.RemoveCallback(Image);
+  Image.Bitmap.SetSize(0, 0);
+  Image.Visible := False;
+  Path := OverviewMediaPath(Names);
+  if Path = '' then
+    Exit;
+  Image.Bitmap.LoadFromFileAsync(Image, Path, 900, 600,
+    procedure(Success: Boolean)
+    begin
+      Image.Visible := Success;
+      if (Image = ImageOverviewPicture) and not FVideoSelected then
+        if Success then
+          SetOverviewMediaStatus('')
+        else
+          SetOverviewMediaStatus(L('Не удалось загрузить превью: файл отсутствует или формат не поддерживается.'));
+    end);
+end;
+
+procedure TFormGameLibrary.ClearOverview;
+var
+  I: Integer;
+  Component: TComponent;
+  WasLoading: Boolean;
+begin
+  WasLoading := FLoading;
+  FLoading := True;
+  try
+    CloseOverviewVideo;
+    FVideoPath := '';
+    for I := 0 to ComponentCount - 1 do
+    begin
+      Component := Components[I];
+      if (Component is TEdit) and string(Component.Name).StartsWith('EditOverview') then
+        TEdit(Component).Text := '';
+    end;
+    MemoOverviewDescription.Text := '';
+    CheckBoxOverviewFavorite.IsChecked := False;
+    CheckBoxOverviewHidden.IsChecked := False;
+    CheckBoxOverviewKid.IsChecked := False;
+    ImageOverviewPicture.Bitmap.RemoveCallback(ImageOverviewPicture);
+    ImageOverviewBox.Bitmap.RemoveCallback(ImageOverviewBox);
+    ImageOverviewPicture.Bitmap.SetSize(0, 0);
+    ImageOverviewBox.Bitmap.SetSize(0, 0);
+    ImageOverviewPicture.Visible := False;
+    ImageOverviewBox.Visible := False;
+    SetOverviewMediaStatus('');
+  finally
+    FLoading := WasLoading;
+  end;
+end;
+
+procedure TFormGameLibrary.UpdateOverviewFields;
+var
+  Value: string;
+  Date: TDateTime;
+  Y, M, D: Integer;
+  WasLoading: Boolean;
+  RomNode: IXMLNode;
+begin
+  if (FDraft = nil) or (FSelected < 0) then
+    Exit;
+  WasLoading := FLoading;
+  FLoading := True;
+  try
+    EditOverviewName.Text := OverviewValue(['name', 'Title', '@name']);
+    if EditOverviewName.Text.Trim <> '' then
+      GameTitleLabel.Text := EditOverviewName.Text
+    else
+      GameTitleLabel.Text := TPath.GetFileNameWithoutExtension(FLibrary.Games[FSelected].RomPath);
+    MemoOverviewDescription.Text := OverviewValue(['desc', 'Notes', 'description']);
+    Value := OverviewValue(['releasedate', 'ReleaseDate', 'year']);
+    if (Length(Value) >= 8) and (Value[5] <> '-') and
+      TryStrToInt(Copy(Value, 1, 4), Y) and TryStrToInt(Copy(Value, 5, 2), M) and
+      TryStrToInt(Copy(Value, 7, 2), D) and TryEncodeDate(Y, M, D, Date) then
+      Value := FormatDateTime('dd/mm/yyyy', Date)
+    else if TryISO8601ToDate(Value, Date, False) then
+      Value := FormatDateTime('dd/mm/yyyy', Date);
+    EditOverviewDate.Text := Value;
+    EditOverviewPlayers.Text := OverviewValue(['players', 'MaxPlayers']);
+    EditOverviewRating.Text := OverviewValue(['rating', 'StarRatingFloat']);
+    EditOverviewPublisher.Text := OverviewValue(['publisher', 'Publisher', 'manufacturer']);
+    EditOverviewDeveloper.Text := OverviewValue(['developer', 'Developer']);
+    EditOverviewGenre.Text := OverviewValue(['genre', 'Genre']);
+    Value := OverviewValue(['path', 'ApplicationPath']);
+    if FLibrary.Kind = 3 then
+    begin
+      RomNode := FDraft.DocumentElement.ChildNodes.FindNode('rom');
+      if RomNode <> nil then
+        Value := VarToStr(RomNode.Attributes['name']);
+    end;
+    try
+      EditOverviewRom.Text := FLibrary.MediaPath(Value);
+    except
+      EditOverviewRom.Text := Value;
+    end;
+    EditOverviewRegion.Text := OverviewValue(['region', 'Region']);
+    EditOverviewPlayCount.Text := OverviewValue(['playcount', 'PlayCount']);
+    EditOverviewLastPlayed.Text := OverviewValue(['lastplayed', 'LastPlayedDate']);
+    CheckBoxOverviewFavorite.IsChecked := MatchText(OverviewValue(['favorite', 'Favorite']), ['true', '1']);
+    CheckBoxOverviewHidden.IsChecked := MatchText(OverviewValue(['hidden', 'Hide']), ['true', '1']);
+    CheckBoxOverviewKid.IsChecked := MatchText(OverviewValue(['kidgame']), ['true', '1']);
+  finally
+    FLoading := WasLoading;
+  end;
+end;
+
+procedure TFormGameLibrary.UpdateOverview;
+begin
+  UpdateOverviewFields;
+  LoadOverviewImage(ImageOverviewPicture, ['image', 'ScreenshotImagePath', 'ImagePath', 'thumbnail', 'box', 'BoxFrontImagePath']);
+  // EmulationStation's image is commonly a complete mix with its own box and logo.
+  // Add a separate box only when displaying a standalone LaunchBox screenshot.
+  if (OverviewMediaPath(['image']) = '') and
+    (OverviewMediaPath(['ScreenshotImagePath']) <> '') then
+    LoadOverviewImage(ImageOverviewBox, ['box', 'BoxFrontImagePath'])
+  else
+  begin
+    ImageOverviewBox.Bitmap.RemoveCallback(ImageOverviewBox);
+    ImageOverviewBox.Bitmap.SetSize(0, 0);
+    ImageOverviewBox.Visible := False;
+  end;
+  FVideoPath := OverviewMediaPath(['video', 'VideoPath']);
+  UpdateOverviewMedia;
+end;
+
+procedure TFormGameLibrary.SetOverviewMediaStatus(const Text: string);
+begin
+  LabelOverviewMediaStatus.Text := Text;
+  LabelOverviewMediaStatus.Visible := Text <> '';
+end;
+
+procedure TFormGameLibrary.UpdatePlaybackButton;
+var
+  Active, Playing: Boolean;
+begin
+  Active := (FPlayer <> nil) and (FOpenedVideoPath <> '') and FVideoSelected and
+    (EditorTabs.ActiveTab = TabItemOverview) and
+    (FPlayer.Snapshot.State in [TPlayerState.Ready, TPlayerState.Playing,
+      TPlayerState.Paused, TPlayerState.Ended]);
+  Playing := Active and (FPlayer.Snapshot.State = TPlayerState.Playing);
+  ButtonVideoPlayback.Enabled := Active;
+  PathVideoPlay.Visible := not Playing;
+  PathVideoPause.Visible := Playing;
+  if Playing then
+    ButtonVideoPlayback.Hint := L('Пауза')
+  else
+    ButtonVideoPlayback.Hint := L('Смотреть');
+end;
+
+procedure TFormGameLibrary.CloseOverviewVideo;
+begin
+  FOpenedVideoPath := '';
+  LayoutVideoTransport.Visible := False;
+  if FPlayer <> nil then
+    FPlayer.Close;
+  UpdatePlaybackButton;
+  TrackBarVideoSeek.Enabled := False;
+  LabelVideoTime.Text := '';
+end;
+
+procedure TFormGameLibrary.UpdateVideoOverlay;
+
+  function InVideo(Control: IControl): Boolean;
+  var
+    Obj: TFmxObject;
+  begin
+    Result := False;
+    if Control = nil then
+      Exit;
+    Obj := Control.GetObject;
+    while Obj <> nil do
+    begin
+      if Obj = LayoutVideoStage then
+        Exit(True);
+      Obj := Obj.Parent;
+    end;
+  end;
+
+begin
+  LayoutVideoTransport.Visible := FVideoSelected and
+    (EditorTabs.ActiveTab = TabItemOverview) and (FOpenedVideoPath <> '') and
+    (LayoutVideoStage.Root <> nil) and
+    (InVideo(LayoutVideoStage.Root.GetHovered) or InVideo(LayoutVideoStage.Root.GetCaptured));
+end;
+
+procedure TFormGameLibrary.VideoPointerChanged(Sender: TObject);
+begin
+  UpdateVideoOverlay;
+end;
+
+procedure TFormGameLibrary.UpdateOverviewMedia;
+begin
+  SpeedButtonPicture.IsPressed := not FVideoSelected;
+  SpeedButtonVideo.IsPressed := FVideoSelected;
+  RectanglePictureLine.Visible := not FVideoSelected;
+  RectangleVideoLine.Visible := FVideoSelected;
+  LayoutOverviewPicture.Visible := not FVideoSelected;
+  LayoutVideoStage.Visible := FVideoSelected;
+  SetOverviewMediaStatus('');
+  if FVideoSelected and (EditorTabs.ActiveTab = TabItemOverview) then
+  begin
+    if FVideoPath = '' then
+    begin
+      CloseOverviewVideo;
+      SetOverviewMediaStatus(L('Файл медиа не найден'));
+    end
+    else if FOpenedVideoPath <> FVideoPath then
+    begin
+      CloseOverviewVideo;
+      try
+        FOpenedVideoPath := FVideoPath;
+        FPlayer.Open(FVideoPath, True);
+      except
+        on E: Exception do
+        begin
+          FOpenedVideoPath := '';
+          PlayerError(Self, E.Message);
+        end;
+      end;
+    end;
+  end
+  else
+  begin
+    CloseOverviewVideo;
+    if not FVideoSelected and ImageOverviewPicture.Bitmap.IsEmpty then
+      SetOverviewMediaStatus(L('Медиа не задано'));
+  end;
+  UpdateVideoOverlay;
+end;
+
+procedure TFormGameLibrary.OverviewMediaClick(Sender: TObject);
+begin
+  FVideoSelected := Sender = SpeedButtonVideo;
+  UpdateOverviewMedia;
+end;
+
+procedure TFormGameLibrary.PlayerError(Sender: TObject; const MessageText: string);
+begin
+  SetOverviewMediaStatus(MessageText);
+  UpdatePlaybackButton;
+  TrackBarVideoSeek.Enabled := False;
+end;
+
+procedure TFormGameLibrary.PlayerChanged(Sender: TObject);
+var
+  Active: Boolean;
+begin
+  UpdateVideoOverlay;
+  Active := FVideoSelected and (EditorTabs.ActiveTab = TabItemOverview) and
+    (FPlayer.Snapshot.State in [TPlayerState.Ready, TPlayerState.Playing,
+      TPlayerState.Paused, TPlayerState.Ended]);
+  UpdatePlaybackButton;
+  TrackBarVideoSeek.Enabled := Active and (FPlayer.DurationSeconds > 0);
+  if not Active then
+    Exit;
+  FUpdatingVideo := True;
+  try
+    TrackBarVideoSeek.Max := Max(0.01, FPlayer.DurationSeconds);
+    TrackBarVideoSeek.Value := FPlayer.PositionSeconds;
+  finally
+    FUpdatingVideo := False;
+  end;
+  LabelVideoTime.Text := Format('%d:%2.2d / %d:%2.2d',
+    [Trunc(FPlayer.PositionSeconds) div 60, Trunc(FPlayer.PositionSeconds) mod 60,
+     Trunc(FPlayer.DurationSeconds) div 60, Trunc(FPlayer.DurationSeconds) mod 60]);
+end;
+
+procedure TFormGameLibrary.VideoPlaybackClick(Sender: TObject);
+begin
+  if not ButtonVideoPlayback.Enabled then
+    Exit;
+  if FPlayer.Snapshot.State = TPlayerState.Playing then
+    FPlayer.Pause
+  else
+    FPlayer.Play;
+end;
+
+procedure TFormGameLibrary.VideoSeekChanged(Sender: TObject);
+begin
+  if not FUpdatingVideo and TrackBarVideoSeek.Enabled then
+    FPlayer.Seek(TrackBarVideoSeek.Value);
+end;
+
+procedure ReleaseLibraryControl(Control: TControl);
+var
+  Captured: IControl;
+  Obj: TFmxObject;
+
+  procedure DetachEvents(Item: TFmxObject);
+  var
+    I, Count: Integer;
+    Props: PPropList;
+  begin
+    Item.Name := '';
+    if Item is TControl then
+      TControl(Item).TagObject := nil;
+    if Item is TImage then
+      TImage(Item).Bitmap.RemoveCallback(Item);
+    Count := GetPropList(Item.ClassInfo, [tkMethod], nil);
+    GetMem(Props, Count * SizeOf(Pointer));
+    try
+      GetPropList(Item.ClassInfo, [tkMethod], Props);
+      for I := 0 to Count - 1 do
+        if string(Props[I].Name).StartsWith('On') then
+          SetMethodProp(Item, Props[I], Default(TMethod));
+    finally
+      FreeMem(Props);
+    end;
+    for I := 0 to Item.ChildrenCount - 1 do
+      DetachEvents(Item.Children[I]);
+  end;
+
+begin
+  if Control.Root <> nil then
+  begin
+    Captured := Control.Root.GetCaptured;
+    if Captured <> nil then
+    begin
+      Obj := Captured.GetObject;
+      while (Obj <> nil) and (Obj <> Control) do
+        Obj := Obj.Parent;
+      if Obj = Control then
+        Control.Root.SetCaptured(nil);
+    end;
+  end;
+  DetachEvents(Control);
+  Control.Parent := nil;
+  Control.Release;
+end;
+
+procedure TFormGameLibrary.ReleaseFieldEditors;
+var
+  Editor: TGameFieldEditor;
+begin
+  for Editor in FEditors do
+  begin
+    Editor.Field := nil;
+    ReleaseLibraryControl(Editor);
+  end;
+  FEditors.Clear;
+end;
+
+procedure TFormGameLibrary.ReleaseGameItems;
+begin
+  GameList.BeginUpdate;
+  try
+    while GameList.Count > 0 do
+      ReleaseLibraryControl(GameList.ListItems[GameList.Count - 1]);
+  finally
+    GameList.EndUpdate;
   end;
 end;
 
@@ -801,6 +1460,8 @@ var
 begin
   Scraping := FScrapeWorker <> nil;
   Busy := Scraping or FLibraryLoading;
+  if Busy then
+    CloseOverviewVideo;
   CloseButton.Enabled := True;
   HasGame := (FSelected >= 0) and not Busy;
   GamesPanel.Enabled := not Busy;
@@ -818,10 +1479,10 @@ begin
       if Editor.ErrorText <> '' then
         Inc(Errors);
   EditorTabs.Enabled := HasGame;
-  FieldsTabButton.Enabled := HasGame;
-  XMLTabButton.Enabled := HasGame;
-  FieldsTabLine.Visible := EditorTabs.ActiveTab = FieldsTab;
-  XMLTabLine.Visible := EditorTabs.ActiveTab = XMLTab;
+  SpeedButtonOverviewTab.Enabled := HasGame;
+  SpeedButtonFieldsTab.Enabled := HasGame;
+  SpeedButtonXMLTab.Enabled := HasGame;
+  SyncTabs;
   SaveButton.Enabled := HasGame and FDirty and (Errors = 0);
   ScrapeButton.Enabled := HasGame and Assigned(FOnCreateScrapeWorker);
   StatusLabel.StyledSettings := StatusLabel.StyledSettings - [TStyledSetting.FontColor];
@@ -1087,6 +1748,7 @@ begin
   end;
   if CanClose then
   begin
+    CloseOverviewVideo;
     LibraryLoadTimer.Enabled := False;
     if FLibraryLoad <> nil then
       FLibraryLoad.Cancel;

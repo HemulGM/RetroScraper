@@ -1,4 +1,4 @@
-RetroScraper project layout
+﻿RetroScraper project layout
 
 The DPR and DPROJ stay at the repository root. Unit names are unchanged.
 PAS/FMX pairs stay together in sources/UI. Application code is grouped in
@@ -60,7 +60,7 @@ under the new user-data identity. Application/resource directories reject writes
 
 CacheFolder is a global setting, empty by default. API and ROM hash caches are
 completely disabled until an absolute writable folder is selected in Settings.
-Media, previews and cache indexes then use that selected folder. CacheLimitGB
+Game media, previews and cache indexes then use that selected folder. CacheLimitGB
 is global: default 10 GiB, 0 means unlimited. A background worker removes oldest
 completed cache files by UTC modification time when the limit is exceeded.
 Completed writes request maintenance, batched at most once per 30 seconds;
@@ -68,6 +68,15 @@ startup and saved policy changes request an immediate check. Active operation
 leases protect only the files/directories currently in use; other old cache
 entries remain eligible during long scraping runs. Incomplete downloads,
 ROMs, exported media and unrelated files are excluded from automatic removal.
+Platform icons, logos, wheels and photos are persistent user data under
+PlatformArtwork/media with indexes in PlatformArtwork/index, independent of the
+selected cache, its limit and cache clearing. Surviving old artwork is copied
+from the selected cache at startup; source files are left unchanged. Artwork
+also persists when caching is disabled. Downloads are validated before replacing
+existing artwork. PlatformArtwork/update.json records UTC times of successful
+refreshes and offers. Configured applications offer a catalog/artwork update at
+startup after 14 days; declining also postpones the next offer by 14 days.
+A successful manual or wizard refresh starts a new 14-day interval.
 Necessary work
 files without a cache use user-data Temp/<session GUID> and are removed at exit.
 D:/Temp/RetroScraperCache is the explicitly selected cache on this workstation;
@@ -86,7 +95,8 @@ standalone probes and two test build scripts are maintained in Tests; see its
 README.md for commands. Generated binaries stay in Tests/Output (ignored by Git);
 run-time fixtures, screenshots and reports use the selected test user-data folder.
 Old archive probes for the removed SK.Archive.* backend were deleted; current
-7z regressions continue to use dependencies/Delphi7z in SK.Tests.pas.
+7z regressions use dependencies/Delphi7z via RunArchiveInputTests in
+SK.Platform.Tests.pas, included in both Windows and portable self-tests.
 
 Do not commit sources/Services/SK.ScreenScraper.Application.inc or dist/Data.
 The example application include is safe to track. No commits or pushes were

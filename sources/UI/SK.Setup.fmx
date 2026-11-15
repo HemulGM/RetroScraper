@@ -14,15 +14,12 @@
   OnCloseQuery = FormCloseQuery
   OnResize = FormResize
   DesignerMasterStyle = 0
-  object PlatformIcons: TImageList
-    Source = <>
-    Destination = <>
-  end
   object SetupRoot: TLayout
     Align = Client
     Size.Width = 1200.000000000000000000
     Size.Height = 760.000000000000000000
     Size.PlatformDefault = False
+    TabOrder = 0
     OnResize = FormResize
     object SetupSurface: TRectangle
       Align = Contents
@@ -48,80 +45,6 @@
         Size.Height = 1.000000000000000000
         Size.PlatformDefault = False
         Stroke.Kind = None
-      end
-      object WizardHelpButton: TButton
-        Align = Left
-        Margins.Left = 32.000000000000000000
-        Margins.Top = 18.000000000000000000
-        Margins.Bottom = 18.000000000000000000
-        Position.X = 32.000000000000000000
-        Position.Y = 19.000000000000000000
-        Size.Width = 124.000000000000000000
-        Size.Height = 41.000000000000000000
-        Size.PlatformDefault = False
-        StyleLookup = 'buttonstyle_subtle'
-        OnClick = WizardHelpClick
-        object WizardHelpIcon: TPath
-          Align = Left
-          Data.Path = {
-            53000000000000000000404100000040020000001B2F8C410000004002000000
-            0000B041C74BCF40020000000000B04100004041020000000000B0410E2D8C41
-            020000001B2F8C410000B04102000000000040410000B041020000009643CF40
-            0000B04102000000000000400E2D8C4102000000000000400000404102000000
-            00000040C74BCF40020000009643CF4000000040020000000000404100000040
-            030000000000404100000040000000000000404121B06A4002000000C3F5EC40
-            21B06A400200000021B06A40C3F5EC400200000021B06A400000404102000000
-            21B06A408FC2844102000000C3F5EC40FCA9A2410200000000004041FCA9A241
-            020000008FC28441FCA9A24102000000FCA9A2418FC2844102000000FCA9A241
-            0000404102000000FCA9A241C3F5EC40020000008FC2844121B06A4002000000
-            0000404121B06A40030000000000404121B06A40000000000000404100007841
-            0200000039D64841000078410200000000005041C7297F410200000000005041
-            0000844102000000000050411C6B88410200000039D6484100008C4102000000
-            0000404100008C4102000000C729374100008C4102000000000030411C6B8841
-            0200000000003041000084410200000000003041C7297F4102000000C7293741
-            0000784102000000000040410000784103000000000040410000784100000000
-            000040410000D84002000000014D58410000D8400200000000006C412766FF40
-            0200000000006C41000018410200000000006C413D2C284102000000713D6741
-            1B2F314102000000B22E5B41D3BC3D41010000001C7C58411C7C404102000000
-            CE884E41696F4A410200000000004C412AA94E410200000000004C4100005841
-            0200000000004C4190A05E410200000090A04641000064410200000000004041
-            0000644102000000705F394100006441020000000000344190A05E4102000000
-            00003441000058410200000000003441C3D34741020000008FC23841E5D03E41
-            020000004ED144412D43324101000000E4834741E4832F410200000032775141
-            979025410200000000005441D656214102000000000054410000184102000000
-            0000544149F40C4102000000E10B4B4100000441020000000000404100000441
-            0200000012A535410000044102000000C5202D41B3DE0B4102000000A01A2C41
-            7EF415410100000000002C41000018410200000000002C419BA01E4102000000
-            90A026410000244102000000000020410000244102000000655F194100002441
-            02000000000014419BA01E410200000000001441000018410200000000001441
-            2766FF4002000000FFB227410000D84002000000000040410000D84003000000
-            000040410000D840}
-          Fill.Color = xFFE6E6E6
-          HitTest = False
-          Margins.Left = 4.000000000000000000
-          Margins.Top = 8.500000000000000000
-          Margins.Right = 4.000000000000000000
-          Margins.Bottom = 8.500000000000000000
-          Position.X = 4.000000000000000000
-          Position.Y = 8.500000000000000000
-          Size.Width = 24.000000000000000000
-          Size.Height = 24.000000000000000000
-          Size.PlatformDefault = False
-          Stroke.Kind = None
-          WrapMode = Fit
-        end
-        object WizardHelpText: TLabel
-          Align = Client
-          StyledSettings = [Family]
-          Margins.Left = 8.000000000000000000
-          Size.Width = 84.000000000000000000
-          Size.Height = 41.000000000000000000
-          Size.PlatformDefault = False
-          TextSettings.Font.Size = 16.000000000000000000
-          TextSettings.FontColor = xFFF3F3F3
-          TextSettings.WordWrap = False
-          Text = #1055#1086#1084#1086#1097#1100
-        end
       end
       object BackButton: TButton
         Align = Left
@@ -161,6 +84,7 @@
         object ApplyButton: TButton
           Align = Right
           StyledSettings = [Family, Style, FontColor]
+          Position.X = 132.000000000000000000
           Size.Width = 208.000000000000000000
           Size.Height = 41.000000000000000000
           Size.PlatformDefault = False
@@ -446,7 +370,7 @@
           Size.Height = 64.000000000000000000
           Size.PlatformDefault = False
           TextSettings.FontColor = xFFE6E6E6
-          Text =
+          Text = 
             #1055#1088#1086#1074#1077#1088#1100#1090#1077' '#1085#1072#1081#1076#1077#1085#1085#1099#1077' '#1087#1083#1072#1090#1092#1086#1088#1084#1099'. '#1057#1086#1093#1088#1072#1085#1077#1085#1080#1077' '#1079#1072#1084#1077#1085#1080#1090' '#1087#1088#1077#1078#1085#1080#1081' '#1089#1087#1080#1089#1086#1082 +
             ' '#1089#1080#1089#1090#1077#1084'; '#1086#1090#1084#1077#1085#1072' '#1089#1086#1093#1088#1072#1085#1080#1090' '#1087#1088#1077#1078#1085#1080#1077' '#1085#1072#1089#1090#1088#1086#1081#1082#1080'.'
         end
@@ -581,7 +505,6 @@
             Stroke.Kind = None
           end
           object WizardSummary: TListBox
-          ScrollAnimation = True
             Align = Client
             Margins.Top = 4.000000000000000000
             Size.Width = 34.000000000000000000
@@ -591,6 +514,7 @@
             ParentShowHint = False
             ShowHint = True
             OnMouseMove = SummaryMouseMove
+            ScrollAnimation = True
             AlternatingRowBackground = True
             DisableFocusEffect = True
             ItemHeight = 44.000000000000000000
@@ -660,6 +584,9 @@
           TabOrder = 1
         end
         object PlatformSearch: TEdit
+          Hint = 'hint.search'
+          ParentShowHint = False
+          ShowHint = True
           Touch.InteractiveGestures = [LongTap, DoubleTap]
           Align = Top
           TabOrder = 2
@@ -720,6 +647,9 @@
           TabOrder = 0
         end
         object FrontEndCombo: TComboBox
+          Hint = 'hint.frontend'
+          ParentShowHint = False
+          ShowHint = True
           Align = Top
           DisableMouseWheel = True
           Items.Strings = (
@@ -757,17 +687,24 @@
           Size.Height = 32.000000000000000000
           Size.PlatformDefault = False
           object RootEdit: TEdit
+            Hint = 'hint.rom_folder'
+            ParentShowHint = False
+            ShowHint = True
             Touch.InteractiveGestures = [LongTap, DoubleTap]
             Align = Client
             TabOrder = 0
-            Size.Width = 544.000000000000000000
+            Size.Width = 552.000000000000000000
             Size.Height = 32.000000000000000000
             Size.PlatformDefault = False
           end
           object BrowseButton: TButton
+            Hint = 'hint.rom_folder'
+            ParentShowHint = False
+            ShowHint = True
             Align = Right
             StyledSettings = [Family, Style, FontColor]
             Margins.Left = 8.000000000000000000
+            Position.X = 560.000000000000000000
             Size.Width = 32.000000000000000000
             Size.Height = 32.000000000000000000
             Size.PlatformDefault = False
@@ -819,6 +756,9 @@
           end
         end
         object DetectCheck: TCheckBox
+          Hint = 'hint.detect'
+          ParentShowHint = False
+          ShowHint = True
           Align = Top
           StyledSettings = [Family, Style, FontColor]
           Margins.Top = 26.000000000000000000
@@ -833,6 +773,9 @@
           OnChange = SelectionChanged
         end
         object RecursiveCheck: TCheckBox
+          Hint = 'hint.recursive'
+          ParentShowHint = False
+          ShowHint = True
           Align = Top
           Margins.Top = 4.000000000000000000
           Position.Y = 218.000000000000000000
@@ -843,6 +786,9 @@
           OnChange = SelectionChanged
         end
         object SearchAllCheck: TCheckBox
+          Hint = 'hint.aliases'
+          ParentShowHint = False
+          ShowHint = True
           Align = Top
           Margins.Top = 4.000000000000000000
           Position.Y = 254.000000000000000000
@@ -873,8 +819,12 @@
             Size.Height = 32.000000000000000000
             Size.PlatformDefault = False
             object FrontendHomeBrowse: TButton
+              Hint = 'hint.frontend_path'
+              ParentShowHint = False
+              ShowHint = True
               Align = Right
               Margins.Left = 8.000000000000000000
+              Position.X = 560.000000000000000000
               Size.Width = 32.000000000000000000
               Size.Height = 32.000000000000000000
               Size.PlatformDefault = False
@@ -921,11 +871,14 @@
                 Stroke.Kind = None
                 WrapMode = Fit
               end
-              end
+            end
             object FrontendHomeEdit: TEdit
+              Hint = 'hint.frontend_path'
+              ParentShowHint = False
+              ShowHint = True
               Touch.InteractiveGestures = [LongTap, DoubleTap]
               Align = Client
-              Size.Width = 508.000000000000000000
+              Size.Width = 552.000000000000000000
               Size.Height = 32.000000000000000000
               Size.PlatformDefault = False
             end
@@ -935,14 +888,14 @@
           Align = Top
           StyledSettings = [Family, Style]
           Margins.Top = 16.000000000000000000
-          Position.Y = 378.000000000000000000
+          Position.Y = 374.000000000000000000
           Size.Width = 592.000000000000000000
           Size.Height = 96.000000000000000000
           Size.PlatformDefault = False
           TextSettings.Font.Size = 14.000000000000000000
           TextSettings.FontColor = xFFAAAAAA
           TextSettings.VertAlign = Leading
-          Text =
+          Text = 
             #1042#1099#1073#1077#1088#1080#1090#1077' '#1089#1080#1089#1090#1077#1084#1091' '#1080' '#1087#1072#1087#1082#1091' '#1089' '#1080#1075#1088#1072#1084#1080'. '#1044#1083#1103' '#1085#1077#1089#1082#1086#1083#1100#1082#1080#1093' '#1089#1080#1089#1090#1077#1084' '#1074#1082#1083#1102#1095#1080#1090 +
             #1077' '#1086#1087#1088#1077#1076#1077#1083#1077#1085#1080#1077' '#1087#1086' '#1074#1083#1086#1078#1077#1085#1085#1099#1084' '#1087#1072#1087#1082#1072#1084'.'
           TabOrder = 4
@@ -1365,12 +1318,12 @@
           end
         end
         object WizardAccountLayout: TVertScrollBox
-          ScrollAnimation = True
           Align = Client
           Size.Width = 50.000000000000000000
           Size.Height = 50.000000000000000000
           Size.PlatformDefault = False
           Visible = False
+          ScrollAnimation = True
           Viewport.Width = 38.000000000000000000
           Viewport.Height = 50.000000000000000000
           object WizardAccountFields: TLayout
@@ -1420,6 +1373,9 @@
                 Text = #1051#1086#1075#1080#1085
               end
               object WizardLogin: TEdit
+                Hint = 'hint.login'
+                ParentShowHint = False
+                ShowHint = True
                 Touch.InteractiveGestures = [LongTap, DoubleTap]
                 Align = Top
                 TextSettings.Font.Size = 16.000000000000000000
@@ -1446,6 +1402,9 @@
                 Text = #1055#1072#1088#1086#1083#1100
               end
               object WizardPassword: TEdit
+                Hint = 'hint.password'
+                ParentShowHint = False
+                ShowHint = True
                 Touch.InteractiveGestures = [LongTap, DoubleTap]
                 Align = Top
                 Password = True
@@ -1459,6 +1418,9 @@
                 StyledSettings = [Family, Style, FontColor]
                 OnApplyStyleLookup = WizardEditApplyStyle
                 object WizardPasswordReveal: TEditButton
+                  Hint = 'hint.reveal_password'
+                  ParentShowHint = False
+                  ShowHint = True
                   Touch.InteractiveGestures = [LongTap]
                   CanFocus = False
                   Cursor = crArrow
@@ -1549,6 +1511,9 @@
                 end
               end
               object WizardAnonymous: TCheckBox
+                Hint = 'hint.anonymous'
+                ParentShowHint = False
+                ShowHint = True
                 Align = Top
                 StyledSettings = [Family, Style, FontColor]
                 Margins.Top = 8.000000000000000000
@@ -1619,6 +1584,9 @@
                 Text = #1048#1076#1077#1085#1090#1080#1092#1080#1082#1072#1090#1086#1088' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
               end
               object WizardDeveloper: TEdit
+                Hint = 'hint.developer'
+                ParentShowHint = False
+                ShowHint = True
                 Touch.InteractiveGestures = [LongTap, DoubleTap]
                 Align = Top
                 TextSettings.Font.Size = 16.000000000000000000
@@ -1645,6 +1613,9 @@
                 Text = #1055#1072#1088#1086#1083#1100' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
               end
               object WizardDeveloperPassword: TEdit
+                Hint = 'hint.developer_password'
+                ParentShowHint = False
+                ShowHint = True
                 Touch.InteractiveGestures = [LongTap, DoubleTap]
                 Align = Top
                 Password = True
@@ -1658,6 +1629,9 @@
                 StyledSettings = [Family, Style, FontColor]
                 OnApplyStyleLookup = WizardEditApplyStyle
                 object WizardDeveloperPasswordReveal: TEditButton
+                  Hint = 'hint.reveal_password'
+                  ParentShowHint = False
+                  ShowHint = True
                   Touch.InteractiveGestures = [LongTap]
                   CanFocus = False
                   Cursor = crArrow
@@ -1749,6 +1723,9 @@
               end
             end
             object WizardOffline: TCheckBox
+              Hint = 'hint.offline'
+              ParentShowHint = False
+              ShowHint = True
               Align = Top
               StyledSettings = [Family, Style, FontColor]
               Margins.Top = 10.000000000000000000
@@ -1764,5 +1741,9 @@
         end
       end
     end
+  end
+  object PlatformIcons: TImageList
+    Source = <>
+    Destination = <>
   end
 end

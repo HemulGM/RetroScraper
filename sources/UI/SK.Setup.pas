@@ -7,7 +7,8 @@ uses
   System.Generics.Collections, System.Threading, FMX.Types, FMX.Controls,
   FMX.Controls.Presentation, FMX.Forms, FMX.Objects, FMX.StdCtrls, FMX.Edit,
   FMX.ListBox, FMX.Dialogs, FMX.Layouts, SK.Configuration, SK.Catalog,
-  FMX.ScrollBox, FMX.Ani, FMX.Graphics, FMX.TreeView, FMX.ImgList, System.ImageList;
+  FMX.ScrollBox, FMX.Ani, FMX.Graphics, FMX.TreeView, FMX.ImgList,
+  System.ImageList;
 
 type
   TWizardResourceStage = (wrIdle, wrConnecting, wrCatalog, wrArtwork, wrReady, wrOffline, wrFailed);
@@ -25,9 +26,6 @@ type
     WizardMediaProgressTrack: TRectangle;
     WizardMediaProgressFill: TRectangle;
     WizardFooterDivider: TRectangle;
-    WizardHelpButton: TButton;
-    WizardHelpIcon: FMX.Objects.TPath;
-    WizardHelpText: TLabel;
     WizardHeaderLayout: TLayout;
     WizardSubtitle: TLabel;
     WizardSteps: TGridPanelLayout;
@@ -133,7 +131,6 @@ type
     procedure PasswordRevealClick(Sender: TObject);
     procedure DeveloperPasswordRevealClick(Sender: TObject);
     procedure WizardOptionsChanged(Sender: TObject);
-    procedure WizardHelpClick(Sender: TObject);
     procedure WizardEditApplyStyle(Sender: TObject);
     procedure ProgressResize(Sender: TObject);
     procedure SummaryMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Single);
@@ -149,7 +146,9 @@ type
   private
     FOnCompleted: TNotifyEvent;
     FEmbedded, FCompleted: Boolean;
-    FFiltering: Boolean;
+    FFiltering, FLoadingIcons: Boolean;
+    FArtworkBase: string;
+    FIconIndexes: TDictionary<Integer, Integer>;
     FConfig: TRetroScraperConfig;
     FCatalog: TJSONObject;
     FCopyMode, FWizard, FScanning: Boolean;
@@ -173,6 +172,9 @@ type
     procedure BuildWizardSummary;
     procedure MaskPasswords;
     procedure SaveCategories;
+    procedure ClearPlatformRows;
+    procedure LoadVisibleIcons;
+    procedure PlatformViewportChanged(Sender: TObject; const OldViewportPosition, NewViewportPosition: TPointF; const ContentSizeChanged: Boolean);
     function SelectedSystem: TJSONValue;
     procedure FinishDetection;
     procedure UpdateSelection;
@@ -203,6 +205,10 @@ uses
 type
   TWizardEditAccess = class(TEdit);
 
+  TSetupTreeAccess = class(TTreeView);
+
+  TSetupControlAccess = class(TControl);
+
 var
   ExpandedPlatformCategories: TDictionary<string, Boolean>;
 
@@ -215,6 +221,8 @@ end;
 
 procedure TFormSetup.FormCreate(Sender: TObject);
 begin
+  FIconIndexes := TDictionary<Integer, Integer>.Create;
+  SystemList.OnViewportPositionChange := PlatformViewportChanged;
   FrontEndCombo.ListBox.ScrollAnimation := TBehaviorBoolean.True;
   ApplyLocale(Self);
   ShowWizardPage(0);
@@ -240,6 +248,7 @@ begin
     end;
   end;
   ProgressResize(nil);
+  LoadVisibleIcons;
 end;
 
 procedure TFormSetup.ProgressResize(Sender: TObject);
@@ -280,11 +289,6 @@ end;
 procedure TFormSetup.WizardOptionsChanged(Sender: TObject);
 begin
   UpdateSelection
-end;
-
-procedure TFormSetup.WizardHelpClick(Sender: TObject);
-begin
-  ShowMessage(SK.Locale.L('Подключите ScreenScraper, выберите папки и платформы, затем проверьте итог. Для настройки без сети используйте сохранённый каталог.'));
 end;
 
 procedure TFormSetup.UpdateWizardSteps;
@@ -335,6 +339,7 @@ end;
 destructor TFormSetup.Destroy;
 begin
   FOnCompleted := nil;
+  FFiltering := True;
   TInterlocked.Exchange(FScanCancelled, 1);
   if FScanTask <> nil then
     FScanTask.Wait;
@@ -342,7 +347,9 @@ begin
   TThread.RemoveQueuedEvents(nil, FinishWizardResources);
   TThread.RemoveQueuedEvents(nil, UpdateWizardProgress);
   SaveCategories;
+  SystemList.OnViewportPositionChange := nil;
   SystemList.Clear;
+  FreeAndNil(FIconIndexes);
   FMediaSources.Free;
   FPendingCatalog.Free;
   FOwnedCatalog.Free;
@@ -481,7 +488,6 @@ begin
   SetupSourceLayout.Visible := not FWizard or (Page = 1);
   PlatformPanel.Visible := SetupSourceLayout.Visible;
   BackButton.Visible := FWizard and (Page > 0);
-  WizardHelpButton.Visible := FWizard;
   WizardSteps.Visible := FWizard;
   WizardSubtitle.Visible := FWizard;
   if FWizard then
@@ -806,15 +812,30 @@ end;
 
 procedure TFormSetup.LoadCatalog(Catalog: TJSONObject);
 begin
-  FCatalog := Catalog;
-  PlatformSearch.Text := '';
+  // Rows borrow catalogue objects; detach them before changing the catalogue.
+  FFiltering := True;
+  try
+    SaveCategories;
+    ClearPlatformRows;
+    FCatalog := Catalog;
+    PlatformSearch.Text := '';
+    FIconIndexes.Clear;
+    PlatformIcons.Destination.Clear;
+    PlatformIcons.Source.Clear;
+    if FConfig <> nil then
+      FArtworkBase := FConfig.Base
+    else
+      FArtworkBase := WritableBase;
+  finally
+    FFiltering := False;
+  end;
   SearchChanged(nil);
 end;
 
 procedure TFormSetup.SearchChanged(Sender: TObject);
 var
   A, V, Previous: TJSONValue;
-  Query, Names, Key, Category, ImageFile: string;
+  Query, Names, Key, Category: string;
   MatchCount: Integer;
   Expanded: Boolean;
   Matches: TList<TJSONValue>;
@@ -843,17 +864,8 @@ var
       if Value = Previous then
         SelectedRow := Row;
     end;
-    if FCopyMode then
-      Exit;
-    if FConfig <> nil then
-      ImageFile := PlatformArtwork(CacheWorkBase(FConfig.Root), JInt(Value, 'id'), 'icon')
-    else
-      ImageFile := PlatformArtwork(SessionTemporaryBase, JInt(Value, 'id'), 'icon');
-    if ImageFile <> '' then
-    try
-      Row.ImageIndex := PlatformIcons.AddOrSet('platform_' + JStr(Value, 'id'), [1.0], [ImageFile])
-    except
-    end;
+    // Only the rows in the viewport need icons;
+    // filtering reuses the existing image list.
   end;
 
 begin
@@ -868,9 +880,7 @@ begin
   Matches := TList<TJSONValue>.Create;
   Categories := TStringList.Create;
   try
-    SystemList.Clear;
-    PlatformIcons.Destination.Clear;
-    PlatformIcons.Source.Clear;
+    ClearPlatformRows;
     SelectedRow := nil;
     FirstRow := nil;
     if FCopyMode then
@@ -938,6 +948,117 @@ begin
   else
     EmptyLabel.Text := SK.Locale.L('Платформы не найдены. Измените поисковый запрос.');
   UpdateSelection;
+  LoadVisibleIcons;
+end;
+
+procedure TFormSetup.ClearPlatformRows;
+var
+  Row: TTreeViewItem;
+  Root: IRoot;
+
+  procedure Disconnect(Obj: TFmxObject);
+  var
+    I: Integer;
+    Control: TSetupControlAccess;
+  begin
+    Obj.TagObject := nil;
+    if Obj is TControl then
+    begin
+      Control := TSetupControlAccess(Obj);
+      Control.OnClick := nil;
+      Control.OnDblClick := nil;
+      Control.OnMouseDown := nil;
+      Control.OnMouseUp := nil;
+      Control.OnMouseMove := nil;
+      Control.OnMouseEnter := nil;
+      Control.OnMouseLeave := nil;
+      Control.OnMouseWheel := nil;
+    end;
+    for I := 0 to Obj.ChildrenCount - 1 do
+      Disconnect(Obj.Children[I]);
+  end;
+
+begin
+  SystemList.BeginUpdate;
+  try
+    SystemList.Selected := nil;
+    while SystemList.Count > 0 do
+    begin
+      Row := SystemList.Items[SystemList.Count - 1];
+      Root := Row.Root;
+      if (Root <> nil) and (Root.GetCaptured <> nil) and
+        Row.IsChild(Root.GetCaptured.GetObject) then
+        Root.SetCaptured(nil);
+      Disconnect(Row);
+      Row.Parent := nil;
+      Row.Release;
+    end;
+    TSetupTreeAccess(SystemList).HoveredItem := nil;
+    // All rows are detached: reset FMX viewport/selection indexes without
+    // destroying any event targets synchronously.
+    SystemList.Clear;
+  finally
+    SystemList.EndUpdate;
+  end;
+end;
+
+procedure TFormSetup.PlatformViewportChanged(Sender: TObject; const OldViewportPosition, NewViewportPosition: TPointF; const ContentSizeChanged: Boolean);
+begin
+  LoadVisibleIcons;
+end;
+
+procedure TFormSetup.LoadVisibleIcons;
+var
+  I, ID, ImageIndex: Integer;
+  Row: TTreeViewItem;
+  Bounds: TRectF;
+  ImageFile: string;
+  Activity: IInterface;
+begin
+  if FFiltering or FLoadingIcons or FCopyMode or (FIconIndexes = nil) or
+    (FArtworkBase = '') or (csDestroying in ComponentState) then
+    Exit;
+  FLoadingIcons := True;
+  PlatformIcons.BeginUpdate;
+  try
+    Activity := CacheActivity(FArtworkBase);
+    // GlobalCount includes only expanded rows, so collapsed categories do no I/O.
+    for I := 0 to SystemList.GlobalCount - 1 do
+    begin
+      Row := SystemList.ItemByGlobalIndex(I);
+      if Row.TagObject = nil then
+        Continue;
+      // ItemHeight is fixed in FMX. Positions are not assigned yet when the
+      // embedded screen is first configured, so use the visible row index.
+      if SystemList.ItemHeight > 0 then
+        Bounds := RectF(0, I * SystemList.ItemHeight, 1, (I + 1) * SystemList.ItemHeight)
+      else
+        Bounds := TSetupTreeAccess(SystemList).GetItemRect(Row);
+      if (Bounds.Bottom < SystemList.ViewportPosition.Y) or
+        (Bounds.Top > SystemList.ViewportPosition.Y + SystemList.Height) then
+        Continue;
+      ID := JInt(TJSONValue(Row.TagObject), 'id');
+      if not FIconIndexes.TryGetValue(ID, ImageIndex) then
+      begin
+        ImageIndex := -1;
+        try
+          if FConfig <> nil then
+            ImageFile := PlatformArtwork(FArtworkBase, ID, 'icon', FCatalog, CacheBase(FConfig.Root))
+          else
+            ImageFile := PlatformArtwork(FArtworkBase, ID, 'icon', FCatalog);
+          if ImageFile <> '' then
+            ImageIndex := PlatformIcons.AddOrSet('platform_' + ID.ToString, [1.0], [ImageFile]);
+        except
+          // Missing or invalid artwork must not block selecting a platform.
+        end;
+        FIconIndexes.Add(ID, ImageIndex);
+      end;
+      Row.ImageIndex := ImageIndex;
+    end;
+  finally
+    PlatformIcons.EndUpdate;
+    FLoadingIcons := False;
+  end;
 end;
 
 procedure TFormSetup.ToggleCategory(Sender: TObject);
@@ -947,6 +1068,7 @@ begin
   Header := TTreeViewItem(Sender);
   Header.IsExpanded := not Header.IsExpanded;
   SaveCategories;
+  LoadVisibleIcons;
 end;
 
 procedure TFormSetup.SaveCategories;

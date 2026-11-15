@@ -100,7 +100,7 @@ begin
       Count := SelectablePlatformCount(Result);
       if Assigned(Progress) then
         Progress(crArtwork, Count, 0, Count * 4);
-      RefreshPlatformArtwork(Result, Settings, Credentials, CacheWorkBase(Settings), False, Cancel,
+      RefreshPlatformArtwork(Result, Settings, Credentials, Base, False, Cancel,
         procedure(Done, Total: Integer)
         begin
           if Assigned(Progress) and ((Done mod 8 = 0) or (Done = Total)) then
@@ -141,7 +141,7 @@ begin
         end;
         WriteJSON(TPlatformPath.Combine(Base, SystemsCatalogPath), Catalog);
         try
-          ArtworkCount := RefreshPlatformArtwork(Catalog, Settings, Credentials, CacheWorkBase(Settings),
+          ArtworkCount := RefreshPlatformArtwork(Catalog, Settings, Credentials, Base,
             False, nil, ArtworkProgress);
           Result.MessageText := Result.MessageText + L(' — изображений платформ: %d', [ArtworkCount]);
         except

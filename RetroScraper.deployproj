@@ -1,0 +1,3 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(BDS)\bin\CodeGear.Deployment.targets" Condition="Exists('$(BDS)\bin\CodeGear.Deployment.targets')"/>
+</Project>
