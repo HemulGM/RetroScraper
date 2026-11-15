@@ -41,3 +41,10 @@ __pycache__/
 /sources/Tests/*
 /sources/Tools/*
 /codex-work/*
+
+# Maintained localization audit and regression suite
+!/sources/Tools/audit-locales.py
+!/sources/Tests/SK.Parity.Tests.pas
+
+/sources/Tests/*
+/sources/Tools/*

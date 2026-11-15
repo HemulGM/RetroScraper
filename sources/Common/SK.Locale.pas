@@ -176,7 +176,7 @@ begin
       // Empty/dynamic hints (paths, quotas, log rows) remain owned by their presenters.
       if TControl(C).Hint <> '' then
         Obj.AddPair('Hint', TControl(C).Hint);
-      if (C is TLabel) or (C is TButton) or (C is TCheckBox) or (C is TRadioButton) or (C is TTabItem) then
+      if (C is TLabel) or (C is TCustomButton) or (C is TCheckBox) or (C is TRadioButton) or (C is TTabItem) then
         Obj.AddPair('Text', GetStrProp(C, 'Text'));
       if C is TEdit then
         Obj.AddPair('TextPrompt', TEdit(C).TextPrompt);

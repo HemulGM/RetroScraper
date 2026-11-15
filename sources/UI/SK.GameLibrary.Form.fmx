@@ -524,7 +524,7 @@
                             StaysPressed = True
                             GroupName = 'GameLibraryMedia'
                             StyleLookup = 'buttonstyle_subtle'
-                            Text = 'Picture'
+                            Text = 'Изображение'
                             OnClick = OverviewMediaClick
                             object RectanglePictureLine: TRectangle
                               Align = Bottom
@@ -546,7 +546,7 @@
                             StaysPressed = True
                             GroupName = 'GameLibraryMedia'
                             StyleLookup = 'buttonstyle_subtle'
-                            Text = 'Video'
+                            Text = 'Видео'
                             OnClick = OverviewMediaClick
                             object RectangleVideoLine: TRectangle
                               Align = Bottom

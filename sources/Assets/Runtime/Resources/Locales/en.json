@@ -18,7 +18,7 @@
   "%d систем · выбрано %d": "%d systems · %d selected",
   "%s · %d из %d": "%s · %d of %d",
   "%s · система %d из %d": "%s · system %d of %d",
-  "1 дн.": "1 days",
+  "1 дн.": "1 day",
   "10 дн.": "10 days",
   "11 дн.": "11 days",
   "12 дн.": "12 days",
@@ -644,5 +644,6 @@
   "hint.field_help": "Show the field description, format and accepted values.",
   "hint.clear_media": "Remove the media reference from the game being edited.",
   "hint.replace_media": "Select a local media file for this game.",
-  "hint.return_library": "Return to the library after scraping finishes."
+  "hint.return_library": "Return to the library after scraping finishes.",
+  "%d дн.": "%d days"
 }

@@ -2485,7 +2485,7 @@ begin
     ExportConfigButton.Enabled := True;
     RefreshSettings;
     ProgressBarScrappingGames.Value := 0;
-    LabelScrapingGameCount.Text := 'Games';
+    LabelScrapingGameCount.Text := SK.Locale.L('%d из %d игр', [0, 0]);
     ButtonScrap.Text := SK.Locale.L('Остановить');
     ShowPage(0);
     UpdateSelectionCount;

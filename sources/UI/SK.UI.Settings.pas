@@ -14,7 +14,7 @@ function ReadSettingValue(Control: TControl; Obj: TJSONObject; const Path: strin
 implementation
 
 uses
-  SK.Json, SK.Consts;
+  SK.Json, SK.Consts, SK.Locale;
 
 procedure ApplySettingValue(Control: TControl; Obj: TJSONObject; const Path: string; Spec: TArray<string>; CacheTTL: TComboBox);
 var
@@ -78,7 +78,7 @@ begin
       else if N >= 16 then
       begin
         CacheTTL.Tag := N;
-        CacheTTL.Items.Add(N.ToString + ' days');
+        CacheTTL.Items.Add(L('%d дн.', [N]));
         N := 17;
       end;
     end;
