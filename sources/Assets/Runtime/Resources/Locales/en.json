@@ -671,6 +671,10 @@
   "KO: —": "KO: —",
   "KO / 24h": "KO today / limit",
   "Continue scraping": "Continue scraping",
-  "hint.resume_scraping": "Resume the stopped run with the remaining games. Completed games and their results are retained. After a quota stop, wait until the quota is available again. Resume is available until a new run starts or the application closes.",
-  "Scraping resumed; completed games will be skipped.": "Scraping resumed; completed games will be skipped."
+  "hint.resume_scraping": "Resume remaining games after stopping or restarting the application. Completed results are retained. After a quota stop, wait until the quota is available again.",
+  "Scraping resumed; completed games will be skipped.": "Scraping resumed; completed games will be skipped.",
+  "hint.delete_scraping_progress": "Delete saved scraping progress",
+  "Unable to save scraping progress: %s": "Unable to save scraping progress: %s",
+  "Unable to load scraping progress: %s": "Unable to load scraping progress: %s",
+  "Unable to delete scraping progress: %s": "Unable to delete scraping progress: %s"
 }

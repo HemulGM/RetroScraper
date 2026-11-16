@@ -46,6 +46,9 @@ type
     FQuotaTick: UInt64;
     FOffline: Boolean;
     FPlanReady: Boolean;
+    FCheckpointFile: string;
+    FCheckpointTick: UInt64;
+    FInputFinished: TProc<TScrapeWorker, string, TJSONObject>;
     FVerbose: Boolean;
     FQueue: TInputQueue;
     FTaskSystem: TJSONObject;
@@ -58,6 +61,7 @@ type
     FNextPreviewTick: UInt64;
     FProduced: TDictionary<string, Boolean>;
     FCleanupRoots: TDictionary<string, Boolean>;
+    procedure SaveCheckpoint(Force: Boolean = False);
     function HasPendingWork: Boolean;
     function ResumeInputs(Sys: TJSONObject): TArray<string>;
     procedure PrepareTargetSystem(Sys: TJSONObject);
@@ -80,6 +84,9 @@ type
   public
     constructor Create(Config, Credentials: TJSONObject; const Base: string; Selected: Integer; Offline: Boolean = False; OfflineEngines: Integer = 1; const TargetRom: string = ''; NetworkQueue: TScreenScraperNetworkQueue = nil);
     destructor Destroy; override;
+    procedure EnablePersistence(const FileName: string);
+    class function LoadCheckpoint(const FileName: string; Credentials: TJSONObject;
+      const Base: string): TScrapeWorker; static;
     procedure Snapshot(out Status: TScrapeStatus; Lines: TStrings);
     function CreateContinuation(Credentials: TJSONObject = nil; NetworkQueue: TScreenScraperNetworkQueue = nil): TScrapeWorker;
   end;
@@ -165,6 +172,7 @@ begin
           begin
             Result := Terminated;
           end);
+      if Terminated then raise EAbort.Create('Cancelled');
       if FTargetRom = '' then
         State.Inputs := FilterNewInputs(Sys, State.Inputs);
       FResumePlatforms.Add(Key, State);
@@ -197,10 +205,141 @@ begin
   try
     for Key in FResumePlatforms.Keys do
       Result.FResumePlatforms.Add(Key, FResumePlatforms[Key].Clone);
+    Result.FCheckpointFile := FCheckpointFile;
     Result.Log(SK.Locale.L('Scraping resumed; completed games will be skipped.'));
   except
     Result.Free;
     raise;
+  end;
+end;
+
+procedure TScrapeWorker.EnablePersistence(const FileName: string);
+begin
+  FCheckpointFile := FileName;
+  SaveCheckpoint(True);
+end;
+
+procedure TScrapeWorker.SaveCheckpoint(Force: Boolean);
+var
+  Root, Platforms, Entry: TJSONObject;
+  State: TResumePlatform;
+  Key, Path, Temporary: string;
+  Items: TJSONArray;
+  Item: TJSONObject;
+
+  function Keys(Dict: TDictionary<string, Boolean>): TJSONArray;
+  var
+    K: string;
+  begin
+    Result := TJSONArray.Create;
+    for K in Dict.Keys do Result.Add(K);
+  end;
+
+begin
+  if FCheckpointFile = '' then Exit;
+  if not Force and (TThread.GetTickCount64 < FCheckpointTick + 5000) then Exit;
+  Root := TJSONObject.Create;
+  try
+    try
+      Root.AddPair('Version', TJSONNumber.Create(1));
+      Root.AddPair('Config', FConfig.Clone as TJSONObject);
+      Root.AddPair('Selected', TJSONNumber.Create(FSelected));
+      Root.AddPair('Offline', TJSONBool.Create(FOffline));
+      Root.AddPair('Engines', TJSONNumber.Create(FEngineLimit));
+      Root.AddPair('TargetRom', FTargetRom);
+      Platforms := TJSONObject.Create;
+      Root.AddPair('Platforms', Platforms);
+      for Key in FResumePlatforms.Keys do
+      begin
+        State := FResumePlatforms[Key];
+        Entry := TJSONObject.Create;
+        Platforms.AddPair(Key, Entry);
+        Items := TJSONArray.Create;
+        Entry.AddPair('Inputs', Items);
+        for Path in State.Inputs do Items.Add(Path);
+        Entry.AddPair('Completed', Keys(State.Completed));
+        Entry.AddPair('Produced', Keys(State.Produced));
+        Entry.AddPair('CleanupRoots', Keys(State.CleanupRoots));
+        Entry.AddPair('Saved', TJSONBool.Create(State.Saved));
+        Items := TJSONArray.Create;
+        Entry.AddPair('Results', Items);
+        for Item in State.Results do Items.AddElement(Item.Clone as TJSONObject);
+        Items := TJSONArray.Create;
+        Entry.AddPair('Missing', Items);
+        for Path in State.Missing do Items.Add(Path);
+      end;
+      EnsureDirectory(ExtractFileDir(FCheckpointFile));
+      Temporary := FCheckpointFile + '.tmp';
+      try
+        TFile.WriteAllText(Temporary, Root.ToJSON, TEncoding.UTF8);
+        CommitFile(Temporary, FCheckpointFile);
+      finally
+        if TFile.Exists(Temporary) then TFile.Delete(Temporary);
+      end;
+      FCheckpointTick := TThread.GetTickCount64;
+    except
+      on E: Exception do
+      begin
+        FCheckpointTick := TThread.GetTickCount64;
+        Log(SK.Locale.L('Unable to save scraping progress: %s', [E.Message]));
+      end;
+    end;
+  finally
+    Root.Free;
+  end;
+end;
+
+class function TScrapeWorker.LoadCheckpoint(const FileName: string;
+  Credentials: TJSONObject; const Base: string): TScrapeWorker;
+var
+  Root, Platforms, Entry: TJSONObject;
+  Pair: TJSONPair;
+  Value: TJSONValue;
+  State: TResumePlatform;
+  Inputs: TJSONArray;
+  I: Integer;
+
+  procedure ReadKeys(Obj: TJSONObject; const Name: string; Dict: TDictionary<string, Boolean>);
+  var
+    V: TJSONValue;
+  begin
+    for V in Obj.GetValue<TJSONArray>(Name) do Dict.AddOrSetValue(V.Value, True);
+  end;
+
+begin
+  Result := nil;
+  Root := ReadJSON(FileName);
+  try
+    if (Root = nil) or (JInt(Root, 'Version') <> 1) then
+      raise EInvalidOpException.Create('Invalid saved scrape');
+    Result := TScrapeWorker.Create(Root.GetValue<TJSONObject>('Config'), Credentials,
+      Base, JInt(Root, 'Selected', -1), JBool(Root, 'Offline'),
+      JInt(Root, 'Engines', 1), JStr(Root, 'TargetRom'));
+    try
+      Platforms := Root.GetValue<TJSONObject>('Platforms');
+      for Pair in Platforms do
+      begin
+        Entry := Pair.JsonValue as TJSONObject;
+        State := TResumePlatform.Create;
+        Result.FResumePlatforms.Add(Pair.JsonString.Value, State);
+        Inputs := Entry.GetValue<TJSONArray>('Inputs');
+        SetLength(State.Inputs, Inputs.Count);
+        for I := 0 to Inputs.Count - 1 do State.Inputs[I] := Inputs.Items[I].Value;
+        ReadKeys(Entry, 'Completed', State.Completed);
+        ReadKeys(Entry, 'Produced', State.Produced);
+        ReadKeys(Entry, 'CleanupRoots', State.CleanupRoots);
+        State.Saved := JBool(Entry, 'Saved');
+        for Value in Entry.GetValue<TJSONArray>('Results') do
+          State.Results.Add(Value.Clone as TJSONObject);
+        for Value in Entry.GetValue<TJSONArray>('Missing') do State.Missing.Add(Value.Value);
+      end;
+      Result.FCheckpointFile := FileName;
+    except
+      FreeAndNil(Result);
+      raise;
+    end;
+  finally
+    Root.Free;
   end;
 end;
 
@@ -1477,6 +1616,8 @@ begin
           end;
         end;
       finally
+        if Assigned(FInputFinished) then
+          FInputFinished(Self, FileName, Item);
         Response.Free;
         Item.Free;
         TMonitor.Enter(FLock);
@@ -1518,20 +1659,10 @@ var
 
   procedure CollectResults;
   var
-    Worker: TScrapeWorker;
     Item: TJSONObject;
     Path: string;
   begin
     if Collected then Exit;
-    for Worker in Workers do
-    begin
-      for Path in Worker.FCompletedInputs.Keys do State.Completed.AddOrSetValue(Path, True);
-      for Item in Worker.FResults do State.Results.Add(Item.Clone as TJSONObject);
-      for Path in Worker.FMissing do
-        if State.Missing.IndexOf(Path) < 0 then State.Missing.Add(Path);
-      for Path in Worker.FProduced.Keys do State.Produced.AddOrSetValue(Path, True);
-      for Path in Worker.FCleanupRoots.Keys do State.CleanupRoots.AddOrSetValue(Path, True);
-    end;
     for Item in State.Results do Results.Add(Item);
     Missing.Assign(State.Missing);
     for Path in State.Produced.Keys do FProduced.AddOrSetValue(Path, True);
@@ -1675,6 +1806,39 @@ begin
       Workers.Add(Child);
       Child.FQueue := Queue;
       Child.FTaskSystem := Sys.Clone as TJSONObject;
+      Child.FInputFinished :=
+        procedure(Worker: TScrapeWorker; FileName: string; GameItem: TJSONObject)
+        var
+          Path: string;
+          Guard: TObject;
+        begin
+          Guard := SharedResourceLock('scrape-checkpoint|' + FBase);
+          TMonitor.Enter(Guard);
+          try
+            if Worker.FCompletedInputs.ContainsKey(PathKey(FileName)) and
+              not State.Completed.ContainsKey(PathKey(FileName)) then
+            begin
+              if (Worker.FResults.Count > 0) and (GameItem <> nil) and
+                (JStr(Worker.FResults.Last, 'path') = JStr(GameItem, 'path')) then
+                State.Results.Add(Worker.FResults.Last.Clone as TJSONObject);
+              State.Completed.AddOrSetValue(PathKey(FileName), True);
+            end;
+            for Path in Worker.FMissing do
+              if State.Missing.IndexOf(Path) < 0 then State.Missing.Add(Path);
+            for Path in Worker.FProduced.Keys do State.Produced.AddOrSetValue(Path, True);
+            for Path in Worker.FCleanupRoots.Keys do State.CleanupRoots.AddOrSetValue(Path, True);
+            // Each engine hands off only this game's data; keep the long-lived
+            // result set in the coordinator and avoid rescanning it per game.
+            Worker.FResults.Clear;
+            Worker.FCompletedInputs.Clear;
+            Worker.FMissing.Clear;
+            Worker.FProduced.Clear;
+            Worker.FCleanupRoots.Clear;
+            SaveCheckpoint;
+          finally
+            TMonitor.Exit(Guard);
+          end;
+        end;
     end;
     SetLength(Seen, Workers.Count * 3);
     for Child in Workers do
@@ -1760,6 +1924,7 @@ begin
     for Child in Workers do
       Child.WaitFor;
     CollectResults;
+    SaveCheckpoint(True);
     Results.Free;
     Writer.Free;
     Missing.Free;
@@ -2000,6 +2165,7 @@ begin
         end;
       end;
       FPlanReady := True;
+      SaveCheckpoint(True);
       for i := 0 to Systems.Count - 1 do
       begin
         if Terminated then
@@ -2102,7 +2268,15 @@ begin
     finally
       TMonitor.Exit(FLock);
     end;
-    EndWorkerPlatform;
+    try
+      if FCheckpointFile <> '' then
+        if HasPendingWork then
+          SaveCheckpoint(True)
+        else if TFile.Exists(FCheckpointFile) then
+          TFile.Delete(FCheckpointFile);
+    finally
+      EndWorkerPlatform;
+    end;
   end;
 end;
 

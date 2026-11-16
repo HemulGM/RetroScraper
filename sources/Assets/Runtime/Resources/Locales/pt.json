@@ -671,6 +671,10 @@
   "KO: —": "KO: —",
   "KO / 24h": "KO hoje / limite",
   "Continue scraping": "Continuar scraping",
-  "hint.resume_scraping": "Retomar com os jogos restantes. Os jogos concluídos e os resultados são preservados. Após uma paragem por quota, aguarde a sua reposição. Disponível até iniciar outra execução ou fechar a aplicação.",
-  "Scraping resumed; completed games will be skipped.": "Scraping retomado; os jogos já processados serão ignorados."
+  "hint.resume_scraping": "Continuar os jogos restantes após parar ou reiniciar a aplicação. Os resultados concluídos são mantidos. Se a quota se esgotou, aguarde a sua renovação.",
+  "Scraping resumed; completed games will be skipped.": "Scraping retomado; os jogos já processados serão ignorados.",
+  "hint.delete_scraping_progress": "Eliminar o progresso guardado",
+  "Unable to save scraping progress: %s": "Não foi possível guardar o progresso: %s",
+  "Unable to load scraping progress: %s": "Não foi possível carregar o progresso: %s",
+  "Unable to delete scraping progress: %s": "Não foi possível eliminar o progresso: %s"
 }

@@ -614,6 +614,10 @@ type
     ButtonAddSystem: TButton;
     ButtonRunWizard: TButton;
     ButtonRemoveSystem: TButton;
+    ButtonSavedScraping: TButton;
+    LayoutSavedScraping: TLayout;
+    SpeedButtonDeleteScraping: TSpeedButton;
+    PathDeleteScraping: FMX.Objects.TPath;
     ImportConfigButton: TButton;
     ExportConfigButton: TButton;
     OpenDialog: TOpenDialog;
@@ -628,6 +632,7 @@ type
     Layout2: TLayout;
     ButtonWeb: TButton;
     OpenPlatformLibrary: TButton;
+    Path1: TPath;
     procedure ScenariosClick(Sender: TObject);
     procedure ScenarioChanged(Sender: TObject);
     procedure ScenarioSelectionClick(Sender: TObject);
@@ -665,6 +670,9 @@ type
     procedure ButtonTestAccountClick(Sender: TObject);
     procedure ButtonScrapClick(Sender: TObject);
     procedure ButtonResumeScrapingClick(Sender: TObject);
+    procedure ButtonSavedScrapingClick(Sender: TObject);
+    procedure SpeedButtonDeleteScrapingClick(Sender: TObject);
+    procedure UpdateSavedScraping;
     procedure ButtonAddSystemClick(Sender: TObject);
     procedure ButtonRemoveSystemClick(Sender: TObject);
     procedure ButtonSourceFolderClick(Sender: TObject);
@@ -1092,6 +1100,7 @@ begin
     RefreshSettings
   end;
   ShowPage(0);
+  UpdateSavedScraping;
 end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);
@@ -2476,6 +2485,54 @@ begin
   ValidateAccount;
 end;
 
+procedure TFormMain.UpdateSavedScraping;
+begin
+  LayoutSavedScraping.Visible := TFile.Exists(TPlatformPath.Combine(WritableBase, 'scraping-progress.json')) and
+    ((FWorker = nil) or FWorker.Finished);
+end;
+
+procedure TFormMain.ButtonSavedScrapingClick(Sender: TObject);
+var
+  NextWorker: TScrapeWorker;
+begin
+  if not CanExecuteAction then Exit;
+  try
+    NextWorker := TScrapeWorker.LoadCheckpoint(
+      TPlatformPath.Combine(WritableBase, 'scraping-progress.json'), FConfig.Credentials, WritableBase);
+  except
+    on E: Exception do
+    begin
+      ShowMessage(SK.Locale.L('Unable to load scraping progress: %s', [E.Message]));
+      Exit;
+    end;
+  end;
+  FWorker.Free;
+  FWorker := NextWorker;
+  LayoutSavedScraping.Visible := False;
+  BeginScrapeDisplay;
+  FWorker.Start;
+end;
+
+procedure TFormMain.SpeedButtonDeleteScrapingClick(Sender: TObject);
+var
+  FileName: string;
+begin
+  if not CanExecuteAction then Exit;
+  FileName := TPlatformPath.Combine(WritableBase, 'scraping-progress.json');
+  try
+    if TFile.Exists(FileName) then TFile.Delete(FileName);
+  except
+    on E: Exception do
+    begin
+      ShowMessage(SK.Locale.L('Unable to delete scraping progress: %s', [E.Message]));
+      Exit;
+    end;
+  end;
+  FreeAndNil(FWorker);
+  ButtonResumeScraping.Visible := False;
+  UpdateSavedScraping;
+end;
+
 procedure TFormMain.ButtonResumeScrapingClick(Sender: TObject);
 var
   NextWorker, Previous: TScrapeWorker;
@@ -2486,6 +2543,7 @@ begin
   FWorker := NextWorker;
   Previous.Free;
   ShowPage(1);
+  LayoutSavedScraping.Visible := False;
   FScrapePresenter.BeginScrape(True);
   FWorker.Start;
 end;
@@ -2524,6 +2582,7 @@ begin
     if O.GetValue<TJSONArray>('Systems').Count = 0 then
       Exit;
     FWorker := TScrapeWorker.Create(O, FConfig.Credentials, WritableBase, -1);
+    FWorker.EnablePersistence(TPlatformPath.Combine(WritableBase, 'scraping-progress.json'));
   finally
     O.Free
   end;
@@ -2744,6 +2803,7 @@ begin
   CheckPlatformUpdates;
   PollFolderCount;
   PollMediaPreview;
+  UpdateSavedScraping;
   if FWorker = nil then
     Exit;
   Lines := TStringList.Create;
@@ -2761,6 +2821,7 @@ procedure TFormMain.BeginScrapeDisplay;
 begin
   ShowPage(1);
   FLogPresenter.Reset;
+  LayoutSavedScraping.Visible := False;
   FScrapePresenter.BeginScrape;
 end;
 
@@ -3122,6 +3183,7 @@ begin
       if FWorker <> nil then
         FreeAndNil(FWorker);
       FWorker := TScrapeWorker.Create(RunConfig, FConfig.Credentials, WritableBase, -1);
+      FWorker.EnablePersistence(TPlatformPath.Combine(WritableBase, 'scraping-progress.json'));
       BeginScrapeDisplay;
       FastColoredTextBoxLogging.Lines.Add(SK.Locale.L('Сценарий: %s · поле: %s',
         [ComboBoxScenario.Selected.Text, Request.Field]));

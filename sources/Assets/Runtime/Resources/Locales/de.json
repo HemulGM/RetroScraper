@@ -671,6 +671,10 @@
   "KO: —": "KO: —",
   "KO / 24h": "KO heute / Limit",
   "Continue scraping": "Scraping fortsetzen",
-  "hint.resume_scraping": "Den angehaltenen Lauf mit den verbleibenden Spielen fortsetzen. Fertige Spiele und Ergebnisse bleiben erhalten. Nach einem Kontingentstopp auf die Freigabe warten. Verfügbar bis zu einem neuen Lauf oder dem Schließen der Anwendung.",
-  "Scraping resumed; completed games will be skipped.": "Scraping fortgesetzt; bereits verarbeitete Spiele werden übersprungen."
+  "hint.resume_scraping": "Verbleibende Spiele nach einem Stopp oder Neustart fortsetzen. Fertige Ergebnisse bleiben erhalten. Nach einem Kontingentstopp warten, bis das Kontingent wieder verfügbar ist.",
+  "Scraping resumed; completed games will be skipped.": "Scraping fortgesetzt; bereits verarbeitete Spiele werden übersprungen.",
+  "hint.delete_scraping_progress": "Gespeicherten Scraping-Fortschritt löschen",
+  "Unable to save scraping progress: %s": "Scraping-Fortschritt konnte nicht gespeichert werden: %s",
+  "Unable to load scraping progress: %s": "Scraping-Fortschritt konnte nicht geladen werden: %s",
+  "Unable to delete scraping progress: %s": "Scraping-Fortschritt konnte nicht gelöscht werden: %s"
 }
