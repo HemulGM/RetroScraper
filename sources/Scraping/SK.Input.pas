@@ -23,6 +23,8 @@ function ComputeInputHashes(Config: TJSONObject; const FileName, CacheRoot: stri
 
 procedure HashInputStream(Stream: TStream; out CRC, MD5, SHA1: string; Cancel: TFunc<Boolean> = nil);
 
+function GameNameQueries(const RomName: string): TArray<string>;
+
 function CleanRomName(const Name: string): string;
 
 function MatchNameExpression(const Name, Expression: string): Boolean;
@@ -400,6 +402,21 @@ begin
   finally
     Folders.Free
   end;
+end;
+
+function GameNameQueries(const RomName: string): TArray<string>;
+var
+  Name, CleanName: string;
+begin
+  Name := TPath.GetFileNameWithoutExtension(RomName);
+  CleanName := TRegEx.Replace(Name, '[\(\[].*?[\)\]]', '').Replace('''', ' ').Replace('.', ' ').Trim;
+  Name := CleanRomName(Name);
+  CleanName := CleanRomName(CleanName);
+  Result := nil;
+  if Name <> '' then
+    Result := TArray<string>.Create(Name);
+  if (CleanName <> '') and not SameText(Name, CleanName) then
+    Result := Result + TArray<string>.Create(CleanName);
 end;
 
 function CleanRomName(const Name: string): string;

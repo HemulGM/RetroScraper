@@ -41579,15 +41579,32 @@
                             Position.X = 12.000000000000000000
                             Position.Y = 32.000000000000000000
                             Size.Width = 170.400024414062500000
-                            Size.Height = 36.000000000000000000
+                            Size.Height = 22.000000000000000000
                             Size.PlatformDefault = False
-                            TextSettings.Font.Size = 20.000000000000000000
+                            TextSettings.Font.Size = 18.000000000000000000
                             TextSettings.Font.StyleExt = {00070000000000000004000000}
                             TextSettings.FontColor = xFFF3F3F3
                             TextSettings.HorzAlign = Center
                             Text = #8212
                             ParentShowHint = False
                             ShowHint = True
+                          end
+                          object LabelKOQuotaValue: TLabel
+                            Hint = 'hint.ko_quota'
+                            ParentShowHint = False
+                            ShowHint = True
+                            Position.Y = 54.000000000000000000
+                            Align = Top
+                            StyledSettings = [Family]
+                            Margins.Left = 12.000000000000000000
+                            Margins.Right = 12.000000000000000000
+                            Size.Width = 170.400024414062500000
+                            Size.Height = 18.000000000000000000
+                            Size.PlatformDefault = False
+                            TextSettings.Font.Size = 13.000000000000000000
+                            TextSettings.FontColor = xFFF3F3F3
+                            TextSettings.HorzAlign = Center
+                            Text = 'KO: —'
                           end
                         end
                       end
@@ -42119,6 +42136,23 @@
                     Size.PlatformDefault = False
                     Text = #1054#1089#1090#1072#1085#1086#1074#1080#1090#1100
                     OnClick = ButtonScrapClick
+                  end
+                  object ButtonResumeScraping: TButton
+                    Align = Right
+                    StyledSettings = [Family, Style, FontColor]
+                    Hint = 'hint.resume_scraping'
+                    ParentShowHint = False
+                    ShowHint = True
+                    Margins.Top = 8.000000000000000000
+                    Margins.Right = 12.000000000000000000
+                    Margins.Bottom = 4.000000000000000000
+                    Position.X = 644.000000000000000000
+                    Size.Width = 180.000000000000000000
+                    Size.Height = 35.000000000000000000
+                    Size.PlatformDefault = False
+                    Visible = False
+                    Text = 'Continue scraping'
+                    OnClick = ButtonResumeScrapingClick
                   end
                   object ScrapeSummary: TLabel
                     Align = Client
@@ -47729,7 +47763,7 @@
                               Margins.Left = 16.000000000000000000
                               Margins.Top = 8.000000000000000000
                               Margins.Right = 16.000000000000000000
-                              Margins.Bottom = 16.000000000000000000
+                              Margins.Bottom = 0.000000000000000000
                               Position.X = 16.000000000000000000
                               Position.Y = 304.000000000000000000
                               Size.Width = 464.000000000000000000
@@ -47747,6 +47781,45 @@
                                 Text = #1047#1072#1087#1088#1086#1089#1086#1074' '#1089#1077#1075#1086#1076#1085#1103' / '#1083#1080#1084#1080#1090
                               end
                               object AccountQuotaValue: TLabel
+                                Align = Client
+                                StyledSettings = []
+                                Size.Width = 203.000000000000000000
+                                Size.Height = 28.000000000000000000
+                                Size.PlatformDefault = False
+                                TextSettings.Font.Size = 14.000000000000000000
+                                TextSettings.FontColor = xFFBDBDBD
+                                Text = #8212
+                              end
+                            end
+                            object LayoutAccountKOQuota: TLayout
+                              Align = Bottom
+                              Margins.Left = 16.000000000000000000
+                              Margins.Top = 8.000000000000000000
+                              Margins.Right = 16.000000000000000000
+                              Margins.Bottom = 16.000000000000000000
+                              Position.X = 16.000000000000000000
+                              Position.Y = 340.000000000000000000
+                              Size.Width = 464.000000000000000000
+                              Size.Height = 28.000000000000000000
+                              Size.PlatformDefault = False
+                              object LabelAccountKOQuota: TLabel
+                            Hint = 'hint.ko_quota'
+                            ParentShowHint = False
+                            ShowHint = True
+                                Align = Left
+                                StyledSettings = []
+                                Margins.Right = 8.000000000000000000
+                                Size.Width = 253.000000000000000000
+                                Size.Height = 28.000000000000000000
+                                Size.PlatformDefault = False
+                                TextSettings.Font.Size = 14.000000000000000000
+                                TextSettings.FontColor = xFFBDBDBD
+                                Text = 'KO / 24h'
+                              end
+                              object LabelAccountKOQuotaValue: TLabel
+                            Hint = 'hint.ko_quota'
+                            ParentShowHint = False
+                            ShowHint = True
                                 Align = Client
                                 StyledSettings = []
                                 Size.Width = 203.000000000000000000

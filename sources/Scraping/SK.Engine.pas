@@ -15,6 +15,18 @@ type
 
   TScrapeStatus = SK.Scrape.Types.TScrapeStatus;
 
+  TResumePlatform = class
+  public
+    Inputs: TArray<string>;
+    Completed, Produced, CleanupRoots: TDictionary<string, Boolean>;
+    Results: TObjectList<TJSONObject>;
+    Missing: TStringList;
+    Saved: Boolean;
+    constructor Create;
+    destructor Destroy; override;
+    function Clone: TResumePlatform;
+  end;
+
   TScrapeWorker = class(TThread)
   private
     FScenario: TScenarioRequest;
@@ -33,16 +45,21 @@ type
     FEngineLimit: Integer;
     FQuotaTick: UInt64;
     FOffline: Boolean;
+    FPlanReady: Boolean;
     FVerbose: Boolean;
     FQueue: TInputQueue;
     FTaskSystem: TJSONObject;
     FResults: TObjectList<TJSONObject>;
     FMissing: TStringList;
     FScanned: TDictionary<string, TArray<string>>;
+    FResumePlatforms: TObjectDictionary<string, TResumePlatform>;
+    FCompletedInputs: TDictionary<string, Boolean>;
     FPreviewFiles: TList<string>;
     FNextPreviewTick: UInt64;
     FProduced: TDictionary<string, Boolean>;
     FCleanupRoots: TDictionary<string, Boolean>;
+    function HasPendingWork: Boolean;
+    function ResumeInputs(Sys: TJSONObject): TArray<string>;
     procedure PrepareTargetSystem(Sys: TJSONObject);
     function FilterNewInputs(Sys: TJSONObject; const Files: TArray<string>): TArray<string>;
     procedure CaptureQuota(User: TJSONObject);
@@ -64,6 +81,7 @@ type
     constructor Create(Config, Credentials: TJSONObject; const Base: string; Selected: Integer; Offline: Boolean = False; OfflineEngines: Integer = 1; const TargetRom: string = ''; NetworkQueue: TScreenScraperNetworkQueue = nil);
     destructor Destroy; override;
     procedure Snapshot(out Status: TScrapeStatus; Lines: TStrings);
+    function CreateContinuation(Credentials: TJSONObject = nil; NetworkQueue: TScreenScraperNetworkQueue = nil): TScrapeWorker;
   end;
 
 procedure HashStream(Stream: TStream; out CRC, MD5, SHA1: string; Cancel: TFunc<Boolean> = nil);
@@ -76,6 +94,116 @@ uses
   SK.Mix, SK.GameList, SK.Metadata, SK.Output, SK.Frontend, SK.Cache, SK.Catalog,
   SK.Locale, FMX.Graphics;
 
+constructor TResumePlatform.Create;
+begin
+  inherited;
+  Completed := TDictionary<string, Boolean>.Create;
+  Produced := TDictionary<string, Boolean>.Create;
+  CleanupRoots := TDictionary<string, Boolean>.Create;
+  Results := TObjectList<TJSONObject>.Create(True);
+  Missing := TStringList.Create;
+end;
+
+destructor TResumePlatform.Destroy;
+begin
+  Missing.Free;
+  Results.Free;
+  Completed.Free;
+  Produced.Free;
+  CleanupRoots.Free;
+  inherited;
+end;
+
+function TResumePlatform.Clone: TResumePlatform;
+var
+  Key: string;
+  Item: TJSONObject;
+begin
+  Result := TResumePlatform.Create;
+  try
+    Result.Inputs := Copy(Inputs);
+    Result.Saved := Saved;
+    for Key in Completed.Keys do Result.Completed.Add(Key, True);
+    for Key in Produced.Keys do Result.Produced.Add(Key, True);
+    for Key in CleanupRoots.Keys do Result.CleanupRoots.Add(Key, True);
+    for Item in Results do Result.Results.Add(Item.Clone as TJSONObject);
+    Result.Missing.Assign(Missing);
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+function TScrapeWorker.HasPendingWork: Boolean;
+var
+  State: TResumePlatform;
+begin
+  Result := False;
+  if FTaskSystem <> nil then Exit;
+  if not FPlanReady or (FResumePlatforms = nil) or (FResumePlatforms.Count = 0) then
+    Exit(Terminated or (FStatus.Errors > 0));
+  for State in FResumePlatforms.Values do
+    if not State.Saved then Exit(True);
+end;
+
+function TScrapeWorker.ResumeInputs(Sys: TJSONObject): TArray<string>;
+var
+  State: TResumePlatform;
+  Key, FileName: string;
+  Count: Integer;
+begin
+  Key := THashSHA2.GetHashString(Sys.ToJSON);
+  if not FResumePlatforms.TryGetValue(Key, State) then
+  begin
+    State := TResumePlatform.Create;
+    try
+      if FTargetRom <> '' then
+        State.Inputs := TArray<string>.Create(FTargetRom)
+      else
+        State.Inputs := ScanInputs(Sys,
+          function: Boolean
+          begin
+            Result := Terminated;
+          end);
+      if FTargetRom = '' then
+        State.Inputs := FilterNewInputs(Sys, State.Inputs);
+      FResumePlatforms.Add(Key, State);
+    except
+      State.Free;
+      raise;
+    end;
+  end;
+  Result := nil;
+  if State.Saved then Exit;
+  SetLength(Result, Length(State.Inputs));
+  Count := 0;
+  for FileName in State.Inputs do
+    if not State.Completed.ContainsKey(PathKey(FileName)) then
+    begin
+      Result[Count] := FileName;
+      Inc(Count);
+    end;
+  SetLength(Result, Count);
+end;
+
+function TScrapeWorker.CreateContinuation(Credentials: TJSONObject; NetworkQueue: TScreenScraperNetworkQueue): TScrapeWorker;
+var
+  Key: string;
+begin
+  if not Finished or not HasPendingWork then
+    raise EInvalidOpException.Create('No stopped scrape is available to continue');
+  if Credentials = nil then Credentials := FCredentials;
+  Result := TScrapeWorker.Create(FConfig, Credentials, FBase, FSelected, FOffline, FEngineLimit, FTargetRom, NetworkQueue);
+  try
+    for Key in FResumePlatforms.Keys do
+      Result.FResumePlatforms.Add(Key, FResumePlatforms[Key].Clone);
+    Result.Log(SK.Locale.L('Scraping resumed; completed games will be skipped.'));
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
 procedure TScrapeWorker.CaptureQuota(User: TJSONObject);
 begin
   if JValue(User, 'response.ssuser') = nil then
@@ -84,6 +212,8 @@ begin
   try
     FStatus.QuotaText := JStr(User, 'response.ssuser.requeststoday', '—') + ' / ' +
       JStr(User, 'response.ssuser.maxrequestsperday', '—');
+    FStatus.KOQuotaText := JStr(User, 'response.ssuser.requestskotoday', '—') + ' / ' +
+      JStr(User, 'response.ssuser.maxrequestskoperday', '—');
     FStatus.QuotaUpdated := Now;
   finally
     TMonitor.Exit(FLock)
@@ -173,6 +303,8 @@ begin
   FResults := TObjectList<TJSONObject>.Create(True);
   FMissing := TStringList.Create;
   FScanned := TDictionary<string, TArray<string>>.Create;
+  FResumePlatforms := TObjectDictionary<string, TResumePlatform>.Create([doOwnsValues]);
+  FCompletedInputs := TDictionary<string, Boolean>.Create;
   FPreviewFiles := TList<string>.Create;
   FStatus.Started := Now;
   FStatus.Running := True;
@@ -188,6 +320,8 @@ begin
   FResults.Free;
   FMissing.Free;
   FScanned.Free;
+  FResumePlatforms.Free;
+  FCompletedInputs.Free;
   FPreviewFiles.Free;
   FConfig.Free;
   FCredentials.Free;
@@ -227,7 +361,7 @@ begin
       FLogFile := '';
       TMonitor.Enter(FLock);
       try
-        FLog.Add('Warning: file logging disabled: ' + E.Message);
+        FLog.Add(SK.Locale.L('Warning: file logging disabled: %s', [E.Message]));
       finally
         TMonitor.Exit(FLock)
       end;
@@ -263,6 +397,7 @@ begin
       FStatus.Running := False;
       FStatus.Finished := True;
       FStatus.Cancelled := Terminated;
+      FStatus.CanResume := HasPendingWork;
       FStatus.FinishedAt := Now;
       if Terminated then
         FStatus.Stage := 'Cancelled'
@@ -1062,7 +1197,7 @@ begin
             raise;
           if (Dest <> '') and TPath.GetFileName(Dest).StartsWith(BaseName) and TFile.Exists(Dest) then
             TFile.Delete(Dest);
-          Log('Media error: ' + E.Message);
+          Log(SK.Locale.L('Media error: %s', [E.Message]));
           TMonitor.Enter(FLock);
           try
             Inc(FStatus.Errors);
@@ -1093,7 +1228,6 @@ var
   OutputLock: TObject;
   Hashes: TRomHashes;
   FallbackResponse: TJSONObject;
-  NameQuery, CleanName: string;
   Response, Game, Item: TJSONObject;
   Doc: IXMLDocument;
   Node: IXMLNode;
@@ -1113,6 +1247,11 @@ begin
     procedure(MessageText: string)
     begin
       Trace(MessageText)
+    end;
+  FAPI.LookupMiss :=
+    procedure(MessageText: string)
+    begin
+      Log(MessageText)
     end;
   FCleanupRoots.Clear;
   TMonitor.Enter(FLock);
@@ -1198,19 +1337,15 @@ begin
                   '&romtaille=' + Size.ToString + '&crc=' + CRC + '&md5=' + MD5 + '&sha1=' + SHA1);
               if JValue(Response, 'response.jeu') = nil then
                 FreeAndNil(Response);
-              if (Method <> 1) and ((Response = nil) or (JInt(Response, 'response.jeu.romid') = 0)) then
+              if (Method <> 1) and (Response = nil) then
               begin
                 FallbackResponse := nil;
-                NameQuery := TPath.GetFileNameWithoutExtension(RomName);
-                CleanName := TRegEx.Replace(NameQuery, '[\(\[].*?[\)\]]', '').Replace('''', ' ').Replace('.', ' ').Trim;
-                for Extra in TArray<string>.Create(NameQuery, CleanName) do
+                for Extra in GameNameQueries(RomName) do
                 begin
                   FallbackResponse := FAPI.Request(GameInfoEndpoint, Params + '&romtype=jeu&romnom=' + Encode(CleanRomName(Extra)));
                   if JValue(FallbackResponse, 'response.jeu') <> nil then
                     Break;
                   FreeAndNil(FallbackResponse);
-                  if SameText(NameQuery, CleanName) then
-                    Break;
                 end;
                 if FallbackResponse <> nil then
                 begin
@@ -1244,7 +1379,7 @@ begin
             finally
               TMonitor.Exit(FLock);
             end;
-            Log('Not found: ' + RomName);
+            Log(SK.Locale.L('Not found: %s', [RomName]));
           end
           else
           begin
@@ -1300,10 +1435,14 @@ begin
                 TMonitor.Exit(FLock);
               end;
             end;
-            Log('Completed: ' + JStr(Item, 'name'));
+            Log(SK.Locale.L('Completed: %s', [JStr(Item, 'name')]));
           end;
-          if not Terminated and ((Game <> nil) or not JBool(Sys, 'GameList.PreserveMissingMedia')) then
-            FResults.Add(Item.Clone as TJSONObject);
+          if not Terminated then
+          begin
+            if (Game <> nil) or not JBool(Sys, 'GameList.PreserveMissingMedia') then
+              FResults.Add(Item.Clone as TJSONObject);
+            FCompletedInputs.AddOrSetValue(PathKey(FileName), True);
+          end;
           TMonitor.Enter(FLock);
           try
             if JBool(Item, 'favorite') then
@@ -1321,7 +1460,7 @@ begin
           end;
           on E: Exception do
           begin
-            Log('Error: ' + RomName + ' — ' + E.Message);
+            Log(SK.Locale.L('Error: %s — %s', [RomName, E.Message]));
             Trace(E.ClassName + ': ' + E.StackTrace);
             TMonitor.Enter(FLock);
             try
@@ -1374,6 +1513,31 @@ var
   Path: string;
   Item: TJSONObject;
   Results: TObjectList<TJSONObject>;
+  State: TResumePlatform;
+  Collected: Boolean;
+
+  procedure CollectResults;
+  var
+    Worker: TScrapeWorker;
+    Item: TJSONObject;
+    Path: string;
+  begin
+    if Collected then Exit;
+    for Worker in Workers do
+    begin
+      for Path in Worker.FCompletedInputs.Keys do State.Completed.AddOrSetValue(Path, True);
+      for Item in Worker.FResults do State.Results.Add(Item.Clone as TJSONObject);
+      for Path in Worker.FMissing do
+        if State.Missing.IndexOf(Path) < 0 then State.Missing.Add(Path);
+      for Path in Worker.FProduced.Keys do State.Produced.AddOrSetValue(Path, True);
+      for Path in Worker.FCleanupRoots.Keys do State.CleanupRoots.AddOrSetValue(Path, True);
+    end;
+    for Item in State.Results do Results.Add(Item);
+    Missing.Assign(State.Missing);
+    for Path in State.Produced.Keys do FProduced.AddOrSetValue(Path, True);
+    for Path in State.CleanupRoots.Keys do FCleanupRoots.AddOrSetValue(Path, True);
+    Collected := True;
+  end;
 
   procedure Aggregate;
   var
@@ -1460,6 +1624,7 @@ var
     TMonitor.Enter(FLock);
     try
       Combined.QuotaText := FStatus.QuotaText;
+      Combined.KOQuotaText := FStatus.KOQuotaText;
       Combined.QuotaUpdated := FStatus.QuotaUpdated;
       Combined.PreviewData := FStatus.PreviewData;
       Combined.PreviewSource := FStatus.PreviewSource;
@@ -1471,10 +1636,14 @@ var
   end;
 
 begin
+  State := FResumePlatforms[THashSHA2.GetHashString(Sys.ToJSON)];
+  if State.Saved then Exit;
   Files := FScanned[THashSHA2.GetHashString(Sys.ToJSON)];
-  if (JBool(Sys, 'GameList.OnlyNew') or FScenario.Active) and (Length(Files) = 0) then
+  if (JBool(Sys, 'GameList.OnlyNew') or FScenario.Active) and (Length(Files) = 0) and
+    (State.Results.Count = 0) then
   begin
-    Log('No games need updating; existing gamelist preserved.');
+    Log(SK.Locale.L('No games need updating; existing gamelist preserved.'));
+    State.Saved := True;
     Exit;
   end;
   TMonitor.Enter(FLock);
@@ -1497,6 +1666,7 @@ begin
   Missing := TStringList.Create;
   Results := TObjectList<TJSONObject>.Create(False);
   Writer := nil;
+  Collected := False;
   try
     Writer := TGameListWriter.Create(Sys);
     for i := 0 to Min(FEngineLimit, Max(1, Length(Files))) - 1 do
@@ -1523,16 +1693,7 @@ begin
         Sleep(WorkerPollMs);
     until Done;
     Aggregate;
-    for Child in Workers do
-    begin
-      for Item in Child.FResults do
-        Results.Add(Item);
-      Missing.AddStrings(Child.FMissing);
-      for Path in Child.FProduced.Keys do
-        FProduced.AddOrSetValue(Path, True);
-      for Path in Child.FCleanupRoots.Keys do
-        FCleanupRoots.AddOrSetValue(Path, True);
-    end;
+    CollectResults;
     Results.Sort(TComparer<TJSONObject>.Construct(
       function(const A, B: TJSONObject): Integer
       begin
@@ -1584,10 +1745,11 @@ begin
         not JBool(Sys, 'GameList.OnlyNew') and (FStatus.Errors = StartErrors));
       if (FTargetRom = '') and JBool(Sys, 'Miscellaneous.SaveFCRCMissing') then
         Missing.SaveToFile(ChangeFileExt(JStr(Sys, 'GameList.OutputFile'), '.Missing.FCRC.txt'), TEncoding.UTF8);
-      Log('Gamelist saved.');
+      State.Saved := True;
+      Log(SK.Locale.L('Gamelist saved.'));
     end
     else
-      Log('Cancelled; existing gamelist preserved.');
+      Log(SK.Locale.L('Cancelled; existing gamelist preserved.'));
   finally
     for Child in Workers do
     begin
@@ -1597,6 +1759,7 @@ begin
     end;
     for Child in Workers do
       Child.WaitFor;
+    CollectResults;
     Results.Free;
     Writer.Free;
     Missing.Free;
@@ -1663,7 +1826,7 @@ begin
         if Allowed and AllowCleanup and TFile.Exists(Path) then
         begin
           TFile.Delete(Path);
-          Log('Removed unused media: ' + Path);
+          Log(SK.Locale.L('Removed unused media: %s', [Path]));
         end
         else
           FProduced.AddOrSetValue(Path, True);
@@ -1734,10 +1897,10 @@ begin
     end;
     SetLength(Result, Count);
     if FScenario.Active then
-      Log(Format('Scenario %s (%s): %d games to update, %d skipped.',
+      Log(SK.Locale.L('Scenario %s (%s): %d games to update, %d skipped.',
         [FScenario.ID, FScenario.Field, Count, Length(Files) - Count]))
     else
-      Log(Format('Only new: %d new games, %d already listed.', [Count, Length(Files) - Count]));
+      Log(SK.Locale.L('Only new: %d new games, %d already listed.', [Count, Length(Files) - Count]));
   finally
     Existing.Free;
   end;
@@ -1774,7 +1937,7 @@ begin
       if not FOffline and not JBool(FCredentials, 'anonymous') then
       begin
         SetStage('Authenticating');
-        Log('Authenticating with ScreenScraper…');
+        Log(SK.Locale.L('Authenticating with ScreenScraper…'));
         User := FAPI.Authenticate;
         try
           if JValue(User, 'response.ssuser') = nil then
@@ -1824,15 +1987,7 @@ begin
             EnsureRecalboxMedia(Sys);
           ResolveFrontendPaths(Sys, JValue(FConfig, 'FrontEnd') as TJSONObject, FSystemCatalog);
           PrepareTargetSystem(Sys);
-          if FTargetRom <> '' then
-            InputFiles := TArray<string>.Create(FTargetRom)
-          else
-            InputFiles := ScanInputs(Sys,
-              function: Boolean
-              begin
-                Result := Terminated
-              end);
-          InputFiles := FilterNewInputs(Sys, InputFiles);
+          InputFiles := ResumeInputs(Sys);
           FScanned.AddOrSetValue(THashSHA2.GetHashString(Sys.ToJSON), InputFiles);
           TMonitor.Enter(FLock);
           try
@@ -1844,6 +1999,7 @@ begin
           Sys.Free
         end;
       end;
+      FPlanReady := True;
       for i := 0 to Systems.Count - 1 do
       begin
         if Terminated then
@@ -1869,10 +2025,10 @@ begin
             try
               EnsureDirectory(FBase + 'Logs');
               FLogFile := TPlatformPath.Combine(FBase, NativePath('Logs\') + FormatDateTime('yyyymmdd-hhnnss', Now) + '-' + JStr(Sys, 'SystemId') + '.log');
-              Log('Scraping log started.');
+              Log(SK.Locale.L('Scraping log started.'));
             except
               on E: Exception do
-                Log('Warning: file logging unavailable: ' + E.Message);
+                Log(SK.Locale.L('Warning: file logging unavailable: %s', [E.Message]));
             end;
           end;
           try
@@ -1888,7 +2044,7 @@ begin
             begin
               if E is EScreenScraperFatal then
                 Terminate;
-              Log('System error: ' + E.Message);
+              Log(SK.Locale.L('System error: %s', [E.Message]));
               TMonitor.Enter(FLock);
               try
                 Inc(FStatus.Errors);
@@ -1918,7 +2074,7 @@ begin
       begin
         if E is EScreenScraperFatal then
           Terminate;
-        Log('Stopped: ' + E.Message);
+        Log(SK.Locale.L('Stopped: %s', [E.Message]));
         TMonitor.Enter(FLock);
         try
           Inc(FStatus.Errors);
@@ -1942,6 +2098,7 @@ begin
       else
         FStatus.Stage := 'Completed';
       FStatus.Cancelled := Terminated;
+      FStatus.CanResume := HasPendingWork;
     finally
       TMonitor.Exit(FLock);
     end;

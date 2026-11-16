@@ -417,6 +417,7 @@
         <DCCReference Include="sources\Tests\SK.GameLibrary.Tests.pas"/>
         <DCCReference Include="sources\Tests\SK.Parity.Tests.pas"/>
         <DCCReference Include="sources\Tests\SK.Tests.pas"/>
+        <DCCReference Include="sources\Tests\SK.Lookup.Tests.pas"/>
         <DCCReference Include="sources\Tests\SK.Platform.Tests.pas"/>
         <DCCReference Include="dependencies\Delphi7z\Z7.Archive.Filters.pas"/>
         <DCCReference Include="dependencies\Delphi7z\Z7.Archive.Lzma.pas"/>

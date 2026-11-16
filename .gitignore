@@ -29,11 +29,6 @@
 /sources/Services/SK.ScreenScraper.Application.inc
 # Generated investigations and UI captures
 /sources/Docs/Design/
-/sources/Tests/[Oo]utput/
-/sources/Tests/*.png
-/sources/Tests/*.log
-/sources/Tests/*.txt
-/sources/Tests/*.diff
 /sources/Assets/Runtime/**/*.bak
 /dependencies/Player/
 __pycache__/
@@ -41,10 +36,3 @@ __pycache__/
 /sources/Tests/*
 /sources/Tools/*
 /codex-work/*
-
-# Maintained localization audit and regression suite
-!/sources/Tools/audit-locales.py
-!/sources/Tests/SK.Parity.Tests.pas
-
-/sources/Tests/*
-/sources/Tools/*

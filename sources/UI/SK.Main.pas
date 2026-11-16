@@ -215,6 +215,9 @@ type
     ReuseExistingMediaSwitch: TSwitch;
     AccountQuotaLabel: TLabel;
     AccountQuotaValue: TLabel;
+    LayoutAccountKOQuota: TLayout;
+    LabelAccountKOQuota: TLabel;
+    LabelAccountKOQuotaValue: TLabel;
     PanelScreenScraperDescriptionV3Surface: TRectangle;
     ServiceAboutTitle: TLabel;
     ServiceAboutNote: TLabel;
@@ -261,6 +264,7 @@ type
     MetricQuotaDivider: TRectangle;
     LabelQuota: TLabel;
     LabelQuotaValue: TLabel;
+    LabelKOQuotaValue: TLabel;
     MetricSavedMedia: TLayout;
     MetricSavedMediaDivider: TRectangle;
     WorkerSurface: TRectangle;
@@ -318,6 +322,7 @@ type
     SelectedSystemCount: TLabel;
     CheckBoxOnlyNew: TCheckBox;
     StartScraping: TButton;
+    ButtonResumeScraping: TButton;
     StartScrapingIcon: FMX.Objects.TPath;
     ScopeLabel: TLabel;
     SettingsScope: TComboBox;
@@ -659,6 +664,7 @@ type
     procedure ButtonRunWizardClick(Sender: TObject);
     procedure ButtonTestAccountClick(Sender: TObject);
     procedure ButtonScrapClick(Sender: TObject);
+    procedure ButtonResumeScrapingClick(Sender: TObject);
     procedure ButtonAddSystemClick(Sender: TObject);
     procedure ButtonRemoveSystemClick(Sender: TObject);
     procedure ButtonSourceFolderClick(Sender: TObject);
@@ -1857,6 +1863,8 @@ begin
   AccountStatusDot.Fill.Color := $FF888888;
   AccountThreadsValue.Text := '—';
   AccountQuotaValue.Text := '—';
+  LabelAccountKOQuotaValue.Text := '—';
+  LabelKOQuotaValue.Text := 'KO: —';
   LabelQuotaValue.Text := '—';
   LabelQuotaValue.Hint := '';
   LabelThreadAvailable.Text := SK.Locale.L('Нажмите «Проверить подключение»');
@@ -2103,6 +2111,8 @@ begin
   AccountStatusDot.Fill.Color := $FF60CDFF;
   AccountThreadsValue.Text := '—';
   AccountQuotaValue.Text := '—';
+  LabelAccountKOQuotaValue.Text := '—';
+  LabelKOQuotaValue.Text := 'KO: —';
   LabelQuotaValue.Text := '—';
   LabelQuotaValue.Hint := '';
   Credentials := FConfig.Credentials.Clone as TJSONObject;
@@ -2138,6 +2148,8 @@ begin
           AccountThreadsValue.Text := Connection.ThreadsText;
           AccountQuotaValue.Text := Connection.QuotaText;
           LabelQuotaValue.Text := Connection.QuotaText;
+          LabelAccountKOQuotaValue.Text := Connection.KOQuotaText;
+          LabelKOQuotaValue.Text := 'KO: ' + Connection.KOQuotaText;
           LabelQuotaValue.Hint := SK.Locale.L('Запросы сегодня / суточный лимит ScreenScraper');
           if Connection.Verified then
           begin
@@ -2464,6 +2476,20 @@ begin
   ValidateAccount;
 end;
 
+procedure TFormMain.ButtonResumeScrapingClick(Sender: TObject);
+var
+  NextWorker, Previous: TScrapeWorker;
+begin
+  if not CanExecuteAction or (FWorker = nil) or not FWorker.Finished then Exit;
+  NextWorker := FWorker.CreateContinuation(FConfig.Credentials);
+  Previous := FWorker;
+  FWorker := NextWorker;
+  Previous.Free;
+  ShowPage(1);
+  FScrapePresenter.BeginScrape(True);
+  FWorker.Start;
+end;
+
 procedure TFormMain.ButtonScrapClick(Sender: TObject);
 var
   O: TJSONObject;
@@ -2479,7 +2505,6 @@ begin
       ButtonScrap.Text := SK.Locale.L('Остановка…');
       Exit;
     end;
-    FreeAndNil(FWorker);
     PanelLeftPan.Enabled := True;
     ImportConfigButton.Enabled := True;
     ExportConfigButton.Enabled := True;

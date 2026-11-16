@@ -12,7 +12,7 @@ type
 
   TAccountConnection = record
     Verified: Boolean;
-    ThreadsText, QuotaText, MessageText: string;
+    ThreadsText, QuotaText, KOQuotaText, MessageText: string;
   end;
 
 function SelectablePlatformCount(Catalog: TJSONObject): Integer;
@@ -51,6 +51,7 @@ begin
   Result := Default(TAccountConnection);
   Result.ThreadsText := '—';
   Result.QuotaText := '—';
+  Result.KOQuotaText := '—';
   if Anonymous then
     Exit;
   User := API.Authenticate;
@@ -61,6 +62,8 @@ begin
     Result.ThreadsText := JStr(User, 'response.ssuser.maxthreads', '—');
     Result.QuotaText := JStr(User, 'response.ssuser.requeststoday', '—') + ' / ' +
       JStr(User, 'response.ssuser.maxrequestsperday', '—');
+    Result.KOQuotaText := JStr(User, 'response.ssuser.requestskotoday', '—') + ' / ' +
+      JStr(User, 'response.ssuser.maxrequestskoperday', '—');
     Result.MessageText := L('Авторизация выполнена');
   finally
     User.Free;
@@ -124,6 +127,7 @@ begin
   Result := Default(TAccountConnection);
   Result.ThreadsText := '—';
   Result.QuotaText := '—';
+  Result.KOQuotaText := '—';
   API := nil;
   Catalog := nil;
   try

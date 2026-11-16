@@ -12,6 +12,7 @@ type
     OpenPlatformLibrary: TButton;
     AccountQuotaValue: TLabel;
     LabelQuotaValue: TLabel;
+    LabelKOQuotaValue, LabelAccountKOQuotaValue: TLabel;
     ScrapeStateBadge: TRectangle;
     ScrapeStateText: TLabel;
     NavScrapingIcon: FMX.Objects.TPath;
@@ -21,6 +22,7 @@ type
     ConfigureSystem: TButton;
     CheckBoxOnlyNew: TCheckBox;
     StartScraping: TButton;
+    ButtonResumeScraping: TButton;
     ScrapePercent: TLabel;
     RecentMediaNote: TLabel;
     ScrapeSummary: TLabel;
@@ -66,7 +68,7 @@ type
     OnLogChanged, OnFullLog, OnFinished: TProc;
     constructor Create(View: TComponent);
     destructor Destroy; override;
-    procedure BeginScrape;
+    procedure BeginScrape(ContinueRun: Boolean = False);
     procedure ApplyStatus(const S: TScrapeStatus);
     property Subtitle: string read FScrapeSubtitle;
   end;
@@ -85,6 +87,8 @@ begin
   FView.OpenPlatformLibrary := RequireComponent(View, 'OpenPlatformLibrary') as TButton;
   FView.AccountQuotaValue := RequireComponent(View, 'AccountQuotaValue') as TLabel;
   FView.LabelQuotaValue := RequireComponent(View, 'LabelQuotaValue') as TLabel;
+  FView.LabelKOQuotaValue := RequireComponent(View, 'LabelKOQuotaValue') as TLabel;
+  FView.LabelAccountKOQuotaValue := RequireComponent(View, 'LabelAccountKOQuotaValue') as TLabel;
   FView.ScrapeStateBadge := RequireComponent(View, 'ScrapeStateBadge') as TRectangle;
   FView.ScrapeStateText := RequireComponent(View, 'ScrapeStateText') as TLabel;
   FView.NavScrapingIcon := RequireComponent(View, 'NavScrapingIcon') as FMX.Objects.TPath;
@@ -94,6 +98,7 @@ begin
   FView.ConfigureSystem := RequireComponent(View, 'ConfigureSystem') as TButton;
   FView.CheckBoxOnlyNew := RequireComponent(View, 'CheckBoxOnlyNew') as TCheckBox;
   FView.StartScraping := RequireComponent(View, 'StartScraping') as TButton;
+  FView.ButtonResumeScraping := RequireComponent(View, 'ButtonResumeScraping') as TButton;
   FView.ScrapePercent := RequireComponent(View, 'ScrapePercent') as TLabel;
   FView.RecentMediaNote := RequireComponent(View, 'RecentMediaNote') as TLabel;
   FView.ScrapeSummary := RequireComponent(View, 'ScrapeSummary') as TLabel;
@@ -138,11 +143,12 @@ begin
   inherited;
 end;
 
-procedure TScrapePresenter.BeginScrape;
+procedure TScrapePresenter.BeginScrape(ContinueRun: Boolean);
 var
   i: Integer;
   S: TScrapeStatus;
 begin
+  FView.ButtonResumeScraping.Visible := False;
   FView.PanelSettings.Enabled := False;
   FView.PanelLeftPan.Enabled := False;
   FView.ButtonAddSystem.Enabled := False;
@@ -153,7 +159,8 @@ begin
   FView.CheckBoxOnlyNew.Enabled := False;
   FView.ImportConfigButton.Enabled := False;
   FView.ExportConfigButton.Enabled := False;
-  FView.FastColoredTextBoxLogging.Lines.Clear;
+  if not ContinueRun then
+    FView.FastColoredTextBoxLogging.Lines.Clear;
   for i := 0 to 2 do
     FPreviewRevisions[i] := 0;
   FView.PictureBoxScrapSample1.Bitmap.Clear(0);
@@ -221,6 +228,8 @@ var
   Obj: TFmxObject;
   EngineRow, TextColumn, MediaRow, StatsColumn: TLayout;
 begin
+  FView.ButtonResumeScraping.Visible := S.Finished and S.CanResume;
+  FView.ButtonResumeScraping.Enabled := S.Finished and S.CanResume;
   if Assigned(OnLogChanged) then
     OnLogChanged;
   Images[0] := FView.PictureBoxScrapSample1;
@@ -387,6 +396,8 @@ begin
   begin
     FView.LabelQuotaValue.Text := S.QuotaText;
     FView.AccountQuotaValue.Text := S.QuotaText;
+    FView.LabelKOQuotaValue.Text := 'KO: ' + S.KOQuotaText;
+    FView.LabelAccountKOQuotaValue.Text := S.KOQuotaText;
     FView.LabelQuotaValue.Hint := SK.Locale.L('Запросы сегодня / суточный лимит ScreenScraper. Обновлено: ') +
       FormatDateTime('dd.mm hh:nn:ss', S.QuotaUpdated);
   end;

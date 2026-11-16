@@ -51,6 +51,7 @@ uses
   SK.Parity.Tests in 'sources\Tests\SK.Parity.Tests.pas',
   {$IFDEF MSWINDOWS}
   SK.Tests in 'sources\Tests\SK.Tests.pas',
+  SK.Lookup.Tests in 'sources\Tests\SK.Lookup.Tests.pas',
   {$ENDIF }
   SK.Platform.Tests in 'sources\Tests\SK.Platform.Tests.pas',
   Z7.Archive.Filters in 'dependencies\Delphi7z\Z7.Archive.Filters.pas',
@@ -88,6 +89,13 @@ begin
     RunGameLibrarySelfTests;
     Halt(ExitCode);
   end;
+  {$IFDEF MSWINDOWS}
+  if FindCmdLineSwitch('lookuptest') then
+  begin
+    RunLookupSelfTests;
+    Halt(ExitCode);
+  end;
+  {$ENDIF}
   if FindCmdLineSwitch('selftest') then
   begin
     {$IFDEF MSWINDOWS}RunSelfTests;{$ELSE}RunPortableSelfTests;{$ENDIF}

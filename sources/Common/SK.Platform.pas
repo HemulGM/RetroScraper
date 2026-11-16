@@ -352,7 +352,7 @@ var
   TestBase: string;
 begin
   Result := UserDataBase;
-  if FindCmdLineSwitch('selftest') or FindCmdLineSwitch('paritytest') or FindCmdLineSwitch('editvisibilitytest') or
+  if FindCmdLineSwitch('selftest') or FindCmdLineSwitch('lookuptest') or FindCmdLineSwitch('paritytest') or FindCmdLineSwitch('editvisibilitytest') or
     FindCmdLineSwitch('wizardconcepttest') or FindCmdLineSwitch('directorytest') or FindCmdLineSwitch('librarytest') then
   begin
     TestBase := GetEnvironmentVariable('RETROSCRAPER_TEST_DATA');

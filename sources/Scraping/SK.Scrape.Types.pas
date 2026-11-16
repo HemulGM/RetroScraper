@@ -29,7 +29,7 @@ type
   end;
 
   TScrapeStatus = record
-    Running, Finished, Cancelled: Boolean;
+    Running, Finished, Cancelled, CanResume: Boolean;
     Total, Completed, Found, Missing, Errors, Downloaded, Saved, Requests, Cached, Favorites, Hidden: Integer;
     SystemsTotal, SystemsCompleted: Integer;
     CurrentSystem, CurrentSystemID, CurrentFile, LastError, Stage: string;
@@ -37,7 +37,7 @@ type
     PreviewData: array[0..2] of TBytes;
     PreviewRevision: array[0..2] of Int64;
     PreviewSource: array[0..2] of string;
-    QuotaText: string;
+    QuotaText, KOQuotaText: string;
     QuotaUpdated: TDateTime;
     Started, FinishedAt: TDateTime;
     Engines: TArray<TEngineStatus>;

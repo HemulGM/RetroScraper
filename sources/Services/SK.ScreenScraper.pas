@@ -43,6 +43,7 @@ type
     FHttp: THTTPClient;
     FCredentials: TJSONObject;
     FCache: string;
+    procedure ReportLookupMiss(const Endpoint, Params: string; FromCache: Boolean);
     function NetworkGet(const URL: string; Stream: TStream = nil; CountRequest: Boolean = False): IHTTPResponse;
     procedure ReceiveData(const Sender: TObject; AContentLength, AReadCount: Int64; var Abort: Boolean);
     function RequestUnlocked(const Endpoint, Params: string; Cacheable: Boolean): TJSONObject;
@@ -51,6 +52,8 @@ type
     procedure WaitRetry(Delay: Cardinal);
     function AuthURL(const URL: string): string;
     function CredentialValue(const Key: string): string;
+  protected
+    function MetadataGet(const URL: string; out Body: string): Integer; virtual;
   public
     ScopeSystemID: Integer;
     CacheDays: Integer;
@@ -61,6 +64,7 @@ type
     IsCancelled: TFunc<Boolean>;
     NetworkQueue: TScreenScraperNetworkQueue;
     Diagnostic: TProc<string>;
+    LookupMiss: TProc<string>;
     constructor Create(Credentials: TJSONObject; const Cache: string);
     destructor Destroy; override;
     function Request(const Endpoint, Params: string; Cacheable: Boolean = True): TJSONObject;
@@ -84,7 +88,7 @@ implementation
 uses
   System.IOUtils, System.NetEncoding, System.Hash, System.DateUtils,
   System.RegularExpressions, SK.Json, SK.Storage, SK.Platform, SK.Consts,
-  SK.Cache;
+  SK.Cache, SK.Locale;
 
 procedure SanitizeResponse(Obj: TJSONValue);
 var
@@ -425,28 +429,72 @@ begin
   end;
 end;
 
+procedure TScreenScraper.ReportLookupMiss(const Endpoint, Params: string; FromCache: Boolean);
+var
+  Source, MessageText: string;
+begin
+  if FromCache then
+    Source := L('negative cache (HTTP 404)')
+  else
+    Source := L('server HTTP 404');
+  MessageText := L('Lookup miss: %s — %s; no ROM/game matched the supplied platform and identification.',
+    [Endpoint + '?' + Params, Source]);
+  if Assigned(LookupMiss) then
+    LookupMiss(MessageText)
+  else if Assigned(Diagnostic) then
+    Diagnostic(MessageText);
+end;
+
+function TScreenScraper.MetadataGet(const URL: string; out Body: string): Integer;
+var
+  Response: IHTTPResponse;
+begin
+  Body := '';
+  Response := NetworkGet(URL, nil, True);
+  Result := Response.StatusCode;
+  if Result = HTTPOK then
+    Body := Response.ContentAsString(TEncoding.UTF8);
+end;
+
 function TScreenScraper.RequestUnlocked(const Endpoint, Params: string; Cacheable: Boolean): TJSONObject;
 var
   URL, FileName, Key, S: string;
-  Response: IHTTPResponse;
+  StatusCode: Integer;
   Attempt: Integer;
+  Negative: Boolean;
+  Age: TDateTime;
   V: TJSONValue;
 begin
   Result := nil;
   FileName := '';
   if FCache <> '' then
     FileName := TPlatformPath.Combine(FCache, THashSHA2.GetHashString(Endpoint + '?' + Params) + '.json');
-  if (FCache <> '') and Cacheable and (CacheDays <> 0) and TFile.Exists(FileName) and
-    ((CacheDays >= UnlimitedCacheDays) or (DaysBetween(Now, TFile.GetLastWriteTime(FileName)) < CacheDays)) then
+  if (FCache <> '') and Cacheable and (CacheDays <> 0) and TFile.Exists(FileName) then
   begin
     Result := ReadJSON(FileName);
     if Result <> nil then
     begin
-      RegisterCacheFile(TDirectory.GetParent(TDirectory.GetParent(FCache)), ScopeSystemID, 'api', FileName);
-      Inc(CacheHits);
-      if Assigned(Diagnostic) then
-        Diagnostic('API cache hit: ' + Endpoint);
-      Exit;
+      Negative := JBool(Result, '_screenscraper_not_found');
+      Age := Now - TFile.GetLastWriteTime(FileName);
+      // Negative entries live for one week independently of positive-cache TTL.
+      if (Negative and ((Age < 0) or (Age >= 7))) or
+        (not Negative and (CacheDays < UnlimitedCacheDays) and
+          (DaysBetween(Now, TFile.GetLastWriteTime(FileName)) >= CacheDays)) then
+        FreeAndNil(Result)
+      else
+      begin
+        RegisterCacheFile(TDirectory.GetParent(TDirectory.GetParent(FCache)), ScopeSystemID, 'api', FileName);
+        Inc(CacheHits);
+        if Negative then
+        begin
+          FreeAndNil(Result);
+          ReportLookupMiss(Endpoint, Params, True);
+          Exit;
+        end;
+        if Assigned(Diagnostic) then
+          Diagnostic(L('API cache hit: %s', [Endpoint]));
+        Exit;
+      end;
     end;
   end;
   if Offline then
@@ -464,11 +512,11 @@ begin
   for Attempt := 0 to Retries do
   begin
     if Assigned(Diagnostic) then
-      Diagnostic('API request: ' + Endpoint + ', attempt=' + (Attempt + 1).ToString);
+      Diagnostic(L('API request: %s, attempt=%d', [Endpoint, Attempt + 1]));
     if Assigned(IsCancelled) and IsCancelled() then
       raise EAbort.Create('Cancelled');
     try
-      Response := NetworkGet(URL, nil, True);
+      StatusCode := MetadataGet(URL, S);
     except
       on E: EAbort do
         raise;
@@ -485,16 +533,32 @@ begin
       end;
     end;
     CheckCancellation;
-    if Response.StatusCode = HTTPNotFound then
+    if StatusCode = HTTPNotFound then
+    begin
+      if Endpoint = GameInfoEndpoint then
+      begin
+        ReportLookupMiss(Endpoint, Params, False);
+        if (FCache <> '') and Cacheable and (CacheDays <> 0) then
+        begin
+          V := TJSONObject.Create;
+          try
+            JSet(TJSONObject(V), '_screenscraper_not_found', TJSONBool.Create(True));
+            WriteJSON(FileName, TJSONObject(V));
+            RegisterCacheFile(TDirectory.GetParent(TDirectory.GetParent(FCache)), ScopeSystemID, 'api', FileName);
+          finally
+            V.Free;
+          end;
+        end;
+      end;
       Exit;
-    if Response.StatusCode <> HTTPOK then
+    end;
+    if StatusCode <> HTTPOK then
     begin
       if Attempt = Retries then
-        raise EScreenScraper.Create('ScreenScraper HTTP ' + Response.StatusCode.ToString);
+        raise EScreenScraper.Create('ScreenScraper HTTP ' + StatusCode.ToString);
       WaitRetry(APIBackoffMs * (Attempt + 1));
       Continue;
     end;
-    S := Response.ContentAsString(TEncoding.UTF8);
     V := TJSONObject.ParseJSONValue(S);
     if not (V is TJSONObject) then
     begin
